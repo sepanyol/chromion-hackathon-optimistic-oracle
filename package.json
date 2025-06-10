@@ -2,5 +2,8 @@
   "name": "ccip-starter-kit-foundry",
   "dependencies": {
     "@chainlink/local": "^0.2.5-beta"
+  },
+  "scripts": {
+    "coverage": "forge coverage --report lcov && genhtml lcov.info --output-dir coverage && npx http-server coverage"
   }
 }

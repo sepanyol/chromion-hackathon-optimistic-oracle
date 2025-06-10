@@ -64,3 +64,9 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+### View Coverage
+
+```shell
+$ npm run coverage
+```
