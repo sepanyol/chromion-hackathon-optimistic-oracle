@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.24;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IOracleCoordinator} from "../src/interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "../src/interfaces/IBaseRequestContract.sol";
 
@@ -29,12 +30,19 @@ contract OracleCoordinatorTest is Test {
 
     function setUp() public {
         usdc = new MockUSDC();
-        coordinator = new OracleCoordinator(
-            platform,
-            address(usdc),
-            finalizer,
+        coordinator = new OracleCoordinator(platform, address(usdc));
+
+        // GRANT ROLES
+        vm.startPrank(platform);
+        IAccessControl(address(coordinator)).grantRole(
+            coordinator.FINALIZER_ROLE(),
+            finalizer
+        );
+        IAccessControl(address(coordinator)).grantRole(
+            coordinator.FACTORY_ROLE(),
             factory
         );
+        vm.stopPrank();
 
         requestContract = new MockBaseRequestContract(
             abi.encode(requester),

@@ -85,21 +85,15 @@ contract OracleCoordinator is
     /// @notice Deploys the coordinator contract
     /// @param _platform Address of the platform treasury or admin
     /// @param _usdc ERC20 token used for all bond and reward transfers
-    /// @param _finalizer Address granted permission to finalize requests
-    /// @param _factory Address granted permission to register new requests
     constructor(
-        address _platform,
-        address _usdc,
-        address _finalizer,
-        address _factory
+        address _platform, // multi sig
+        address _usdc
     ) {
         require(_platform != address(0), "invalid address");
         require(_usdc != address(0), "invalid address");
         platform = _platform;
         usdc = IERC20(_usdc);
         _grantRole(DEFAULT_ADMIN_ROLE, _platform);
-        _grantRole(FINALIZER_ROLE, _finalizer);
-        _grantRole(FACTORY_ROLE, _factory);
     }
 
     /// ===== Core Functions =====

@@ -4,16 +4,16 @@ pragma solidity 0.8.24;
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {RequestTypes} from "./types/RequestTypes.sol";
+import {IRequestFactory} from "./interfaces/IRequestFactory.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {RequestContract} from "./RequestContract.sol";
 
 import {console} from "forge-std/console.sol";
 
-contract RequestFactory {
+contract RequestFactory is IRequestFactory {
     address public immutable implementation;
     address public immutable paymentAsset;
-    address public immutable oracleCoordinator;
-    address public immutable oracleRelayer;
+    address public immutable oracleOrRelayer;
     bool public immutable isOracleChain;
 
     event RequestCreated(
@@ -23,25 +23,21 @@ contract RequestFactory {
 
     constructor(
         address _paymentAsset,
-        address _oracleCoordinator,
-        address _oracleRelayer,
+        address _oracleOrRelayer,
         bool _isOracleChain
     ) {
         require(_paymentAsset != address(0), "Invalid asset");
-        require(_oracleCoordinator != address(0), "Invalid coordinator");
-        require(_oracleRelayer != address(0), "Invalid relayer");
+        require(_oracleOrRelayer != address(0), "Invalid instance");
 
         paymentAsset = _paymentAsset;
-        oracleCoordinator = _oracleCoordinator;
-        oracleRelayer = _oracleRelayer;
+        oracleOrRelayer = _oracleOrRelayer;
         isOracleChain = _isOracleChain; // redundancy to save gas, can be also retreived from implementation
 
         implementation = address(
             new RequestContract(
                 address(this),
                 _paymentAsset,
-                _oracleCoordinator,
-                _oracleRelayer,
+                _oracleOrRelayer,
                 _isOracleChain
             )
         );
@@ -65,19 +61,19 @@ contract RequestFactory {
 
         RequestContract(clone).initialize(p);
 
+        IERC20(paymentAsset).approve(oracleOrRelayer, _rewardAmount);
+
         // register @ oracle if this factory is on oracle chain
         // and send funds from msg.sender to oracle
         if (isOracleChain) {
-            IERC20(paymentAsset).approve(oracleCoordinator, _rewardAmount);
-            IOracleCoordinator(oracleCoordinator).registerRequest(clone);
+            IOracleCoordinator(oracleOrRelayer).registerRequest(clone);
         } else {
             // if not on oracle chain, approve reward amount for relayer
             // and send a message to the oracle chain
-            IERC20(paymentAsset).approve(oracleRelayer, _rewardAmount);
             p.originAddress = abi.encode(clone);
             p.originChainId = abi.encode(block.chainid);
             // TODO relayer call
-            // IOracleRelayer(oracleRelayer).sendMessageWithToken();
+            // IOracleRelayer(oracleOrRelayer).sendMessageWithToken();
         }
 
         emit RequestCreated(clone, p);

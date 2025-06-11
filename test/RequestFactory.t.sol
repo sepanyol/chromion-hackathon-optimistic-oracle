@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
-import "forge-std/console.sol";
+// import "forge-std/console.sol";
 
 import {MockUSDC} from "../src/mocks/MockUSDC.sol";
 import {MockOracleCoordinator} from "../src/mocks/MockOracleCoordinator.sol";
@@ -31,18 +31,11 @@ contract RequestFactoryTest is Test {
         vm.prank(requester);
         usdc.approve(address(this), type(uint256).max);
 
-        factory = new RequestFactory(
-            address(usdc),
-            oracleCoordinator,
-            oracleRelayer,
-            true // Oracle chain
-        );
-
+        factory = new RequestFactory(address(usdc), oracleCoordinator, true);
         factoryCrossChain = new RequestFactory(
             address(usdc),
-            oracleCoordinator,
             oracleRelayer,
-            false // Cross chain
+            false
         );
 
         usdc.approve(address(factory), type(uint256).max);

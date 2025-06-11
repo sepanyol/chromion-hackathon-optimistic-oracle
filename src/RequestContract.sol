@@ -9,16 +9,7 @@ contract RequestContract is BaseRequestContract {
     constructor(
         address _factory,
         address _paymentAsset,
-        address _oracleCoordinator,
-        address _oracleRelayer,
+        address _trustee,
         bool _isOracleChain
-    )
-        BaseRequestContract(
-            _factory,
-            _paymentAsset,
-            _oracleCoordinator,
-            _oracleRelayer,
-            _isOracleChain
-        )
-    {}
+    ) BaseRequestContract(_factory, _paymentAsset, _trustee, _isOracleChain) {}
 }

@@ -2,6 +2,8 @@
 pragma solidity 0.8.24;
 
 import {RequestTypes} from "../types/RequestTypes.sol";
+
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /// @title IOracleCoordinator
@@ -146,6 +148,20 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     // ===================================
     // ========= View Functions ==========
     // ===================================
+
+    function FINALIZER_ROLE() external view returns (bytes32);
+
+    function FACTORY_ROLE() external view returns (bytes32);
+
+    function REVIEW_WINDOW() external view returns (uint256);
+
+    function PROPOSER_BOND() external view returns (uint256);
+
+    function CHALLENGER_BOND() external view returns (uint256);
+
+    function REVIEWER_BOND() external view returns (uint256);
+
+    function usdc() external view returns (IERC20);
 
     /// @notice Returns the full proposal information for a given request
     /// @param _request The address of the request

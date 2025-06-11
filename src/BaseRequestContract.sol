@@ -12,10 +12,7 @@ import "./types/RequestTypes.sol";
 abstract contract BaseRequestContract is IBaseRequestContract, Initializable {
     address public immutable factory;
     address public immutable paymentAsset;
-    // TODO maybe just add one address that can be authorized, since cross chain it's always the relayer ( relayer checks is coordinator trys to execute)
-    // and oracle chain it's always the coordinator (Request contract checks if coordinator is allowed)
-    address public immutable oracleCoordinator;
-    address public immutable oracleRelayer; // cross chain relayer, NOT from oracle chain
+    address public immutable trustee;
     bool public immutable isOracleChain; // wheter to decide if there needs to be an origin chain call
 
     bytes public requester;
@@ -39,26 +36,21 @@ abstract contract BaseRequestContract is IBaseRequestContract, Initializable {
         _;
     }
 
-    modifier onlyAuthorized() {
-        require(
-            msg.sender == oracleCoordinator || msg.sender == oracleRelayer,
-            "Not authorized"
-        );
+    modifier onlyTrustee() {
+        require(msg.sender == trustee, "Not authorized");
         _;
     }
 
     constructor(
         address _factory,
         address _paymentAsset,
-        address _oracleCoordinator,
-        address _oracleRelayer,
+        address _trustee,
         bool _isOracleChain
     ) {
         require(_factory != address(0), "Invalid factory");
         factory = _factory;
         paymentAsset = _paymentAsset;
-        oracleCoordinator = _oracleCoordinator;
-        oracleRelayer = _oracleRelayer;
+        trustee = _trustee;
         isOracleChain = _isOracleChain;
 
         _disableInitializers();
@@ -86,7 +78,7 @@ abstract contract BaseRequestContract is IBaseRequestContract, Initializable {
 
     function updateStatus(
         RequestTypes.RequestStatus _newStatus
-    ) external onlyAuthorized {
+    ) external onlyTrustee {
         _updateStatus(_newStatus);
     }
 
@@ -97,7 +89,7 @@ abstract contract BaseRequestContract is IBaseRequestContract, Initializable {
 
     /// @notice Called by OracleCoordinator when a valid answer is proposed
     /// @param _answer The proposed answer bytes (format depends on request type)
-    function updateAnswer(bytes calldata _answer) external onlyAuthorized {
+    function updateAnswer(bytes calldata _answer) external onlyTrustee {
         require(answer.length == 0, "Answer already set");
         answer = _answer;
         emit RequestAnswerUpdated(_answer);

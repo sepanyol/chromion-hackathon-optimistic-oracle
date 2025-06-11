@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IOracleCoordinator} from "../interfaces/IOracleCoordinator.sol";
+import {IOracleCoordinator, IERC20} from "../interfaces/IOracleCoordinator.sol";
 
 contract MockOracleCoordinator is IOracleCoordinator {
     event registerRequestEmit();
@@ -66,4 +66,18 @@ contract MockOracleCoordinator is IOracleCoordinator {
     ) external returns (bool upkeepNeeded, bytes memory performData) {}
 
     function performUpkeep(bytes calldata performData) external {}
+
+    function FINALIZER_ROLE() external view returns (bytes32) {}
+
+    function FACTORY_ROLE() external view returns (bytes32) {}
+
+    function REVIEW_WINDOW() external view returns (uint256) {}
+
+    function PROPOSER_BOND() external view returns (uint256) {}
+
+    function CHALLENGER_BOND() external view returns (uint256) {}
+
+    function REVIEWER_BOND() external view returns (uint256) {}
+
+    function usdc() external view returns (IERC20) {}
 }
