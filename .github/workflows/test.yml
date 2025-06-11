@@ -19,6 +19,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Packages
+        run: npm install
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
