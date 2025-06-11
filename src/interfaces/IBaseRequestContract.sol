@@ -69,5 +69,9 @@ interface IBaseRequestContract {
 
     function updateAnswer(bytes calldata _answer) external;
 
+    function originAddress() external returns (bytes memory);
+
+    function originChainId() external returns (bytes memory);
+
     function getFullPrompt() external view returns (string memory);
 }

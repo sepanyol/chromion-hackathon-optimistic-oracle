@@ -16,6 +16,9 @@ contract MockBaseRequestContract is IBaseRequestContract {
     uint40 public challengeWindowLength;
     bytes public answer;
 
+    bytes public originAddress;
+    bytes public originChainId;
+
     string public questionText;
     string public contextText;
     string public truthText;

@@ -16,6 +16,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract RequestFactoryTest is Test {
     RequestFactory public factory;
+    RequestFactory public factoryCrossChain;
     MockUSDC public usdc;
     address public oracleCoordinator;
     address public oracleRelayer = address(0xC1);
@@ -37,7 +38,15 @@ contract RequestFactoryTest is Test {
             true // Oracle chain
         );
 
+        factoryCrossChain = new RequestFactory(
+            address(usdc),
+            oracleCoordinator,
+            oracleRelayer,
+            false // Cross chain
+        );
+
         usdc.approve(address(factory), type(uint256).max);
+        usdc.approve(address(factoryCrossChain), type(uint256).max);
     }
 
     function test_createRequest_Successful() public {
@@ -61,6 +70,68 @@ contract RequestFactoryTest is Test {
         emit RequestFactory.RequestCreated(address(0), p);
 
         address created = factory.createRequest(p);
+        assertTrue(created != address(0), "Clone address should not be zero");
+    }
+
+    function test_createRequest_SuccessfulFromCrossChainOnOracleChain() public {
+        bytes memory originAddress = abi.encode(address(0x1234));
+        bytes memory originChainId = abi.encode(1234);
+        RequestTypes.RequestParams memory p = RequestTypes.RequestParams({
+            requester: abi.encodePacked(address(this)),
+            answerType: RequestTypes.AnswerType.Bool,
+            challengeWindow: 86400,
+            rewardAmount: 100e6,
+            question: "Is the sky blue?",
+            context: "Weather report",
+            truthMeaning: "True means sky is blue",
+            originAddress: originAddress,
+            originChainId: originChainId,
+            isCrossChain: true
+        });
+
+        vm.expectEmit(true, true, false, false);
+        emit MockOracleCoordinator.registerRequestEmit();
+
+        vm.expectEmit(false, false, false, false);
+        emit RequestFactory.RequestCreated(address(0), p);
+
+        address created = factory.createRequest(p);
+        assertTrue(created != address(0), "Clone address should not be zero");
+
+        assertEq(
+            originAddress,
+            IBaseRequestContract(created).originAddress(),
+            "origin address should be set correctly"
+        );
+        assertEq(
+            originChainId,
+            IBaseRequestContract(created).originChainId(),
+            "origin chainid should be set correctly"
+        );
+    }
+
+    function test_createRequest_FromCrossChainToOracleChain() public {
+        RequestTypes.RequestParams memory p = RequestTypes.RequestParams({
+            requester: abi.encodePacked(address(this)),
+            answerType: RequestTypes.AnswerType.Bool,
+            challengeWindow: 86400,
+            rewardAmount: 100e6,
+            question: "Is the sky blue?",
+            context: "Weather report",
+            truthMeaning: "True means sky is blue",
+            originAddress: bytes(""),
+            originChainId: bytes(""),
+            isCrossChain: true
+        });
+
+        // TODO Replace with Send Message Event From CCIP
+        // vm.expectEmit(true, true, false, false);
+        // emit MockOracleCoordinator.registerRequestEmit();
+
+        vm.expectEmit(false, false, false, false);
+        emit RequestFactory.RequestCreated(address(0), p);
+
+        address created = factoryCrossChain.createRequest(p);
         assertTrue(created != address(0), "Clone address should not be zero");
     }
 

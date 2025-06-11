@@ -404,7 +404,7 @@ contract OracleCoordinator is
 
         require(
             usdc.transfer(msg.sender, reviewerClaimAmount[_request]),
-            "Fail platform transfer"
+            "Fail reviewer transfer"
         );
 
         emit RewardDistributed(
@@ -484,18 +484,14 @@ contract OracleCoordinator is
     }
 
     /// @inheritdoc IOracleCoordinator
-    function getMostRecentPendingFinalization()
-        public
-        view
-        returns (address __)
-    {
-        __;
+    function getMostRecentPendingFinalization() public view returns (address) {
         uint256 _totalLength = nonFinalizedRequests.length();
         for (uint256 i; i < _totalLength; i++) {
             address _finalizableAddress = nonFinalizedRequests.at(i);
             (bool _is, ) = _isFinalizable(_finalizableAddress);
             if (_is) return _finalizableAddress;
         }
+        return address(0);
     }
 
     /// @dev Returns whether a request is eligible for finalization and its current status

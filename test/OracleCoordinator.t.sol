@@ -155,6 +155,12 @@ contract OracleCoordinatorTest is Test {
         coordinator.registerRequest(request);
     }
 
+    function test_registerRequest_RevertIf_RequestAddressIsZero() public {
+        vm.prank(factory);
+        vm.expectRevert("Invalid address");
+        coordinator.registerRequest(address(0));
+    }
+
     function test_proposeAnswer_succeedsWhenOpenAndBondPaid() public {
         bytes memory answer = bytes("42 is the answer");
 
@@ -179,24 +185,23 @@ contract OracleCoordinatorTest is Test {
     }
 
     function test_proposeAnswer_RevertIf_AlreadyProposed() public {
-        bytes memory answer1 = bytes("first answer");
-        bytes memory answer2 = bytes("second answer");
-
-        // proposer (global) sends first proposal
-        deal(address(usdc), proposer, 200e6);
-        vm.prank(proposer);
-        usdc.approve(address(coordinator), type(uint256).max);
-        vm.prank(proposer);
-        coordinator.proposeAnswer(request, answer1);
-
-        // proposer2 tries second proposal
-        deal(address(usdc), proposer2, 200e6);
-        vm.prank(proposer2);
-        usdc.approve(address(coordinator), type(uint256).max);
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.status.selector),
+            abi.encode(RequestTypes.RequestStatus.Proposed)
+        );
 
         vm.expectRevert("Already proposed");
-        vm.prank(proposer2);
-        coordinator.proposeAnswer(request, answer2);
+
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, "");
+    }
+
+    function test_proposeAnswer_RevertIf_BondTransferFailed() public {
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Bond transfer failed");
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("original answer"));
     }
 
     function test_challengeAnswer_succeedsWithValidInput() public {
@@ -213,6 +218,11 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
+
+        assertFalse(
+            coordinator.isChallenged(request),
+            "Request should be not be challenged yet"
+        );
 
         vm.expectEmit(true, true, false, false);
         emit IOracleCoordinator.ChallengeSubmitted(
@@ -233,6 +243,34 @@ contract OracleCoordinatorTest is Test {
             string(answer),
             "Challenge answer mismatch"
         );
+
+        assertTrue(
+            coordinator.isChallenged(request),
+            "Request should be challenged"
+        );
+    }
+
+    function test_challengeAnswer_RevertIf_ChallengeBondFailed() public {
+        address challenger = address(0xDEAD);
+        bytes memory answer = bytes("42 is wrong");
+        bytes memory reason = bytes("Incorrect logic");
+
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("original answer"));
+
+        deal(address(usdc), challenger, 200e6);
+        vm.prank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        usdc.setFailOnTransfer(true);
+
+        vm.expectRevert("Challenge bond failed");
+
+        vm.prank(challenger);
+        coordinator.challengeAnswer(request, answer, reason);
     }
 
     function test_challengeAnswer_RevertIf_CallerIsRequester() public {
@@ -353,6 +391,33 @@ contract OracleCoordinatorTest is Test {
         coordinator.submitReview(request, reviewReason2, false);
     }
 
+    function test_submitReview_RevertIf_ReviewBondFailed() public {
+        address reviewer = address(0xBADA);
+        address challenger = address(0xDEAD);
+        bytes memory challengeAnswer = bytes("42 is wrong");
+        bytes memory challengeReason = bytes("logic flawed");
+        bytes memory reviewReason = bytes("agree with challenge");
+
+        deal(address(usdc), proposer, 200e6);
+        vm.startPrank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.proposeAnswer(request, bytes("original"));
+
+        deal(address(usdc), challenger, 200e6);
+        vm.startPrank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+
+        deal(address(usdc), reviewer, 200e6);
+        vm.startPrank(reviewer);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Review bond failed");
+
+        coordinator.submitReview(request, reviewReason, true);
+    }
+
     function test_submitReview_RevertIf_StatusNotChallenged() public {
         address reviewer = address(0xBADA);
         bytes memory reviewReason = bytes("status invalid");
@@ -385,6 +450,27 @@ contract OracleCoordinatorTest is Test {
 
         vm.startPrank(proposer);
         vm.expectRevert("Reviewer is proposer");
+        coordinator.submitReview(request, reviewReason, true);
+    }
+
+    function test_submitReview_RevertIf_ReviewerIsRequester() public {
+        bytes memory reviewReason = bytes("biased");
+
+        // Propose
+        deal(address(usdc), proposer, 200e6);
+        vm.startPrank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.proposeAnswer(request, bytes("original"));
+
+        // Challenge by someone else
+        address challenger = address(0xDAD1);
+        deal(address(usdc), challenger, 200e6);
+        vm.startPrank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.challengeAnswer(request, bytes("challenge"), bytes("why"));
+
+        vm.startPrank(requester);
+        vm.expectRevert("Reviewer is requester");
         coordinator.submitReview(request, reviewReason, true);
     }
 
@@ -460,6 +546,12 @@ contract OracleCoordinatorTest is Test {
             10e6,
             "Platform should get 10% of reward"
         );
+
+        IOracleCoordinator.UserStats memory _stats = coordinator.getUserStats(
+            proposer
+        );
+        assertEq(_stats.proposed, uint256(1));
+        assertEq(_stats.proposedSuccess, uint256(1));
     }
 
     function test_finalizeRequest_challengerWinsOnSuccessfulChallenge() public {
@@ -611,7 +703,280 @@ contract OracleCoordinatorTest is Test {
         assertGt(claimable, 0, "Reviewer should have claimable amount");
     }
 
+    function test_finalizeRequest_RevertIf_NotFinalizable() public {
+        uint96 reward = 100e6;
+
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(reward)
+        );
+
+        // Prepare balances
+        deal(address(usdc), address(coordinator), reward); // reward already in coordinator
+        deal(address(usdc), proposer, 200e6); // enough for bond
+
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("final answer"));
+
+        vm.expectRevert("Not finalizable");
+
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(request);
+    }
+
+    function test_finalizeRequest_RevertIf_FailProposerTransfer() public {
+        uint96 reward = 100e6;
+
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(reward)
+        );
+
+        // Prepare balances
+        deal(address(usdc), address(coordinator), reward); // reward already in coordinator
+        deal(address(usdc), proposer, 200e6); // enough for bond
+
+        vm.startPrank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.proposeAnswer(request, bytes("final answer"));
+        vm.stopPrank();
+
+        // back to the future
+        vm.warp(block.timestamp + 2 days); // REVIEW_WINDOW = 1 day, assume enough
+
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Fail proposer transfer");
+
+        // Finalize
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(request);
+    }
+
+    function test_finalizeRequest_RevertIf_FailChallengerTransfer() public {
+        address challenger = address(0xC1);
+        address reviewer = address(0xC2);
+        uint96 reward = 100e6;
+        bytes memory challengeAnswer = bytes("correct");
+        bytes memory challengeReason = bytes("fixing it");
+        bytes memory reviewReason = bytes("supporting challenger");
+
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(reward)
+        );
+
+        // fund reward
+        deal(address(usdc), address(coordinator), reward);
+
+        // Setup: proposer submits
+        deal(address(usdc), proposer, 200e6);
+        vm.startPrank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.proposeAnswer(request, bytes("wrong"));
+
+        // Challenge
+        deal(address(usdc), challenger, 200e6);
+        vm.startPrank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+
+        // Review in support of challenge
+        deal(address(usdc), reviewer, 200e6);
+        vm.startPrank(reviewer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.submitReview(request, reviewReason, true); // votesFor = 1
+        vm.stopPrank();
+        // No opposing votes → votesFor > votesAgainst
+
+        // Warp beyond review window
+        vm.warp(block.timestamp + 2 days);
+
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(reward)
+        );
+
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Fail challenger transfer");
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(request);
+    }
+
+    function test_finalizeRequest_RevertIf_FailProposerTransferOnChallengedWin()
+        public
+    {
+        address challenger = address(0xC1);
+        address reviewer = address(0xC2);
+        uint96 reward = 100e6;
+        bytes memory challengeAnswer = bytes("wrong");
+        bytes memory challengeReason = bytes("not valid");
+        bytes memory reviewReason = bytes("disagree with challenge");
+
+        // fund reward
+        deal(address(usdc), address(coordinator), reward);
+
+        // Step 1: proposer submits
+        deal(address(usdc), proposer, 200e6);
+        vm.startPrank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.proposeAnswer(request, bytes("true"));
+
+        // Step 2: challenger challenges
+        deal(address(usdc), challenger, 200e6);
+        vm.startPrank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+
+        // Step 3: reviewer disagrees with challenge
+        deal(address(usdc), reviewer, 200e6);
+        vm.startPrank(reviewer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        coordinator.submitReview(request, reviewReason, false); // votesAgainst = 1
+        vm.stopPrank();
+
+        // Step 4: simulate review window expired
+        vm.warp(block.timestamp + 2 days);
+
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(reward)
+        );
+
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Fail proposer transfer");
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(request);
+    }
+
+    function test_finalizeRequest_RevertIf_NotFinalizer() public {
+        address unauthorized = address(0xb0bb1);
+        vm.expectRevert();
+        vm.prank(unauthorized);
+        coordinator.claimReward(request);
+    }
+
     function test_claimReward_succeedsForWinningReviewer() public {
+        address challenger = address(0xC1);
+        address reviewer = address(0xC2);
+        bytes memory challengeAnswer = bytes("fixed");
+        bytes memory challengeReason = bytes("correct");
+        bytes memory reviewReason = bytes("agree");
+
+        deal(address(usdc), address(coordinator), 100e6); // reward
+
+        // 1. Propose
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("wrong"));
+
+        // 2. Challenge
+        deal(address(usdc), challenger, 200e6);
+        vm.prank(challenger);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(challenger);
+        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+
+        // 3. Review (supports challenge)
+        deal(address(usdc), reviewer, 200e6);
+        vm.prank(reviewer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(reviewer);
+        coordinator.submitReview(request, reviewReason, true); // votesFor = 1
+
+        // chlaimable check
+        assertFalse(
+            coordinator.isClaimable(request, reviewer),
+            "should not be claimable"
+        );
+
+        // try to claim before finalization
+        vm.expectRevert("Not allowed to claim");
+        vm.prank(reviewer);
+        coordinator.claimReward(request);
+
+        // 4. Finalize (Challenge wins)
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(request);
+
+        // chlaimable check
+        assertTrue(
+            coordinator.isClaimable(request, reviewer),
+            "should be claimable now"
+        );
+
+        // 5. Reviewer claims reward
+        uint256 previousClaimerBalance = usdc.balanceOf(reviewer);
+        uint256 expected = coordinator.reviewerClaimAmount(request);
+
+        vm.expectEmit(true, true, false, false);
+        emit IOracleCoordinator.RewardDistributed(request, reviewer, expected);
+
+        vm.prank(reviewer);
+        coordinator.claimReward(request);
+
+        assertEq(
+            usdc.balanceOf(reviewer),
+            expected + previousClaimerBalance,
+            "Reviewer should get reward"
+        );
+
+        // Reclaim attempt → revert
+        vm.expectRevert("Not allowed to claim");
+        vm.prank(reviewer);
+        coordinator.claimReward(request);
+
+        // check reviwers
+        IOracleCoordinator.Review[] memory _reviews = coordinator.getReviews(
+            request
+        );
+        assertEq(_reviews[0].reviewer, reviewer);
+
+        // check tally
+        (uint256 forVotes, uint256 againstVotes) = coordinator.getReviewTally(
+            request
+        );
+        assertEq(forVotes, 1);
+        assertEq(againstVotes, 0);
+
+        // check user stats
+        IOracleCoordinator.UserStats memory _stats;
+
+        _stats = coordinator.getUserStats(proposer);
+        assertEq(_stats.proposed, uint256(1));
+        assertEq(_stats.proposedSuccess, uint256(0));
+        assertEq(_stats.challenged, uint256(0));
+        assertEq(_stats.challengedSuccess, uint256(0));
+        assertEq(_stats.reviewed, uint256(0));
+        assertEq(_stats.reviewedSuccess, uint256(0));
+
+        _stats = coordinator.getUserStats(challenger);
+        assertEq(_stats.proposed, uint256(0));
+        assertEq(_stats.proposedSuccess, uint256(0));
+        assertEq(_stats.challenged, uint256(1));
+        assertEq(_stats.challengedSuccess, uint256(1));
+        assertEq(_stats.reviewed, uint256(0));
+        assertEq(_stats.reviewedSuccess, uint256(0));
+
+        _stats = coordinator.getUserStats(reviewer);
+        assertEq(_stats.proposed, uint256(0));
+        assertEq(_stats.proposedSuccess, uint256(0));
+        assertEq(_stats.challenged, uint256(0));
+        assertEq(_stats.challengedSuccess, uint256(0));
+        assertEq(_stats.reviewed, uint256(1));
+        assertEq(_stats.reviewedSuccess, uint256(1));
+    }
+
+    function test_claimReward_RevertIf_FailReviewerTransfer() public {
         address challenger = address(0xC1);
         address reviewer = address(0xC2);
         bytes memory challengeAnswer = bytes("fixed");
@@ -646,29 +1011,14 @@ contract OracleCoordinatorTest is Test {
         vm.prank(finalizer);
         coordinator.finalizeRequest(request);
 
-        // 5. Reviewer claims reward
-        uint256 previousClaimerBalance = usdc.balanceOf(reviewer);
-        uint256 expected = coordinator.reviewerClaimAmount(request);
+        usdc.setFailOnTransfer(true);
+        vm.expectRevert("Fail reviewer transfer");
 
-        vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, reviewer, expected);
-
-        vm.prank(reviewer);
-        coordinator.claimReward(request);
-
-        assertEq(
-            usdc.balanceOf(reviewer),
-            expected + previousClaimerBalance,
-            "Reviewer should get reward"
-        );
-
-        // Reclaim attempt → revert
-        vm.expectRevert("Not allowed to claim");
         vm.prank(reviewer);
         coordinator.claimReward(request);
     }
 
-    function test_claimReward_revertsIfReviewerWasOnLosingSide() public {
+    function test_claimReward_RevertIf_ReviewerWasOnLosingSide() public {
         address challenger = address(0xC1);
         address reviewer = address(0xC2);
         bytes memory challengeAnswer = bytes("corrected");
@@ -717,20 +1067,34 @@ contract OracleCoordinatorTest is Test {
         vm.prank(proposer);
         coordinator.proposeAnswer(request, bytes("some answer"));
 
+        {
+            // Check Upkeep
+            (bool upkeepNeeded, bytes memory performData) = coordinator
+                .checkUpkeep("");
+
+            assertFalse(upkeepNeeded, "Expected upkeepNeeded to be false");
+            assertEq(
+                performData,
+                bytes(""),
+                "Unexpected request in performData"
+            );
+        }
+
         // Zeit simulieren – Challenge Window abgelaufen
         vm.warp(block.timestamp + 2 days); // > challengeWindow()
 
-        // Check Upkeep
-        (bool upkeepNeeded, bytes memory performData) = coordinator.checkUpkeep(
-            ""
-        );
+        {
+            // Check Upkeep
+            (bool upkeepNeeded, bytes memory performData) = coordinator
+                .checkUpkeep("");
 
-        assertTrue(upkeepNeeded, "Expected upkeepNeeded to be true");
-        assertEq(
-            abi.decode(performData, (address)),
-            request,
-            "Unexpected request in performData"
-        );
+            assertTrue(upkeepNeeded, "Expected upkeepNeeded to be true");
+            assertEq(
+                abi.decode(performData, (address)),
+                request,
+                "Unexpected request in performData"
+            );
+        }
     }
 
     function test_performUpkeep_finalizesRequestCorrectly() public {
@@ -762,6 +1126,41 @@ contract OracleCoordinatorTest is Test {
             uint8(status),
             uint8(RequestTypes.RequestStatus.Resolved),
             "Status should be Resolved"
+        );
+    }
+
+    function test_performUpkeep_RevertIf_Invalid() public {
+        vm.expectRevert();
+        vm.prank(finalizer);
+        coordinator.performUpkeep(abi.encode(address(0x1234)));
+    }
+
+    function test_getMostRecentPendingFinalization_NoValidAddress()
+        public
+        view
+    {
+        assertEq(
+            coordinator.getMostRecentPendingFinalization(),
+            address(0),
+            "should not have a valid address"
+        );
+    }
+
+    function test_getMostRecentPendingFinalization_ValidAddress() public {
+        // Step 1: propose
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("pending"));
+
+        // Step 2: warp beyond challenge window
+        vm.warp(block.timestamp + 2 days);
+
+        assertEq(
+            coordinator.getMostRecentPendingFinalization(),
+            request,
+            "Expected valid address"
         );
     }
 }

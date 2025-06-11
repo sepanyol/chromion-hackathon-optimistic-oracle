@@ -7,6 +7,8 @@ import {RequestTypes} from "./types/RequestTypes.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {RequestContract} from "./RequestContract.sol";
 
+import {console} from "forge-std/console.sol";
+
 contract RequestFactory {
     address public immutable implementation;
     address public immutable paymentAsset;
@@ -72,8 +74,8 @@ contract RequestFactory {
             // if not on oracle chain, approve reward amount for relayer
             // and send a message to the oracle chain
             IERC20(paymentAsset).approve(oracleRelayer, _rewardAmount);
-            p.originAddress = abi.encodePacked(clone);
-            p.originChainId = abi.encodePacked(block.chainid);
+            p.originAddress = abi.encode(clone);
+            p.originChainId = abi.encode(block.chainid);
             // TODO relayer call
             // IOracleRelayer(oracleRelayer).sendMessageWithToken();
         }

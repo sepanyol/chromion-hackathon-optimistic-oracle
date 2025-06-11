@@ -39,11 +39,6 @@ abstract contract BaseRequestContract is IBaseRequestContract, Initializable {
         _;
     }
 
-    modifier onlyOracleChain() {
-        require(isOracleChain, "Not on Oracle Chain");
-        _;
-    }
-
     modifier onlyAuthorized() {
         require(
             msg.sender == oracleCoordinator || msg.sender == oracleRelayer,
