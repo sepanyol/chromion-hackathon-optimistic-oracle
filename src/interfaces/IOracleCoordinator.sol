@@ -108,19 +108,22 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     // ========= Core Actions ==========
     // =================================
 
-    /// @notice Registers a new oracle request contract
-    /// @param _request The address of the request contract
+    /// @notice Registers a new request created on the Oracle Chain.
+    /// @dev Requires FACTORY_ROLE. Transfers reward amount to this contract and updates internal mappings.
+    /// @param _request The address of the request contract to register.
     function registerRequest(address _request) external;
 
-    /// @notice Submits an answer proposal to a specific request
-    /// @param _request The request address
-    /// @param _answer The proposed answer payload (encoded)
+    /// @notice Proposes an answer to an open request.
+    /// @dev Requires bond payment in USDC. Stores proposer metadata and answer content.
+    /// @param _request The request to answer.
+    /// @param _answer The raw answer data.
     function proposeAnswer(address _request, bytes calldata _answer) external;
 
-    /// @notice Submits a challenge to an existing proposal with an alternative answer and justification
-    /// @param _request The address of the request
-    /// @param _answer The new answer proposed by the challenger (encoded)
-    /// @param _reason The reason for the challenge (encoded)
+    /// @notice Challenges a proposed answer with a reason.
+    /// @dev Only allowed if the request is in Proposed status. Challenger must not be the original requester.
+    /// @param _request The request being challenged.
+    /// @param _answer The answer being disputed.
+    /// @param _reason A justification string or hash indicating why the answer is incorrect.
     function challengeAnswer(
         address _request,
         bytes calldata _answer,
@@ -149,18 +152,25 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     // ========= View Functions ==========
     // ===================================
 
+    /// @dev Role allowed to finalize requests
     function FINALIZER_ROLE() external view returns (bytes32);
 
+    /// @dev Role allowed to register new requests
     function FACTORY_ROLE() external view returns (bytes32);
 
+    /// @dev Duration in seconds for which a review phase is open
     function REVIEW_WINDOW() external view returns (uint256);
 
+    /// @dev Bond amount in USDC required to submit a proposal
     function PROPOSER_BOND() external view returns (uint256);
 
+    /// @dev Bond amount in USDC required to challenge a proposal
     function CHALLENGER_BOND() external view returns (uint256);
 
+    /// @dev Bond amount in USDC required for a reviewer to submit a review
     function REVIEWER_BOND() external view returns (uint256);
 
+    /// @notice ERC20 token used for bonds and rewards (e.g., USDC)
     function usdc() external view returns (IERC20);
 
     /// @notice Returns the full proposal information for a given request

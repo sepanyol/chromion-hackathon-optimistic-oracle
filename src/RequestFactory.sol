@@ -8,14 +8,25 @@ import {IRequestFactory} from "./interfaces/IRequestFactory.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {RequestContract} from "./RequestContract.sol";
 
-import {console} from "forge-std/console.sol";
-
+/// @title RequestFactory
+/// @notice Factory contract to deploy request contracts on either the OracleChain or the RequesterChain.
+/// @dev Uses OpenZeppelin Clones to deploy lightweight proxies.
 contract RequestFactory is IRequestFactory {
+    /// @inheritdoc IRequestFactory
     address public immutable implementation;
+
+    /// @inheritdoc IRequestFactory
     address public immutable paymentAsset;
+
+    /// @inheritdoc IRequestFactory
     address public immutable oracleOrRelayer;
+
+    /// @inheritdoc IRequestFactory
     bool public immutable isOracleChain;
 
+    /// @notice Emitted when a request contract is created.
+    /// @param requestContract The deployed request contract address.
+    /// @param requestParams The parameters used for request initialization.
     event RequestCreated(
         address indexed requestContract,
         RequestTypes.RequestParams requestParams
@@ -43,6 +54,7 @@ contract RequestFactory is IRequestFactory {
         );
     }
 
+    /// @inheritdoc IRequestFactory
     function createRequest(
         RequestTypes.RequestParams memory p
     ) external returns (address clone) {

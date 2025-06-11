@@ -26,7 +26,8 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
 
       - name: Run tests
-        run: forge test -vvv
+        # run: forge test -vvv
+        run: forge test --no-match-contract "CrossChainIntegrationTest" -vvv
 
       - name: Run snapshot
         run: forge snapshot

@@ -11,7 +11,7 @@ contract MockBaseRequestContract is IBaseRequestContract {
 
     bytes public requester;
     uint96 public reward;
-    RequestTypes.RequestStatus public override status;
+    RequestTypes.RequestStatus public status;
     uint40 public created;
     uint40 public challengeWindowLength;
     bytes public answer;
@@ -47,39 +47,39 @@ contract MockBaseRequestContract is IBaseRequestContract {
         emit RequestInitialized(_requester);
     }
 
-    function rewardAmount() external view override returns (uint96) {
+    function initialize(RequestTypes.RequestParams memory p) external {}
+
+    function rewardAmount() external view returns (uint96) {
         return reward;
     }
 
-    function challengeWindow() external view override returns (uint40) {
+    function challengeWindow() external view returns (uint40) {
         return challengeWindowLength;
     }
 
-    function updateStatus(
-        RequestTypes.RequestStatus newStatus
-    ) external override {
+    function updateStatus(RequestTypes.RequestStatus newStatus) external {
         status = newStatus;
         emit RequestStatusUpdated(newStatus);
     }
 
-    function updateAnswer(bytes calldata _answer) external override {
+    function updateAnswer(bytes calldata _answer) external {
         answer = _answer;
         status = RequestTypes.RequestStatus.Resolved;
     }
 
-    function createdAt() external view override returns (uint40) {
+    function createdAt() external view returns (uint40) {
         return created;
     }
 
-    function question() external view override returns (string memory) {
+    function question() external view returns (string memory) {
         return questionText;
     }
 
-    function context() external view override returns (string memory) {
+    function context() external view returns (string memory) {
         return contextText;
     }
 
-    function truthMeaning() external view override returns (string memory) {
+    function truthMeaning() external view returns (string memory) {
         return truthText;
     }
 

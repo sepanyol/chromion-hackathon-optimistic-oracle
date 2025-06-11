@@ -27,6 +27,11 @@ interface IBaseRequestContract {
     /// @param answer The updated answer of the request
     event RequestAnswerUpdated(bytes answer);
 
+    /// @notice Initializes a request contract instance with provided parameters.
+    /// @dev Can only be called once by the factory. Sets metadata and request configuration.
+    /// @param p The request parameters to initialize the contract with.
+    function initialize(RequestTypes.RequestParams memory p) external;
+
     /// @notice Returns the address of the user who created the request
     /// @return The requester address
     function requester() external view returns (bytes memory);
@@ -63,15 +68,24 @@ interface IBaseRequestContract {
     /// @return The answer in bytes
     function answer() external view returns (bytes memory);
 
-    /// @notice Called by the OracleCoordinator or OracleRelayer to update request status
-    /// @param newStatus The new request status
-    function updateStatus(RequestTypes.RequestStatus newStatus) external;
+    /// @notice Original address of the request on the source chain.
+    /// @return The origin address in bytes
+    function originAddress() external view returns (bytes memory);
 
+    /// @notice Chain ID of the origin chain.
+    /// @return The origin Chain ID in bytes
+    function originChainId() external view returns (bytes memory);
+
+    /// @notice Updates the current status of the request.
+    /// @dev Can only be called by the trustee (e.g., OracleCoordinator).
+    /// @param _newStatus The new status to apply.
+    function updateStatus(RequestTypes.RequestStatus _newStatus) external;
+
+    /// @notice Called by OracleCoordinator when a valid answer is proposed.
+    /// @param _answer The proposed answer bytes (format depends on request type).
     function updateAnswer(bytes calldata _answer) external;
 
-    function originAddress() external returns (bytes memory);
-
-    function originChainId() external returns (bytes memory);
-
+    /// @notice Returns a concatenated string including question, context, truthMeaning, and optionally the answer.
+    /// @return _answer A human-readable full prompt string for UI or off-chain processing.
     function getFullPrompt() external view returns (string memory);
 }
