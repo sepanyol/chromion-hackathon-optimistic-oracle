@@ -30,4 +30,6 @@ jobs:
         run: forge test --no-match-contract "CrossChainIntegrationTest" -vvv
 
       - name: Run snapshot
-        run: forge snapshot
+        # run: forge snapshot
+        run: forge snapshot --no-match-contract "CrossChainIntegrationTest"
+
