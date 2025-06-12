@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.24;
+
 /// @title RequestTypes
 /// @notice Contains enums and structs used throughout the cross-chain request system.
 library RequestTypes {

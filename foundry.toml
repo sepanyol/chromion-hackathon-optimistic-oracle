@@ -5,6 +5,10 @@ libs = ['node_modules', 'lib']
 remappings = []
 solc = '0.8.24'
 evm_version = 'paris'
+fs_permissions = [
+  { access = "read-write", path = "./deployments"},
+  { access = "read", path = "./out"}
+]
 
 [rpc_endpoints]
 ethereumSepolia = "${ETHEREUM_SEPOLIA_RPC_URL}"
