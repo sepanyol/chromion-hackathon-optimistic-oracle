@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.24;
 
-import "forge-std/Script.sol";
+import "./BaseScript.sol";
 
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {RequestContract} from "../src/RequestContract.sol";
 import {RequestFactory} from "../src/RequestFactory.sol";
 
-contract Deploy is Script {
-    using stdJson for string;
-
+contract Deploy is BaseScript {
     function run() external {
         string memory oracleChainRPC = vm.envString("AVALANCHE_FUJI_RPC_URL");
         address usdc = vm.envAddress("AVALANCHE_FUJI_UTILITY_TOKEN_ADDRESS");
@@ -43,7 +42,7 @@ contract Deploy is Script {
         }
 
         OracleCoordinator oracleInstance = OracleCoordinator(
-            _readAddress(oracleChainId, "OracleCoordinator")
+            readAddress(oracleChainId, "OracleCoordinator")
         );
 
         bytes memory factoryArgs = abi.encode(
@@ -66,6 +65,7 @@ contract Deploy is Script {
                 address(oracleInstance),
                 true
             );
+
             _writeDeploymentJson(
                 oracleChainId,
                 "RequestFactory",
@@ -87,7 +87,23 @@ contract Deploy is Script {
             );
         }
 
-        vm.stopBroadcast();
+        RequestFactory mainFactoryInstance = RequestFactory(
+            readAddress(oracleChainId, "RequestFactory")
+        );
+
+        bytes32 _role = oracleInstance.FACTORY_ROLE();
+        if (
+            !IAccessControl(oracleInstance).hasRole(
+                _role,
+                address(mainFactoryInstance)
+            )
+        ) {
+            IAccessControl(oracleInstance).grantRole(
+                _role,
+                address(mainFactoryInstance)
+            );
+        }
+
         // address oracleRelayer = address(0xDEAD);
 
         // === Sidechain Deployment ===
@@ -96,6 +112,8 @@ contract Deploy is Script {
         //  _deploySidechain(vm.envString("BASE_SEPOLIA_RPC_URL"),vm.envAddress("BASE_SEPOLIA_UTILITY_TOKEN_ADDRESS"), oracleRelayer);
 
         // TODO finish deployment with valid oracle
+
+        vm.stopBroadcast();
     }
 
     function _deploySidechain(
@@ -154,25 +172,6 @@ contract Deploy is Script {
             keccak256(oldArgsHex) != keccak256(newArgs) ||
             keccak256(oldCodeHash) !=
             keccak256(abi.encodePacked(keccak256(creationCode)));
-    }
-
-    function _readAddress(
-        uint256 chainId,
-        string memory contractName
-    ) internal view returns (address) {
-        string memory path = string.concat(
-            "deployments/",
-            vm.toString(chainId),
-            "/",
-            contractName,
-            ".json"
-        );
-        if (vm.exists(path))
-            return
-                vm.parseAddress(
-                    vm.parseJsonString(vm.readFile(path), ".address")
-                );
-        return address(0);
     }
 
     function _writeDeploymentJson(
