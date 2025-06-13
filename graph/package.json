@@ -1,12 +1,18 @@
 {
-  "name": "graph",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "demo-oracle",
+  "license": "UNLICENSED",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ demo-oracle",
+    "create-local": "graph create --node http://localhost:8020/ demo-oracle",
+    "remove-local": "graph remove --node http://localhost:8020/ demo-oracle",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 demo-oracle",
+    "test": "graph test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.97.1",
+    "@graphprotocol/graph-ts": "0.37.0"
+  },
+  "devDependencies": { "matchstick-as": "0.6.0" }
 }
