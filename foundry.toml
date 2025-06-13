@@ -2,39 +2,50 @@
 src = 'src'
 out = 'out'
 libs = ['node_modules', 'lib']
-remappings = []
+remappings = [
+    '@chainlink/local/=lib/chainlink-local/',
+    '@ccip=lib/ccip/',
+    '@openzeppelin/=lib/openzeppelin-contracts/',
+]
 solc = '0.8.24'
 evm_version = 'paris'
-fs_permissions = [
-  { access = "read-write", path = "./deployments"},
-  { access = "read", path = "./out"}
-]
 
 [rpc_endpoints]
-ethereumSepolia = "${ETHEREUM_SEPOLIA_RPC_URL}"
-optimismGoerli = "${OPTIMISM_GOERLI_RPC_URL}"
-avalancheFuji = "${AVALANCHE_FUJI_RPC_URL}"
-arbitrumSepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
-polygonMumbai = "${POLYGON_MUMBAI_RPC_URL}"
-bnbChainTestnet = "${BNB_CHAIN_TESTNET_RPC_URL}"
-baseSepolia = "${BASE_SEPOLIA_RPC_URL}"
-metisSepolia = "${METIS_SEPOLIA_RPC_URL}"
-zksyncSepolia = "${ZKSYNC_SEPOLIA_RPC_URL}"
-scrollSepolia = "${SCROLL_SEPOLIA_RPC_URL}"
-zircuitSepolia = "${ZIRCUIT_SEPOLIA_RPC_URL}"
-xlayerSepolia = "${XLAYER_SEPOLIA_RPC_URL}"
-polygonZkevmSepolia = "${POLYGON_ZKEVM_SEPOLIA_RPC_URL}"
-polkadotAstarShibuya = "${POLKADOT_ASTAR_SHIBUYA_RPC_URL}"
-mantleSepolia = "${MANTLE_SEPOLIA_RPC_URL}"
-soneiumMinatoSepolia = "${SONEIUM_MINATO_SEPOLIA_RPC_URL}"
-bsquaredTestnet = "${BSQUARED_TESTNET_RPC_URL}"
-bobSepolia = "${BOB_SEPOLIA_RPC_URL}"
-worldchainSepolia = "${WORLDCHAIN_SEPOLIA_RPC_URL}"
-shibariumTestnet = "${SHIBARIUM_TESTNET_RPC_URL}"
-bitlayerTestnet= "${BITLAYER_TESTNET_RPC_URL}"
-fantomSonicTestnet = "${FANTOM_SONIC_TESTNET_RPC_URL}"
-cornTestnet = "${CORN_TESTNET_RPC_URL}"
-hashkeySepolia = "${HASHKEY_SEPOLIA_RPC_URL}"
-inkSepolia = "${INK_SEPOLIA_RPC_URL}"
+AVALANCHE_FUJI_RPC_URL="https://avalanche-fuji.infura.io/v3/03ab396066394bd08915c72554693b72"
+ETHEREUM_SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/03ab396066394bd08915c72554693b72"
+ARBITRUM_SEPOLIA_RPC_URL="https://arbitrum-sepolia.infura.io/v3/03ab396066394bd08915c72554693b72"
+BASE_SEPOLIA_RPC_URL="https://base-sepolia.infura.io/v3/03ab396066394bd08915c72554693b72"
+OPTIMISM_GOERLI_RPC_URL=""
+POLYGON_MUMBAI_RPC_URL=""
+BNB_CHAIN_TESTNET_RPC_URL=""
+METIS_SEPOLIA_RPC_URL=""
+ZKSYNC_SEPOLIA_RPC_URL=""
+SCROLL_SEPOLIA_RPC_URL=""
+ZIRCUIT_SEPOLIA_RPC_URL=""
+XLAYER_SEPOLIA_RPC_URL=""
+POLYGON_ZKEVM_SEPOLIA_RPC_URL=""
+POLKADOT_ASTAR_SHIBUYA_RPC_URL=""
+MANTLE_SEPOLIA_RPC_URL=""
+SONEIUM_MINATO_SEPOLIA_RPC_URL=""
+BSQUARED_TESTNET_RPC_URL=""
+BOB_SEPOLIA_RPC_URL=""
+WORLDCHAIN_SEPOLIA_RPC_URL=""
+SHIBARIUM_TESTNET_RPC_URL=""
+BITLAYER_TESTNET_RPC_URL=""
+FANTOM_SONIC_TESTNET_RPC_URL=""
+CORN_TESTNET_RPC_URL=""
+HASHKEY_SEPOLIA_RPC_URL=""
+INK_SEPOLIA_RPC_URL=""
 
+# platform eoa/multisig
+AVALANCHE_FUJI_PLATFORM_ADDRESS="0xE6fd638Fd9efaAE50db351c9C3d4286e9c89a452"
+ETHEREUM_SEPOLIA_PLATFORM_ADDRESS="0xE6fd638Fd9efaAE50db351c9C3d4286e9c89a452"
+ARBITRUM_SEPOLIA_PLATFORM_ADDRESS="0xE6fd638Fd9efaAE50db351c9C3d4286e9c89a452"
+BASE_SEPOLIA_PLATFORM_ADDRESS="0xE6fd638Fd9efaAE50db351c9C3d4286e9c89a452"
+
+# utility token address (mainnet=usdc, testnet=customtoken)
+AVALANCHE_FUJI_UTILITY_TOKEN_ADDRESS="0x5d7d5a45dc75c27ddda489acd6af468b0a54295c"
+ETHEREUM_SEPOLIA_UTILITY_TOKEN_ADDRESS="0xbb04b1d2cadee0f7954f783e96d47cb59f7a0b7d"
+ARBITRUM_SEPOLIA_UTILITY_TOKEN_ADDRESS="0xdb76f7fdaeea53874d8f4795a99ffbc47a53a548"
+BASE_SEPOLIA_UTILITY_TOKEN_ADDRESS="0x8cd493fdf0c8f61e0d6f99b9ee5303e1a9ec78f7"
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
