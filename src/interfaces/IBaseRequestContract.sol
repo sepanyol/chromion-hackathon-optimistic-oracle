@@ -52,6 +52,10 @@ interface IBaseRequestContract {
     /// @return The creation time as a UNIX timestamp
     function createdAt() external view returns (uint40);
 
+    /// @notice Returns a flag to check whether this request is on oracle chain or not
+    /// @return Flag
+    function isOracleChain() external view returns (bool);
+
     /// @notice Returns the question that defines the request
     /// @return A natural-language question string
     function question() external view returns (string memory);

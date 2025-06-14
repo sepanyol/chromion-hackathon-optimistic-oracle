@@ -97,7 +97,6 @@ contract CrossChainIntegrationTest is Test {
         );
 
         // prepare oracle chain
-
         vm.selectFork(oracleChainFork);
         // TODO do proper deployments of relayer
         oracleChainRelayer = makeAddr("oracleChainRelayer");
