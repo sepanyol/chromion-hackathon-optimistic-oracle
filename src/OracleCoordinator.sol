@@ -416,6 +416,33 @@ contract OracleCoordinator is
     }
 
     /// @inheritdoc IOracleCoordinator
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    ) external view returns (address[] memory _requests, uint256 _totalCount) {
+        _totalCount = requests.length();
+        _limit = _maxLimit(_limit, _offset, _totalCount);
+        _requests = new address[](_limit);
+        for (uint256 _start = 0; _start + _offset < _limit + _offset; _start++)
+            _requests[_start] = requests.at(_start + _offset);
+    }
+
+    /// Helper function to figure out the max limit of a list
+    /// @param limit limit that has been targeted
+    /// @param offset offset that has been targeted
+    /// @param count the amount of entries the calculation should be based on
+    /// @dev is used to not overflow the possible available limits of a list
+    function _maxLimit(
+        uint256 limit,
+        uint256 offset,
+        uint256 count
+    ) internal pure returns (uint256) {
+        if (limit + offset > count && offset < count) return count - offset;
+        else if (limit + offset <= count) return limit;
+        else return 0;
+    }
+
+    /// @inheritdoc IOracleCoordinator
     function getProposal(
         address _request
     ) external view returns (Proposal memory _proposal) {

@@ -209,12 +209,6 @@ contract CrossChainIntegrationTest is Test {
         );
         vm.stopPrank();
 
-        // vm.expectEmit(true, true, false, false);
-        // emit IOracleCoordinator.RequestRegistered(
-        //     address(0),
-        //     abi.encode(address(0))
-        // );
-
         assertEq(
             uint256(IBaseRequestContract(createdRequest).status()),
             uint256(RequestTypes.RequestStatus.Pending),
@@ -234,6 +228,120 @@ contract CrossChainIntegrationTest is Test {
             uint256(IBaseRequestContract(createdRequest).status()),
             uint256(RequestTypes.RequestStatus.Open),
             "Request should have status open after oracle chain sends message"
+        );
+    }
+
+    function test_proposeAnswer_CrossChain_Successfull() public {
+        vm.selectFork(crossChainFork);
+
+        crossChainCCIPBnMToken.drip(requester);
+
+        vm.startPrank(requester);
+        crossChainCCIPBnMToken.approve(address(crossChainRequestFactory), 1e10);
+        address createdRequest = crossChainRequestFactory.createRequest(
+            RequestTypes.RequestParams({
+                requester: abi.encode(requester),
+                originAddress: abi.encode(address(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                originChainId: abi.encode(uint64(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                answerType: RequestTypes.AnswerType.Bool,
+                challengeWindow: 86400,
+                rewardAmount: 1e10,
+                question: "Test Question",
+                context: "Test Context",
+                truthMeaning: "Test Truth Meaning",
+                isCrossChain: true
+            })
+        );
+        vm.stopPrank();
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(oracleChainFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        // back to oracle chain
+        vm.selectFork(oracleChainFork);
+        (address[] memory _requests, ) = coordinator.getRequests(1, 0);
+
+        oracleChainCCIPBnMToken.drip(proposer);
+
+        vm.startPrank(proposer);
+        oracleChainCCIPBnMToken.approve(
+            address(coordinator),
+            coordinator.PROPOSER_BOND()
+        );
+        coordinator.proposeAnswer(_requests[0], abi.encode("YADA YADA YADA"));
+        vm.stopPrank();
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        assertEq(
+            uint256(IBaseRequestContract(createdRequest).status()),
+            uint256(RequestTypes.RequestStatus.Proposed),
+            "Request should have status proposed after receiving a proposed answer on oracle chain"
+        );
+    }
+
+    function test_finalizeRequest_CrossChain_Successfull() public {
+        vm.selectFork(crossChainFork);
+
+        crossChainCCIPBnMToken.drip(requester);
+
+        vm.startPrank(requester);
+        crossChainCCIPBnMToken.approve(address(crossChainRequestFactory), 1e10);
+        address createdRequest = crossChainRequestFactory.createRequest(
+            RequestTypes.RequestParams({
+                requester: abi.encode(requester),
+                originAddress: abi.encode(address(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                originChainId: abi.encode(uint64(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                answerType: RequestTypes.AnswerType.Bool,
+                challengeWindow: 86400,
+                rewardAmount: 1e10,
+                question: "Test Question",
+                context: "Test Context",
+                truthMeaning: "Test Truth Meaning",
+                isCrossChain: true
+            })
+        );
+        vm.stopPrank();
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(oracleChainFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        // back to oracle chain
+        vm.selectFork(oracleChainFork);
+        (address[] memory _requests, ) = coordinator.getRequests(1, 0);
+
+        oracleChainCCIPBnMToken.drip(proposer);
+
+        vm.startPrank(proposer);
+        oracleChainCCIPBnMToken.approve(
+            address(coordinator),
+            coordinator.PROPOSER_BOND()
+        );
+        coordinator.proposeAnswer(_requests[0], abi.encode("YADA YADA YADA"));
+        vm.stopPrank();
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        // back to oracle chain
+        vm.selectFork(oracleChainFork);
+
+        vm.warp(block.timestamp + 2 days);
+
+        vm.prank(finalizer);
+        coordinator.finalizeRequest(_requests[0]);
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        assertEq(
+            uint256(IBaseRequestContract(createdRequest).status()),
+            uint256(RequestTypes.RequestStatus.Resolved),
+            "Request should have status done after receiving a proposed answer on oracle chain"
+        );
+
+        assertEq(
+            IBaseRequestContract(createdRequest).answer(),
+            abi.encode("YADA YADA YADA"),
+            "Request should have the answer give on the oracle chain"
         );
     }
 }

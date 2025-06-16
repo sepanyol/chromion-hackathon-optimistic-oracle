@@ -28,6 +28,14 @@ contract MockOracleCoordinator is IOracleCoordinator {
 
     function claimReward(address _request) external {}
 
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    )
+        external
+        view
+        returns (address[] memory _requests, uint256 _totalCount) {}
+        
     function getProposal(
         address _request
     ) external view returns (Proposal memory) {}

@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {RequestTypes} from "../types/RequestTypes.sol";
+import {IBaseRequestContract} from "../interfaces/IBaseRequestContract.sol";
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
@@ -169,6 +170,19 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
 
     /// @notice ERC20 token used for bonds and rewards (e.g., USDC)
     function usdc() external view returns (IERC20);
+
+    /// Returns a list of protocols based on the service provider address
+    /// @param _limit amount of requests
+    /// @param _offset index to start from until limit
+    /// @return _requests list of requests
+    /// @return _totalCount total amount of requests
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    )
+        external
+        view
+        returns (address[] memory _requests, uint256 _totalCount);
 
     /// @notice Returns the full proposal information for a given request
     /// @param _request The address of the request
