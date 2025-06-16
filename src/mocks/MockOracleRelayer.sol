@@ -10,34 +10,31 @@ contract MockOracleRelayer is IOracleRelayer {
         return IERC20(address(0x20));
     }
 
-    function allowlistedDestinationChains(uint64) external pure returns (bool) {
-        return true;
-    }
+    function allowedDestinationRelayers(
+        uint64
+    ) external returns (bytes memory) {}
 
-    function allowlistedSourceChainAndSender(
-        uint64,
-        address
-    ) external pure returns (bool) {
-        return true;
-    }
+    function chainIdToChainSelector(uint256) external returns (uint64) {}
 
-    event event_allowlistDestinationChain();
+    /// @notice instances that are allowed to interact with this relayer
+    function allowedSenders(address) external returns (bool) {}
 
-    function allowlistDestinationChain(uint64, bool) external {
-        emit event_allowlistDestinationChain();
-    }
+    function addDestinationRelayer(
+        uint256 _chainId,
+        uint64 _chainSelector,
+        address _relayer
+    ) external {}
 
-    event event_allowlistSourceChainAndSender();
+    function removeDestinationRelayer(uint256 _chainId) external {}
 
-    function allowlistSourceChainAndSender(uint64, address, bool) external {
-        emit event_allowlistSourceChainAndSender();
-    }
+    function addSenders(address _sender) external {}
+
+    function removeSender(address _sender) external {}
 
     event event_sendMessageWithToken();
 
     function sendMessageWithToken(
         uint64,
-        address,
         bytes calldata,
         address,
         uint256,
@@ -52,7 +49,6 @@ contract MockOracleRelayer is IOracleRelayer {
 
     function sendMessage(
         uint64,
-        address,
         bytes calldata,
         bool
     ) external returns (bytes32 messageId) {

@@ -6,10 +6,12 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import {IOracleRelayer} from "./interfaces/IOracleRelayer.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
@@ -45,6 +47,9 @@ contract OracleCoordinator is
 
     /// @notice ERC20 token used for bonds and rewards (e.g., USDC)
     IERC20 public immutable usdc;
+
+    /// @notice Oracle Relayer to communicate cross chain
+    IOracleRelayer public immutable relayer;
 
     /// @notice Address of the platform treasury or DAO
     address public platform;
@@ -87,12 +92,14 @@ contract OracleCoordinator is
     /// @param _usdc ERC20 token used for all bond and reward transfers
     constructor(
         address _platform, // multi sig
+        address _relayer, // oracle relayer
         address _usdc
     ) {
         require(_platform != address(0), "invalid address");
         require(_usdc != address(0), "invalid address");
         platform = _platform;
         usdc = IERC20(_usdc);
+        relayer = IOracleRelayer(_relayer);
         _grantRole(DEFAULT_ADMIN_ROLE, _platform);
     }
 
@@ -546,10 +553,27 @@ contract OracleCoordinator is
         address _request,
         RequestTypes.RequestStatus _status
     ) internal {
-        // TODO relayer call
-        // if (requestStore[_request]) {
-        // sendMessage();
-        // }
+        bytes memory _originAddress = requestStore[_request].originAddress();
+        if (keccak256(_originAddress) != keccak256(abi.encode(address(0)))) {
+            bytes memory _message = abi.encode(
+                _originAddress,
+                abi.encodeWithSelector(
+                    IBaseRequestContract.updateStatus.selector,
+                    _status
+                )
+            );
+            // TODO how does this look like for SOLANA?
+            relayer.sendMessage(
+                relayer.chainIdToChainSelector(
+                    abi.decode(
+                        requestStore[_request].originChainId(),
+                        (uint256)
+                    )
+                ),
+                _message,
+                false
+            );
+        }
         requestStore[_request].updateStatus(_status);
     }
 
@@ -557,10 +581,27 @@ contract OracleCoordinator is
         address _request,
         bytes memory _answer
     ) internal {
-        // TODO relayer call
-        // if (requestStore[_request]) {
-        // sendMessage();
-        // }
+        bytes memory _originAddress = requestStore[_request].originAddress();
+        if (keccak256(_originAddress) != keccak256(abi.encode(address(0)))) {
+            bytes memory _message = abi.encode(
+                _originAddress,
+                abi.encodeWithSelector(
+                    IBaseRequestContract.updateAnswer.selector,
+                    _answer
+                )
+            );
+            // TODO how does this look like for SOLANA?
+            relayer.sendMessage(
+                relayer.chainIdToChainSelector(
+                    abi.decode(
+                        requestStore[_request].originChainId(),
+                        (uint256)
+                    )
+                ),
+                _message,
+                false
+            );
+        }
         requestStore[_request].updateAnswer(_answer);
     }
 

@@ -8,7 +8,7 @@ interface IOracleRelayer {
     event MessageSent(
         bytes32 indexed messageId,
         uint64 indexed destinationChainSelector,
-        address receiver,
+        bytes receiver,
         bytes text,
         address token,
         uint256 amount,
@@ -19,41 +19,42 @@ interface IOracleRelayer {
     event MessageReceived(
         bytes32 indexed messageId,
         uint64 indexed sourceChainSelector,
-        address sender,
+        bytes sender,
         address token,
         uint256 amount,
         address callee,
         bytes data
     );
 
+    event DestinationRelayerAdded(
+        uint256 chainId,
+        uint64 chainSelector,
+        bytes relayer
+    );
+    event DestinationRelayerRemoved(
+        uint256 chainId,
+        uint64 chainSelector,
+        bytes relayer
+    );
+
+    event SenderAdded(address sender);
+    event SenderRemoved(address sender);
+
     // View functions
     function linkToken() external view returns (IERC20);
 
-    function allowlistedDestinationChains(
-        uint64 chainSelector
-    ) external view returns (bool);
+    /// @notice chain selector => relayer address >> relayers allowed to interact with this relayer
+    function allowedDestinationRelayers(uint64) external returns (bytes memory);
 
-    function allowlistedSourceChainAndSender(
-        uint64 chainSelector,
-        address sender
-    ) external view returns (bool);
+    /// @notice chain id => chain selector
+    function chainIdToChainSelector(uint256) external returns (uint64);
 
-    // State-changing functions
-    function allowlistDestinationChain(
-        uint64 _destinationChainSelector,
-        bool _allowed
-    ) external;
-
-    function allowlistSourceChainAndSender(
-        uint64 _sourceChainSelector,
-        address _sender,
-        bool _allowed
-    ) external;
+    /// @notice instances that are allowed to interact with this relayer
+    function allowedSenders(address) external returns (bool);
 
     function sendMessageWithToken(
         uint64 _destinationChainSelector,
-        address _receiver,
-        bytes calldata _text,
+        bytes calldata _message,
         address _token,
         uint256 _amount,
         bool _includeTokens,
@@ -62,8 +63,19 @@ interface IOracleRelayer {
 
     function sendMessage(
         uint64 _destinationChainSelector,
-        address _receiver,
-        bytes calldata _text,
+        bytes calldata _message,
         bool _payWithNative
     ) external returns (bytes32 messageId);
+
+    function addDestinationRelayer(
+        uint256 _chainId,
+        uint64 _chainSelector,
+        address _relayer
+    ) external;
+
+    function removeDestinationRelayer(uint256 _chainId) external;
+
+    function addSenders(address _sender) external;
+
+    function removeSender(address _sender) external;
 }

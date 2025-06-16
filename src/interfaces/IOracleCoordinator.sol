@@ -55,9 +55,6 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     // ========= Events ===========
     // ============================
 
-    /// @notice Emitted when a new request is registered
-    event RequestRegistered(address indexed request, address indexed requester);
-
     /// @notice Emitted when a new request is registered from non-EVM chain
     event RequestRegistered(address indexed request, bytes requester);
 

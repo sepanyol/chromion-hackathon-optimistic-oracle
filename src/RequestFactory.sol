@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {RequestTypes} from "./types/RequestTypes.sol";
 import {IRequestFactory} from "./interfaces/IRequestFactory.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
+import {IOracleRelayer} from "./interfaces/IOracleRelayer.sol";
 import {RequestContract} from "./RequestContract.sol";
 
 /// @title RequestFactory
@@ -22,6 +23,9 @@ contract RequestFactory is IRequestFactory {
     address public immutable oracleOrRelayer;
 
     /// @inheritdoc IRequestFactory
+    address public immutable homeFactory;
+
+    /// @inheritdoc IRequestFactory
     bool public immutable isOracleChain;
 
     /// @notice Emitted when a request contract is created.
@@ -35,13 +39,17 @@ contract RequestFactory is IRequestFactory {
     constructor(
         address _paymentAsset,
         address _oracleOrRelayer,
+        address _homeFactory,
         bool _isOracleChain
     ) {
-        require(_paymentAsset != address(0), "Invalid asset");
-        require(_oracleOrRelayer != address(0), "Invalid instance");
+        if (_paymentAsset == address(0)) revert("Invalid asset");
+        if (_oracleOrRelayer == address(0)) revert("Invalid instance");
+        if (_homeFactory == address(0) && !_isOracleChain)
+            revert("Home factory address missing");
 
         paymentAsset = _paymentAsset;
         oracleOrRelayer = _oracleOrRelayer;
+        homeFactory = _homeFactory;
         isOracleChain = _isOracleChain; // redundancy to save gas, can be also retreived from implementation
 
         implementation = address(
@@ -82,10 +90,25 @@ contract RequestFactory is IRequestFactory {
         } else {
             // if not on oracle chain, approve reward amount for relayer
             // and send a message to the oracle chain
+            p.isCrossChain = true;
             p.originAddress = abi.encode(clone);
             p.originChainId = abi.encode(block.chainid);
-            // TODO relayer call
-            // IOracleRelayer(oracleOrRelayer).sendMessageWithToken();
+            IOracleRelayer(oracleOrRelayer).sendMessageWithToken(
+                IOracleRelayer(oracleOrRelayer).chainIdToChainSelector(
+                    block.chainid
+                ),
+                abi.encode(
+                    abi.encode(homeFactory),
+                    abi.encodeWithSelector(
+                        IRequestFactory.createRequest.selector,
+                        p
+                    )
+                ),
+                paymentAsset,
+                _rewardAmount,
+                true,
+                false
+            );
         }
 
         emit RequestCreated(clone, p);

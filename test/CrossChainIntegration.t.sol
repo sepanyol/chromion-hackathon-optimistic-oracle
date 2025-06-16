@@ -9,7 +9,9 @@ import {IRouterClient} from "@chainlink/contracts-ccip/contracts/interfaces/IRou
 import {BurnMintERC677Helper, IERC20} from "@chainlink/local/src/ccip/CCIPLocalSimulator.sol";
 
 import {OracleCoordinator, IOracleCoordinator} from "./../src/OracleCoordinator.sol";
-import {RequestFactory, IRequestFactory} from "./../src/RequestFactory.sol";
+import {RequestFactory, IRequestFactory, RequestTypes} from "./../src/RequestFactory.sol";
+import {OracleRelayer, IOracleRelayer} from "./../src/OracleRelayer.sol";
+import {IBaseRequestContract} from "./../src/interfaces/IBaseRequestContract.sol";
 
 contract CrossChainIntegrationTest is Test {
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
@@ -44,9 +46,11 @@ contract CrossChainIntegrationTest is Test {
     IRequestFactory oracleChainRequestFactory;
     IRequestFactory crossChainRequestFactory;
 
-    // TODO relayer
-    address oracleChainRelayer;
-    address crossChainRelayer;
+    IOracleRelayer oracleChainRelayer;
+    IOracleRelayer crossChainRelayer;
+
+    uint256 oracleChainId;
+    uint256 crossChainId;
 
     IOracleCoordinator coordinator;
 
@@ -58,6 +62,9 @@ contract CrossChainIntegrationTest is Test {
 
         oracleChainFork = vm.createSelectFork(ORACLE_RPC_URL);
         crossChainFork = vm.createFork(CROSS_CHAIN_RPC_URL);
+
+        // oracle chain id, because selected first
+        oracleChainId = block.chainid;
 
         owner = makeAddr("owner");
         requester = makeAddr("requester");
@@ -83,8 +90,10 @@ contract CrossChainIntegrationTest is Test {
         oracleChainRouter = IRouterClient(
             oracleChainNetworkDetails.routerAddress
         );
+        oracleChainLinkToken = IERC20(oracleChainNetworkDetails.linkAddress);
 
         vm.selectFork(crossChainFork);
+        crossChainId = block.chainid;
         Register.NetworkDetails
             memory crossChainNetworkDetails = ccipLocalSimulatorFork
                 .getNetworkDetails(block.chainid);
@@ -95,23 +104,30 @@ contract CrossChainIntegrationTest is Test {
         crossChainRouter = IRouterClient(
             crossChainNetworkDetails.routerAddress
         );
+        crossChainLinkToken = IERC20(crossChainNetworkDetails.linkAddress);
 
         // prepare oracle chain
         vm.selectFork(oracleChainFork);
-        // TODO do proper deployments of relayer
-        oracleChainRelayer = makeAddr("oracleChainRelayer");
+        oracleChainRelayer = new OracleRelayer(
+            address(oracleChainLinkToken),
+            address(oracleChainRouter)
+        );
         coordinator = new OracleCoordinator(
             owner,
+            address(oracleChainRelayer),
             address(oracleChainCCIPBnMToken)
         );
         oracleChainRequestFactory = new RequestFactory(
             address(oracleChainCCIPBnMToken),
             address(coordinator),
+            address(0),
             true
         );
 
         // grant roles on coordinator (finalizer and factory)
         vm.startPrank(owner);
+
+        // set roles
         IAccessControl(address(coordinator)).grantRole(
             coordinator.FINALIZER_ROLE(),
             finalizer
@@ -125,21 +141,99 @@ contract CrossChainIntegrationTest is Test {
         // prepare cross chain
 
         vm.selectFork(crossChainFork);
-        // TODO do proper deployments of relayer
-        crossChainRelayer = makeAddr("crossChainRelayer");
+        crossChainRelayer = new OracleRelayer(
+            address(crossChainLinkToken),
+            address(crossChainRouter)
+        );
         crossChainRequestFactory = new RequestFactory(
             address(crossChainCCIPBnMToken),
-            crossChainRelayer,
+            address(crossChainRelayer),
+            address(oracleChainRequestFactory),
             false
         );
 
-        // computeCreate2Address(bytes32 salt, bytes32 initCodeHash, address deployer)
-        // address oracleAddress = vm.computeCreate2Address(keccak256("best dev ever"),OracleCoordinator,owner );
+        // cross chain relayer configuration
+        crossChainRelayer.addDestinationRelayer(
+            crossChainId,
+            oracleChainSelector,
+            address(oracleChainRelayer)
+        );
+        crossChainRelayer.addSenders(address(crossChainRequestFactory));
 
-        // deploy on cross chain
+        // fund relayer with link
+        ccipLocalSimulatorFork.requestLinkFromFaucet(
+            address(crossChainRelayer),
+            10 ether
+        );
+
+        // oracle chain relayer configuration
+        vm.selectFork(oracleChainFork);
+        oracleChainRelayer.addDestinationRelayer(
+            crossChainId,
+            crossChainSelector,
+            address(crossChainRelayer)
+        );
+        oracleChainRelayer.addSenders(address(coordinator));
+        ccipLocalSimulatorFork.requestLinkFromFaucet(
+            address(oracleChainRelayer),
+            10 ether
+        );
     }
 
-    function test_setUp_Successful() public pure {
-        assertTrue(true, "setUp expected to be successful");
+    function test_setUp() public pure {
+        assertTrue(true);
+    }
+
+    function test_createRequest_CrossChain_Successfull_Registered_OracleChain()
+        public
+    {
+        vm.selectFork(crossChainFork);
+
+        crossChainCCIPBnMToken.drip(requester);
+
+        vm.startPrank(requester);
+        crossChainCCIPBnMToken.approve(address(crossChainRequestFactory), 1e10);
+        address createdRequest = crossChainRequestFactory.createRequest(
+            RequestTypes.RequestParams({
+                requester: abi.encode(requester),
+                originAddress: abi.encode(address(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                originChainId: abi.encode(uint64(0)), // will be set by factory (isOracleChain=true, isCrossChain=true)
+                answerType: RequestTypes.AnswerType.Bool,
+                challengeWindow: 86400,
+                rewardAmount: 1e10,
+                question: "Test Question",
+                context: "Test Context",
+                truthMeaning: "Test Truth Meaning",
+                isCrossChain: true
+            })
+        );
+        vm.stopPrank();
+
+        // vm.expectEmit(true, true, false, false);
+        // emit IOracleCoordinator.RequestRegistered(
+        //     address(0),
+        //     abi.encode(address(0))
+        // );
+
+        assertEq(
+            uint256(IBaseRequestContract(createdRequest).status()),
+            uint256(RequestTypes.RequestStatus.Pending),
+            "Newly created request contract should have status pending"
+        );
+
+        // IMPORTANT TO DO THIS
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(oracleChainFork);
+
+        // here happens request register
+        // here happens attestation for request
+        // here happens call back to origin request chain
+
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(crossChainFork);
+
+        assertEq(
+            uint256(IBaseRequestContract(createdRequest).status()),
+            uint256(RequestTypes.RequestStatus.Open),
+            "Request should have status open after oracle chain sends message"
+        );
     }
 }

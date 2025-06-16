@@ -7,6 +7,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {RequestContract} from "../src/RequestContract.sol";
 import {RequestFactory} from "../src/RequestFactory.sol";
+import {OracleRelayer} from "../src/OracleRelayer.sol";
 
 contract Deploy is BaseScript {
     function run() external {
@@ -20,75 +21,24 @@ contract Deploy is BaseScript {
 
         vm.startBroadcast();
 
-        bytes memory oracleArgs = abi.encode(platform, usdc);
-        bytes memory oracleCode = type(OracleCoordinator).creationCode;
-
-        if (
-            _shouldDeploy(
-                oracleChainId,
-                "OracleCoordinator",
-                oracleArgs,
-                oracleCode
-            )
-        ) {
-            OracleCoordinator oracle = new OracleCoordinator(platform, usdc);
-            _writeDeploymentJson(
-                oracleChainId,
-                "OracleCoordinator",
-                address(oracle),
-                oracleArgs,
-                oracleCode
-            );
-        }
-
-        OracleCoordinator oracleInstance = OracleCoordinator(
-            readAddress(oracleChainId, "OracleCoordinator")
+        OracleRelayer relayerInstance = _deployOracleRelayer(
+            oracleChainId,
+            address(0), // link token
+            address(0) // ccip router
         );
 
-        bytes memory factoryArgs = abi.encode(
+        OracleCoordinator oracleInstance = _deployOracleCoordinator(
+            oracleChainId,
+            platform,
+            address(relayerInstance),
+            usdc
+        );
+
+        RequestFactory mainFactoryInstance = _deployRequestFactory(
+            oracleChainId,
             usdc,
             address(oracleInstance),
             true
-        );
-        bytes memory factoryCode = type(RequestFactory).creationCode;
-
-        if (
-            _shouldDeploy(
-                oracleChainId,
-                "RequestFactory",
-                factoryArgs,
-                factoryCode
-            )
-        ) {
-            RequestFactory mainFactory = new RequestFactory(
-                usdc,
-                address(oracleInstance),
-                true
-            );
-
-            _writeDeploymentJson(
-                oracleChainId,
-                "RequestFactory",
-                address(mainFactory),
-                factoryArgs,
-                factoryCode
-            );
-            _writeDeploymentJson(
-                oracleChainId,
-                "RequestContract",
-                mainFactory.implementation(),
-                abi.encode(
-                    address(mainFactory),
-                    usdc,
-                    address(oracleInstance),
-                    true
-                ),
-                type(RequestContract).creationCode
-            );
-        }
-
-        RequestFactory mainFactoryInstance = RequestFactory(
-            readAddress(oracleChainId, "RequestFactory")
         );
 
         bytes32 _role = oracleInstance.FACTORY_ROLE();
@@ -119,7 +69,8 @@ contract Deploy is BaseScript {
     function _deploySidechain(
         string memory rpcUrl,
         address usdc,
-        address relayer
+        address relayer,
+        address homeChain
     ) internal {
         vm.createSelectFork(rpcUrl);
         uint256 chainId = block.chainid;
@@ -132,7 +83,12 @@ contract Deploy is BaseScript {
         if (
             !_shouldDeploy(chainId, "RequestFactory", factoryArgs, factoryCode)
         ) {
-            RequestFactory factory = new RequestFactory(usdc, relayer, false);
+            RequestFactory factory = new RequestFactory(
+                usdc,
+                relayer,
+                homeChain,
+                false
+            );
             _writeDeploymentJson(
                 chainId,
                 "RequestFactory",
@@ -143,6 +99,100 @@ contract Deploy is BaseScript {
         }
 
         vm.stopBroadcast();
+    }
+
+    function _deployOracleRelayer(
+        uint256 _chainId,
+        address _linkToken,
+        address _router
+    ) public returns (OracleRelayer _instance) {
+        bytes memory relayerArgs = abi.encode(_linkToken, _router);
+        bytes memory relayerCode = type(OracleRelayer).creationCode;
+        if (
+            _shouldDeploy(_chainId, "OracleRelayer", relayerArgs, relayerCode)
+        ) {
+            OracleRelayer relayer = new OracleRelayer(_linkToken, _router);
+            _writeDeploymentJson(
+                _chainId,
+                "OracleRelayer",
+                address(relayer),
+                relayerArgs,
+                relayerCode
+            );
+        }
+        _instance = OracleRelayer(
+            payable(readAddress(_chainId, "OracleRelayer"))
+        );
+    }
+
+    function _deployOracleCoordinator(
+        uint256 _chainId,
+        address _platform,
+        address _relayer,
+        address _usdc
+    ) public returns (OracleCoordinator _instance) {
+        bytes memory _args = abi.encode(_platform, _relayer, _usdc);
+        bytes memory _code = type(OracleCoordinator).creationCode;
+
+        if (_shouldDeploy(_chainId, "OracleCoordinator", _args, _code)) {
+            OracleCoordinator oracle = new OracleCoordinator(
+                _platform,
+                _relayer,
+                _usdc
+            );
+            _writeDeploymentJson(
+                _chainId,
+                "OracleCoordinator",
+                address(oracle),
+                _args,
+                _code
+            );
+        }
+
+        _instance = OracleCoordinator(
+            readAddress(_chainId, "OracleCoordinator")
+        );
+    }
+
+    function _deployRequestFactory(
+        uint256 _chainId,
+        address _usdc,
+        address _oracle,
+        bool _isOracleChain
+    ) public returns (RequestFactory _instance) {
+        bytes memory _args = abi.encode(_usdc, _oracle, _isOracleChain);
+        bytes memory _code = type(RequestFactory).creationCode;
+
+        if (_shouldDeploy(_chainId, "RequestFactory", _args, _code)) {
+            RequestFactory mainFactory = new RequestFactory(
+                _usdc,
+                _oracle,
+                address(0),
+                _isOracleChain
+            );
+
+            _writeDeploymentJson(
+                _chainId,
+                "RequestFactory",
+                address(mainFactory),
+                _args,
+                _code
+            );
+            _writeDeploymentJson(
+                _chainId,
+                "RequestContract",
+                mainFactory.implementation(),
+                abi.encode(
+                    address(mainFactory),
+                    _usdc,
+                    _oracle,
+                    _isOracleChain
+                ),
+                type(RequestContract).creationCode
+            );
+        }
+
+        _instance = RequestFactory(readAddress(_chainId, "RequestFactory"));
     }
 
     function _shouldDeploy(

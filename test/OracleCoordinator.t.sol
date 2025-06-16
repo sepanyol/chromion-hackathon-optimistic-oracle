@@ -10,6 +10,7 @@ import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {RequestTypes} from "../src/types/RequestTypes.sol";
 
 import {MockUSDC} from "../src/mocks/MockUSDC.sol";
+import {MockOracleRelayer} from "../src/mocks/MockOracleRelayer.sol";
 import {MockBaseRequestContract} from "../src/mocks/MockBaseRequestContract.sol";
 
 // import {console} from "forge-std/console.sol";
@@ -27,10 +28,16 @@ contract OracleCoordinatorTest is Test {
     address request;
     address requester = address(0x1234);
     MockBaseRequestContract requestContract;
+    MockOracleRelayer oracleRelayer;
 
     function setUp() public {
         usdc = new MockUSDC();
-        coordinator = new OracleCoordinator(platform, address(usdc));
+        oracleRelayer = new MockOracleRelayer();
+        coordinator = new OracleCoordinator(
+            platform,
+            address(oracleRelayer),
+            address(usdc)
+        );
 
         // GRANT ROLES
         vm.startPrank(platform);
@@ -59,6 +66,13 @@ contract OracleCoordinatorTest is Test {
 
         vm.prank(factory);
         usdc.approve(address(coordinator), type(uint256).max);
+
+        // origin address mock for status changes
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.originAddress.selector),
+            abi.encode(abi.encode(address(0)))
+        );
 
         // register upfront
         vm.prank(factory);
@@ -109,6 +123,12 @@ contract OracleCoordinatorTest is Test {
             simRequest,
             abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
             abi.encode(simRewardAmount)
+        );
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.originAddress.selector),
+            abi.encode(abi.encode(address(0)))
         );
 
         deal(address(usdc), factory, 200e6);
