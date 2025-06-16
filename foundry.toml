@@ -9,6 +9,7 @@ fs_permissions = [
   { access = "read-write", path = "./deployments"},
   { access = "read", path = "./out"}
 ]
+gas_reports = ["*"]
 
 [rpc_endpoints]
 ethereumSepolia = "${ETHEREUM_SEPOLIA_RPC_URL}"
