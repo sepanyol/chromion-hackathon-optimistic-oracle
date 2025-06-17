@@ -427,4 +427,57 @@ contract OracleRelayerTest is Test {
         vm.expectRevert("Failed call to callee");
         destOracleRelayer.ccipReceive(any2evmMessage);
     }
+
+    function test_recoverAssets_Ether_Successful() public {
+        vm.selectFork(baseSepoliaFork);
+
+        address _relayer = address(sourceOracleRelayer);
+
+        deal(_relayer, 1 ether);
+
+        assertEq(
+            _relayer.balance,
+            1 ether,
+            "Relayer should have a balance of 1 ether"
+        );
+
+        uint256 _balanceBefore = address(this).balance;
+
+        sourceOracleRelayer.recoverAsset(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        );
+
+        assertEq(_relayer.balance, 0, "Relayer should have no balance");
+        assertEq(address(this).balance - _balanceBefore, 1 ether);
+    }
+
+    function test_recoverAssets_Address_Successful() public {
+        vm.selectFork(baseSepoliaFork);
+        mockLINKSource.mint(address(sourceOracleRelayer), 1e18);
+        uint256 _balanceBefore = mockLINKSource.balanceOf(address(this));
+        sourceOracleRelayer.recoverAsset(address(mockLINKSource));
+        assertEq(
+            mockLINKSource.balanceOf(address(sourceOracleRelayer)),
+            0,
+            "Relayer should have no asset balance"
+        );
+        assertEq(
+            mockLINKSource.balanceOf(address(this)) - _balanceBefore,
+            1e18
+        );
+    }
+
+    function test_recoverAssets_RevertIf_InsufficientBalances() public {
+        vm.selectFork(baseSepoliaFork);
+
+        vm.expectRevert("Native balance insufficient");
+        sourceOracleRelayer.recoverAsset(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        );
+
+        vm.expectRevert("Asset balance insufficient");
+        sourceOracleRelayer.recoverAsset(address(mockLINKSource));
+    }
+
+    receive() external payable {}
 }

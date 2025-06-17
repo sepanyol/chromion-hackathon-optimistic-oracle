@@ -31,6 +31,8 @@ contract MockOracleRelayer is IOracleRelayer {
 
     function removeSender(address _sender) external {}
 
+    function recoverAsset(address _asset) external {}
+
     event event_sendMessageWithToken();
 
     function sendMessageWithToken(

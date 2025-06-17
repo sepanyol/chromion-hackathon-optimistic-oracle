@@ -7,6 +7,7 @@ import {CCIPReceiver} from "@chainlink/contracts-ccip/contracts/applications/CCI
 import {Client} from "@chainlink/contracts-ccip/contracts/libraries/Client.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {console} from "forge-std/console.sol";
 
@@ -15,6 +16,7 @@ import {console} from "forge-std/console.sol";
 /// @notice Needs to know the corresponding relayers on desired chains based on chain id
 contract OracleRelayer is CCIPReceiver, Ownable, IOracleRelayer {
     using SafeERC20 for IERC20;
+    using Address for address payable;
 
     // Define roles for access control
 
@@ -133,8 +135,6 @@ contract OracleRelayer is CCIPReceiver, Ownable, IOracleRelayer {
                 _payWithNative
             );
     }
-
-    receive() external payable {}
 
     /// internal functions
 
@@ -272,10 +272,15 @@ contract OracleRelayer is CCIPReceiver, Ownable, IOracleRelayer {
 
     function recoverAsset(address _asset) external onlyOwner {
         if (_asset == address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)) {
-            // payable(address(this)).transfer()
-            // TODO transfer eth from contract to sender, check balance
+            if (address(this).balance == 0)
+                revert("Native balance insufficient");
+            payable(msg.sender).sendValue(address(this).balance);
         } else {
-            // TODO transfer token from contract to sender, check balance
+            uint256 _balance = IERC20(_asset).balanceOf(address(this));
+            if (_balance == 0) revert("Asset balance insufficient");
+            IERC20(_asset).transfer(msg.sender, _balance);
         }
     }
+
+    receive() external payable {}
 }

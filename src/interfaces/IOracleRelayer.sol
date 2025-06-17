@@ -78,4 +78,6 @@ interface IOracleRelayer {
     function addSenders(address _sender) external;
 
     function removeSender(address _sender) external;
+
+    function recoverAsset(address _asset) external;
 }
