@@ -37,12 +37,14 @@ contract RequestFactoryTest is Test {
             address(usdc),
             oracleCoordinator,
             address(0),
+            0,
             true
         );
         factoryCrossChain = new RequestFactory(
             address(usdc),
             oracleRelayer,
             address(factory),
+            1,
             false
         );
 

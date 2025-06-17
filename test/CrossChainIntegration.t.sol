@@ -121,6 +121,7 @@ contract CrossChainIntegrationTest is Test {
             address(oracleChainCCIPBnMToken),
             address(coordinator),
             address(0),
+            0,
             true
         );
 
@@ -149,12 +150,13 @@ contract CrossChainIntegrationTest is Test {
             address(crossChainCCIPBnMToken),
             address(crossChainRelayer),
             address(oracleChainRequestFactory),
+            oracleChainId,
             false
         );
 
         // cross chain relayer configuration
         crossChainRelayer.addDestinationRelayer(
-            crossChainId,
+            oracleChainId,
             oracleChainSelector,
             address(oracleChainRelayer)
         );

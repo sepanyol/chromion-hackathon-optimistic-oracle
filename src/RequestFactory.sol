@@ -26,6 +26,9 @@ contract RequestFactory is IRequestFactory {
     address public immutable homeFactory;
 
     /// @inheritdoc IRequestFactory
+    uint256 public immutable homeChainId;
+
+    /// @inheritdoc IRequestFactory
     bool public immutable isOracleChain;
 
     /// @notice Emitted when a request contract is created.
@@ -40,16 +43,20 @@ contract RequestFactory is IRequestFactory {
         address _paymentAsset,
         address _oracleOrRelayer,
         address _homeFactory,
+        uint256 _homeChainId,
         bool _isOracleChain
     ) {
         if (_paymentAsset == address(0)) revert("Invalid asset");
         if (_oracleOrRelayer == address(0)) revert("Invalid instance");
         if (_homeFactory == address(0) && !_isOracleChain)
             revert("Home factory address missing");
+        if (_homeChainId == 0 && !_isOracleChain)
+            revert("Home chain id is missing");
 
         paymentAsset = _paymentAsset;
         oracleOrRelayer = _oracleOrRelayer;
         homeFactory = _homeFactory;
+        homeChainId = _homeChainId;
         isOracleChain = _isOracleChain; // redundancy to save gas, can be also retreived from implementation
 
         implementation = address(
@@ -95,7 +102,7 @@ contract RequestFactory is IRequestFactory {
             p.originChainId = abi.encode(block.chainid);
             IOracleRelayer(oracleOrRelayer).sendMessageWithToken(
                 IOracleRelayer(oracleOrRelayer).chainIdToChainSelector(
-                    block.chainid
+                    homeChainId
                 ),
                 abi.encode(
                     abi.encode(homeFactory),
