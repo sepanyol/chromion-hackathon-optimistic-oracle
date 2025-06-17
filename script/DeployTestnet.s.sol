@@ -106,7 +106,9 @@ contract DeployTestnet is BaseScript {
         // ------------------------------------------------------------
         // Setup Oracle Chain
         // ------------------------------------------------------------
-        relayerInstance.addSenders(address(oracleInstance));
+        if (!relayerInstance.allowedSenders(address(oracleInstance))) {
+            relayerInstance.addSenders(address(oracleInstance));
+        }
 
         // grant factory role
         bytes32 _factoryRole = oracleInstance.FACTORY_ROLE();
@@ -147,30 +149,56 @@ contract DeployTestnet is BaseScript {
                 .allowedDestinationRelayers(oracleChainSelector);
 
             // remove existing relayer if one is set
-            if (
-                _destinationRelayerBytes.length > 0 &&
-                abi.decode(_destinationRelayerBytes, (address)) !=
-                address(relayerInstance)
-            ) _relayer.removeDestinationRelayer(block.chainid);
-
-            _relayer.addDestinationRelayer(
-                oracleChainId,
-                oracleChainSelector,
-                address(relayerInstance)
-            );
+            if (_destinationRelayerBytes.length > 0) {
+                if (
+                    abi.decode(_destinationRelayerBytes, (address)) !=
+                    address(relayerInstance)
+                ) {
+                    _relayer.removeDestinationRelayer(block.chainid);
+                    _relayer.addDestinationRelayer(
+                        oracleChainId,
+                        oracleChainSelector,
+                        address(relayerInstance)
+                    );
+                }
+            } else {
+                _relayer.addDestinationRelayer(
+                    oracleChainId,
+                    oracleChainSelector,
+                    address(relayerInstance)
+                );
+            }
 
             // cross chain factory is allows to send through cross chain relayer
-            _relayer.addSenders(address(_factory));
+            if (!_relayer.allowedSenders(address(_factory))) {
+                _relayer.addSenders(address(_factory));
+            }
             vm.stopBroadcast();
 
             // configure oracle chain
             vm.selectFork(oracleForkId);
             vm.startBroadcast();
-            relayerInstance.addDestinationRelayer(
-                _chainId,
-                sideChainData[i].chainSelector,
-                address(_relayer)
-            );
+            bytes memory _oracleRelayerBytes = relayerInstance
+                .allowedDestinationRelayers(sideChainData[i].chainSelector);
+            if (_oracleRelayerBytes.length > 0) {
+                if (
+                    abi.decode(_oracleRelayerBytes, (address)) !=
+                    address(_relayer)
+                ) {
+                    _relayer.removeDestinationRelayer(_chainId);
+                    relayerInstance.addDestinationRelayer(
+                        _chainId,
+                        sideChainData[i].chainSelector,
+                        address(_relayer)
+                    );
+                }
+            } else {
+                relayerInstance.addDestinationRelayer(
+                    _chainId,
+                    sideChainData[i].chainSelector,
+                    address(_relayer)
+                );
+            }
             vm.stopBroadcast();
         }
 
