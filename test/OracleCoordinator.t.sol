@@ -13,8 +13,6 @@ import {MockUSDC} from "../src/mocks/MockUSDC.sol";
 import {MockOracleRelayer} from "../src/mocks/MockOracleRelayer.sol";
 import {MockBaseRequestContract} from "../src/mocks/MockBaseRequestContract.sol";
 
-// import {console} from "forge-std/console.sol";
-
 contract OracleCoordinatorTest is Test {
     OracleCoordinator coordinator;
     MockUSDC usdc;

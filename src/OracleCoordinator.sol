@@ -11,7 +11,6 @@ import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
