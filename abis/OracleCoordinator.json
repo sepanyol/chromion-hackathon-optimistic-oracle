@@ -8,6 +8,11 @@
         "internalType": "address"
       },
       {
+        "name": "_relayer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_usdc",
         "type": "address",
         "internalType": "address"
@@ -372,6 +377,35 @@
   },
   {
     "type": "function",
+    "name": "getRequests",
+    "inputs": [
+      {
+        "name": "_limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_requests",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "_totalCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getReviewTally",
     "inputs": [
       {
@@ -649,6 +683,19 @@
   },
   {
     "type": "function",
+    "name": "relayer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IOracleRelayer"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "renounceRole",
     "inputs": [
       {
@@ -834,25 +881,6 @@
         "type": "bytes",
         "indexed": false,
         "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RequestRegistered",
-    "inputs": [
-      {
-        "name": "request",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "requester",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
       }
     ],
     "anonymous": false
