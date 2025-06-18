@@ -9,7 +9,9 @@ out/
 broadcast/
 
 # Docs
-docs/
+docs/book
+docs/*
+!docs/src
 
 # Dotenv file
 .env
