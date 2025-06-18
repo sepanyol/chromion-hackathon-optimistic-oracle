@@ -2,8 +2,21 @@
   {
     "type": "constructor",
     "inputs": [
-      { "name": "_platform", "type": "address", "internalType": "address" },
-      { "name": "_usdc", "type": "address", "internalType": "address" }
+      {
+        "name": "_platform",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_relayer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_usdc",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "stateMutability": "nonpayable"
   },
@@ -11,58 +24,112 @@
     "type": "function",
     "name": "CHALLENGER_BOND",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "DEFAULT_ADMIN_ROLE",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "FACTORY_ROLE",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "FINALIZER_ROLE",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "PROPOSER_BOND",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "REVIEWER_BOND",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "REVIEW_WINDOW",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "challengeAnswer",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" },
-      { "name": "answer", "type": "bytes", "internalType": "bytes" },
-      { "name": "reason", "type": "bytes", "internalType": "bytes" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "answer",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "reason",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -70,10 +137,24 @@
   {
     "type": "function",
     "name": "checkUpkeep",
-    "inputs": [{ "name": "", "type": "bytes", "internalType": "bytes" }],
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
     "outputs": [
-      { "name": "upkeepNeeded", "type": "bool", "internalType": "bool" },
-      { "name": "performData", "type": "bytes", "internalType": "bytes" }
+      {
+        "name": "upkeepNeeded",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "performData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
     "stateMutability": "view"
   },
@@ -81,7 +162,11 @@
     "type": "function",
     "name": "claimReward",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -90,7 +175,11 @@
     "type": "function",
     "name": "finalizeRequest",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -99,7 +188,11 @@
     "type": "function",
     "name": "getChallenge",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [
       {
@@ -112,10 +205,26 @@
             "type": "address",
             "internalType": "address"
           },
-          { "name": "timestamp", "type": "uint40", "internalType": "uint40" },
-          { "name": "answer", "type": "bytes", "internalType": "bytes" },
-          { "name": "reason", "type": "bytes", "internalType": "bytes" },
-          { "name": "votesFor", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "timestamp",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "answer",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "reason",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "votesFor",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "votesAgainst",
             "type": "uint256",
@@ -136,7 +245,11 @@
                 "type": "uint40",
                 "internalType": "uint40"
               },
-              { "name": "reason", "type": "bytes", "internalType": "bytes" },
+              {
+                "name": "reason",
+                "type": "bytes",
+                "internalType": "bytes"
+              },
               {
                 "name": "supportsChallenge",
                 "type": "bool",
@@ -153,14 +266,24 @@
     "type": "function",
     "name": "getMostRecentPendingFinalization",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "getProposal",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [
       {
@@ -168,9 +291,21 @@
         "type": "tuple",
         "internalType": "struct IOracleCoordinator.Proposal",
         "components": [
-          { "name": "proposer", "type": "address", "internalType": "address" },
-          { "name": "timestamp", "type": "uint40", "internalType": "uint40" },
-          { "name": "answer", "type": "bytes", "internalType": "bytes" },
+          {
+            "name": "proposer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "answer",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
           {
             "name": "challenge",
             "type": "tuple",
@@ -186,8 +321,16 @@
                 "type": "uint40",
                 "internalType": "uint40"
               },
-              { "name": "answer", "type": "bytes", "internalType": "bytes" },
-              { "name": "reason", "type": "bytes", "internalType": "bytes" },
+              {
+                "name": "answer",
+                "type": "bytes",
+                "internalType": "bytes"
+              },
+              {
+                "name": "reason",
+                "type": "bytes",
+                "internalType": "bytes"
+              },
               {
                 "name": "votesFor",
                 "type": "uint256",
@@ -234,13 +377,54 @@
   },
   {
     "type": "function",
-    "name": "getReviewTally",
+    "name": "getRequests",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
     "outputs": [
-      { "name": "_for", "type": "uint256", "internalType": "uint256" },
-      { "name": "_against", "type": "uint256", "internalType": "uint256" }
+      {
+        "name": "_requests",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "_totalCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getReviewTally",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_for",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_against",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
     "stateMutability": "view"
   },
@@ -248,7 +432,11 @@
     "type": "function",
     "name": "getReviews",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [
       {
@@ -256,9 +444,21 @@
         "type": "tuple[]",
         "internalType": "struct IOracleCoordinator.Review[]",
         "components": [
-          { "name": "reviewer", "type": "address", "internalType": "address" },
-          { "name": "timestamp", "type": "uint40", "internalType": "uint40" },
-          { "name": "reason", "type": "bytes", "internalType": "bytes" },
+          {
+            "name": "reviewer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "reason",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
           {
             "name": "supportsChallenge",
             "type": "bool",
@@ -273,16 +473,30 @@
     "type": "function",
     "name": "getRoleAdmin",
     "inputs": [
-      { "name": "role", "type": "bytes32", "internalType": "bytes32" }
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
     ],
-    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "getUserStats",
     "inputs": [
-      { "name": "_user", "type": "address", "internalType": "address" }
+      {
+        "name": "_user",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [
       {
@@ -290,7 +504,11 @@
         "type": "tuple",
         "internalType": "struct IOracleCoordinator.UserStats",
         "components": [
-          { "name": "proposed", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "proposed",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "proposedSuccess",
             "type": "uint256",
@@ -306,7 +524,11 @@
             "type": "uint256",
             "internalType": "uint256"
           },
-          { "name": "reviewed", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "reviewed",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "reviewedSuccess",
             "type": "uint256",
@@ -321,8 +543,16 @@
     "type": "function",
     "name": "grantRole",
     "inputs": [
-      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
-      { "name": "account", "type": "address", "internalType": "address" }
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -331,36 +561,116 @@
     "type": "function",
     "name": "hasRole",
     "inputs": [
-      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
-      { "name": "account", "type": "address", "internalType": "address" }
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
-    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "isChallenged",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
-    "outputs": [{ "name": "_is", "type": "bool", "internalType": "bool" }],
+    "outputs": [
+      {
+        "name": "_is",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "isClaimable",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" },
-      { "name": "_claimer", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_claimer",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
-    "outputs": [{ "name": "_is", "type": "bool", "internalType": "bool" }],
+    "outputs": [
+      {
+        "name": "_is",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "outcomeIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "outcomeIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",
     "name": "performUpkeep",
     "inputs": [
-      { "name": "performData", "type": "bytes", "internalType": "bytes" }
+      {
+        "name": "performData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -369,15 +679,29 @@
     "type": "function",
     "name": "platform",
     "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "view"
   },
   {
     "type": "function",
     "name": "proposeAnswer",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" },
-      { "name": "answer", "type": "bytes", "internalType": "bytes" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "answer",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -386,16 +710,37 @@
     "type": "function",
     "name": "registerRequest",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
+    "name": "relayer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IOracleRelayer"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "renounceRole",
     "inputs": [
-      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
       {
         "name": "callerConfirmation",
         "type": "address",
@@ -408,16 +753,84 @@
   {
     "type": "function",
     "name": "reviewerClaimAmount",
-    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",
     "name": "revokeRole",
     "inputs": [
-      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
-      { "name": "account", "type": "address", "internalType": "address" }
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -426,9 +839,21 @@
     "type": "function",
     "name": "submitReview",
     "inputs": [
-      { "name": "_request", "type": "address", "internalType": "address" },
-      { "name": "reason", "type": "bytes", "internalType": "bytes" },
-      { "name": "supportsChallenge", "type": "bool", "internalType": "bool" }
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "reason",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "supportsChallenge",
+        "type": "bool",
+        "internalType": "bool"
+      }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -437,9 +862,19 @@
     "type": "function",
     "name": "supportsInterface",
     "inputs": [
-      { "name": "interfaceId", "type": "bytes4", "internalType": "bytes4" }
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
     ],
-    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
   },
   {
@@ -447,7 +882,11 @@
     "name": "usdc",
     "inputs": [],
     "outputs": [
-      { "name": "", "type": "address", "internalType": "contract IERC20" }
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
     ],
     "stateMutability": "view"
   },
@@ -528,25 +967,6 @@
         "type": "bytes",
         "indexed": false,
         "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RequestRegistered",
-    "inputs": [
-      {
-        "name": "request",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "requester",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -720,14 +1140,30 @@
     ],
     "anonymous": false
   },
-  { "type": "error", "name": "AccessControlBadConfirmation", "inputs": [] },
+  {
+    "type": "error",
+    "name": "AccessControlBadConfirmation",
+    "inputs": []
+  },
   {
     "type": "error",
     "name": "AccessControlUnauthorizedAccount",
     "inputs": [
-      { "name": "account", "type": "address", "internalType": "address" },
-      { "name": "neededRole", "type": "bytes32", "internalType": "bytes32" }
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "neededRole",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
     ]
   },
-  { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] }
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  }
 ]

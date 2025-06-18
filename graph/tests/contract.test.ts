@@ -9,7 +9,7 @@ import {
 import { Address, Bytes, BigInt } from "@graphprotocol/graph-ts"
 import { ExampleEntity } from "../generated/schema"
 import { AnswerProposed } from "../generated/Contract/Contract"
-import { handleAnswerProposed } from "../src/contract"
+import { handleAnswerProposed } from "../src/oracle-coordinator"
 import { createAnswerProposedEvent } from "./contract-utils"
 
 // Tests structure (matchstick-as >=0.5.0)
