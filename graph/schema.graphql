@@ -73,7 +73,7 @@ type Request @entity(immutable: false) {
 }
 
 type RequestProposal @entity(immutable: false) {
-  id: Bytes! # hash: request + proposer
+  id: Bytes! # Request.id
   createdAt: Timestamp!
   answer: Bytes!
   isChallenged: Boolean! # default: false
@@ -84,11 +84,11 @@ type RequestProposal @entity(immutable: false) {
 }
 
 type ProposalChallenge @entity(immutable: false) {
-  id: Bytes! # hash: request + proposer + challenger
+  id: Bytes! # Request.id
   answer: Bytes!
   reason: Bytes
-  votesFor: BigInt!
-  votesAgainst: BigInt!
+  votesFor: BigInt! # votes for a challenge: number of votes that support a challenge
+  votesAgainst: BigInt! # votes against a challenge: number of votes that support a proposal
   createdAt: Timestamp!
 
   challenger: UserChallenger!
@@ -98,9 +98,9 @@ type ProposalChallenge @entity(immutable: false) {
 }
 
 type ChallengeReview @entity(immutable: true) {
-  id: Bytes! # hash: request + reviewer
+  id: Bytes! # Request.id + reviewer
   reason: Bytes!
-  supportsChallenge: Boolean!
+  supportsChallenge: Boolean! # true = supports a challenge, false = supports a proposal
   createdAt: Timestamp!
 
   reviewer: UserReviewer!
@@ -113,9 +113,9 @@ type UserRequesterStats @entity(immutable: false) {
   id: Bytes!
   requests: BigInt!
   requestsActive: BigInt!
-  successful: BigInt! # without getting challenged
+  successful: BigInt! # request counts that were successful without being challenged (good quality request)
   successRate: BigDecimal!
-  requestAvgResolution: BigDecimal!
+  requestAvgResolution: BigDecimal! # TODO
 }
 
 type UserRequester @entity(immutable: true) {
@@ -130,10 +130,10 @@ type UserProposerStats @entity(immutable: false) {
   proposals: BigInt!
   proposalsActive: BigInt!
   successful: BigInt!
-  challenged: BigInt! # the number of proposals that get challenged but still won
+  challenged: BigInt! # number of proposals that got challenged but still won
   successRate: BigDecimal!
-  earnings: BigDecimal!
-  earningsInUSD: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
 }
 
 type UserProposer @entity(immutable: true) {
@@ -149,8 +149,8 @@ type UserChallengerStats @entity(immutable: false) {
   challengesActive: BigInt!
   successful: BigInt!
   successRate: BigDecimal!
-  earnings: BigDecimal!
-  earningsInUSD: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
 }
 
 type UserChallenger @entity(immutable: true) {
@@ -166,11 +166,11 @@ type UserReviewerStats @entity(immutable: false) {
   reviewsActive: BigInt!
   successful: BigInt!
   successRate: BigDecimal!
-  earnings: BigDecimal!
-  earningsInUSD: BigDecimal!
-  agreementApproval: BigInt!
-  agreementApprovalRate: BigDecimal!
-  agreementRate: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
+  agreementApproval: BigInt! # TODO
+  agreementApprovalRate: BigDecimal! # TODO
+  agreementRate: BigDecimal! # TODO
 }
 
 type UserReviewer @entity(immutable: true) {
