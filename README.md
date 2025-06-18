@@ -75,8 +75,8 @@ $ npm run coverage
 
 Requirements
 
-* create key store account ORACLE_DEPLOYER
-* this wallet needs gas tokens to work
+- create key store account ORACLE_DEPLOYER
+- this wallet needs gas tokens to work
 
 #### Start up oracle chain
 
@@ -87,11 +87,17 @@ $ anvil -f avalancheFuji
 #### Deploy contracts
 
 ```shell
-$ forge script script/Deploy.s.sol:Deploy --fork-url http://127.0.0.1:8545 --account ORACLE_DEPLOYER --broadcast
+# Deploy on local fork
+$ forge script ./script/DeployTestnet.s.sol:DeployTestnet --fork-url http://127.0.0.1:8545 --account ORACLE_DEPLOYER --broadcast
+# Deploy on testnets
+$ forge script ./script/DeployTestnet.s.sol:DeployTestnet --account ORACLE_DEPLOYER --broadcast
 ```
 
-#### Setup fixtures oracle chain
+#### Setup fixtures oracle chain (should only be used on testnet)
 
 ```shell
+# on local fork
 $ forge script script/SetupFixturesOracleChain.s.sol:SetupFixturesOracleChain --fork-url http://127.0.0.1:8545 --account ORACLE_DEPLOYER --broadcast
+# on testnet
+$ forge script script/SetupFixturesOracleChain.s.sol:SetupFixturesOracleChain --account ORACLE_DEPLOYER --broadcast
 ```
