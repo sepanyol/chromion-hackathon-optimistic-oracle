@@ -4,7 +4,6 @@ import {
   BigInt,
   ByteArray,
   Bytes,
-  crypto,
 } from "@graphprotocol/graph-ts";
 import {
   AnswerProposed,
@@ -34,9 +33,17 @@ import {
 } from "../generated/schema";
 import { RequestContract } from "../generated/templates/RequestContract/RequestContract";
 
+const INT32_ONE = BigInt.fromI32(1);
+const INT32_ZERO = BigInt.fromI32(0);
+const EMPTY_BYTES = Bytes.fromI32(0);
+
 export function handleRequestRegistered(event: RequestRegistered): void {
   const _request = getRequest(event.params.request);
-  const _user = getUser(event.params.requester);
+  const _user = getUser(
+    Address.fromBytes(
+      Bytes.fromUint8Array(event.params.requester.subarray(12, 32))
+    )
+  );
   const _requester = getUserRequester(_user.id);
   const _requesterStats = getUserRequesterStats(_requester.stats);
   const _dashboard = getDashboard();
@@ -63,13 +70,12 @@ export function handleRequestRegistered(event: RequestRegistered): void {
   _request.requester = _requester.id;
 
   // count stats
-  _requesterStats.requests = _requesterStats.requests.plus(BigInt.fromI32(1));
-  _requesterStats.requestsActive = _requesterStats.requestsActive.plus(
-    BigInt.fromI32(1)
-  );
+  _requesterStats.requests = _requesterStats.requests.plus(INT32_ONE);
+  _requesterStats.requestsActive =
+    _requesterStats.requestsActive.plus(INT32_ONE);
 
   // update dashboard
-  _dashboard.totalRequests = _dashboard.totalRequests.plus(BigInt.fromI32(1));
+  _dashboard.totalRequests = _dashboard.totalRequests.plus(INT32_ONE);
 
   _dashboard.save();
   _requesterStats.save();
@@ -80,7 +86,7 @@ export function handleRequestRegistered(event: RequestRegistered): void {
 
 export function handleAnswerProposed(event: AnswerProposed): void {
   const _request = getRequest(event.params.request);
-  const _proposal = getRequestProposal(event.params.request);
+  const _proposal = getRequestProposal(_request.id);
   const _user = getUser(event.params.proposer);
   const _proposer = getUserProposer(_user.id);
   const _proposerStats = getUserProposerStats(_proposer.stats);
@@ -102,13 +108,11 @@ export function handleAnswerProposed(event: AnswerProposed): void {
   _user.proposer = _proposer.id;
 
   // update proposer stats
-  _proposerStats.proposals = _proposerStats.proposals.plus(BigInt.fromI32(1));
-  _proposerStats.proposalsActive = _proposerStats.proposals.plus(
-    BigInt.fromI32(1)
-  );
+  _proposerStats.proposals = _proposerStats.proposals.plus(INT32_ONE);
+  _proposerStats.proposalsActive = _proposerStats.proposals.plus(INT32_ONE);
 
   // update dashboard
-  _dashboard.proposals = _dashboard.proposals.plus(BigInt.fromI32(1));
+  _dashboard.proposals = _dashboard.proposals.plus(INT32_ONE);
 
   _dashboard.save();
   _request.save();
@@ -121,6 +125,7 @@ export function handleAnswerProposed(event: AnswerProposed): void {
 export function handleChallengeSubmitted(event: ChallengeSubmitted): void {
   const _request = getRequest(event.params.request);
   const _proposal = getRequestProposal(_request.id);
+  const _proposerStats = getUserProposerStats(_proposal.proposer);
   const _challenge = getProposalChallenge(_request.id);
   const _user = getUser(event.params.challenger);
   const _challenger = getUserChallenger(_user.id);
@@ -142,23 +147,26 @@ export function handleChallengeSubmitted(event: ChallengeSubmitted): void {
   _user.challenger = _challenger.id;
 
   // update challenger stats
-  _challengerStats.challenges = _challengerStats.challenges.plus(
-    BigInt.fromI32(1)
-  );
-  _challengerStats.challengesActive = _challengerStats.challengesActive.plus(
-    BigInt.fromI32(1)
-  );
+  _challengerStats.challenges = _challengerStats.challenges.plus(INT32_ONE);
+  _challengerStats.challengesActive =
+    _challengerStats.challengesActive.plus(INT32_ONE);
 
   // update dashboard
-  _dashboard.activeChallenges = _dashboard.activeChallenges.plus(
-    BigInt.fromI32(1)
-  );
+  _dashboard.activeChallenges = _dashboard.activeChallenges.plus(INT32_ONE);
 
+  // update proposer stats
+  _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
+
+  // flag proposal as challenges
+  _proposal.isChallenged = true;
+
+  _proposal.save();
   _request.save();
   _challenge.save();
   _user.save();
   _challenger.save();
   _challengerStats.save();
+  _proposerStats.save();
   _dashboard.save();
 }
 
@@ -184,16 +192,14 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
   _user.reviewer = _reviewer.id;
 
   // update challenger stats
-  _reviewerStats.reviews = _reviewerStats.reviews.plus(BigInt.fromI32(1));
-  _reviewerStats.reviewsActive = _reviewerStats.reviewsActive.plus(
-    BigInt.fromI32(1)
-  );
+  _reviewerStats.reviews = _reviewerStats.reviews.plus(INT32_ONE);
+  _reviewerStats.reviewsActive = _reviewerStats.reviewsActive.plus(INT32_ONE);
 
   // update challenge stats
   if (_review.supportsChallenge) {
-    _challenge.votesFor = _challenge.votesFor.plus(BigInt.fromI32(1));
+    _challenge.votesFor = _challenge.votesFor.plus(INT32_ONE);
   } else {
-    _challenge.votesAgainst = _challenge.votesAgainst.plus(BigInt.fromI32(1));
+    _challenge.votesAgainst = _challenge.votesAgainst.plus(INT32_ONE);
   }
 
   _challenge.save();
@@ -204,21 +210,128 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
 }
 
 export function handleRequestResolved(event: RequestResolved): void {
-  // const _request = getRequest(event.params.request);
-  // const _dashboard = getDashboard();
-  // const oracle = OracleCoordinator.bind(event.address);
+  const _request = getRequest(event.params.request);
+  const _proposal = getRequestProposal(_request.id);
+  const _challenge = getProposalChallenge(_request.id);
+  const _challengerStats = getUserChallengerStats(_challenge.challenger);
+  const _proposerStats = getUserProposerStats(_proposal.proposer);
+  const _dashboard = getDashboard();
 
-  // const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
-  // _request.status = requestContract.status();
+  const oracleContract = OracleCoordinator.bind(event.address);
+  const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
 
+  const idFor = oracleContract.outcomeIdFor(Address.fromBytes(_request.id));
+  const idAgainst = oracleContract.outcomeIdAgainst(
+    Address.fromBytes(_request.id)
+  );
+  const outcomeFor = oracleContract.proposalChallengeOutcome(idFor);
+  const outcomeAgainst = oracleContract.proposalChallengeOutcome(idAgainst);
 
+  // update request with status and answer
+  _request.status = requestContract.status();
+  _request.answer = requestContract.answer();
 
-  // // _dashboard.
+  // reduce active proposals for proposer
+  _proposerStats.proposalsActive =
+    _proposerStats.proposalsActive.minus(INT32_ONE);
+
+  if (!outcomeFor && !outcomeAgainst) {
+    // not challenged at all
+    _dashboard.proposalsSuccessful =
+      _dashboard.proposalsSuccessful.plus(INT32_ONE);
+
+    // increas successful proposal for proposer
+    _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+  } else {
+    // reduce dashboard challenges
+    _dashboard.activeChallenges = _dashboard.activeChallenges.minus(INT32_ONE);
+
+    // reduce active challenges for challenger
+    _challengerStats.challengesActive =
+      _challengerStats.challengesActive.minus(INT32_ONE);
+
+    if (outcomeFor) {
+      // challenged and challenged won
+      // add sucessful challenge
+      _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
+    } else {
+      // challenged and proposal won
+
+      // increase successful proposal
+      _dashboard.proposalsSuccessful =
+        _dashboard.proposalsSuccessful.plus(INT32_ONE);
+
+      // increase successful proposal for proposer
+      _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+
+      // increase challenged and won proposal for proposer
+      _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
+    }
+
+    // recalc success rate of challenger
+    _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _challengerStats.successful,
+      _challengerStats.challenges
+    );
+  }
+
+  // recalc success rate
+  _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
+    _dashboard.proposalsSuccessful,
+    _dashboard.proposals
+  );
+
+  // recalc success rate for proposer
+  _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+    _proposerStats.successful,
+    _proposerStats.proposals
+  );
+
+  _request.save();
+  _proposerStats.save();
+  _challengerStats.save();
+  _dashboard.save();
 }
 
-export function handleBondRefunded(event: BondRefunded): void {}
+export function handleRewardDistributed(event: RewardDistributed): void {
+  // gather earnings for users
+  const _request = getRequest(event.params.request);
+  const _proposal = getRequestProposal(_request.id);
+  const _challenge = getProposalChallenge(_request.id);
+  const _rewardedAmount = event.params.amount.toBigDecimal();
 
-export function handleRewardDistributed(event: RewardDistributed): void {}
+  if (Address.fromBytes(_proposal.proposer) === event.params.recipient) {
+    // reward given for proposer (cant be challenger, cant be reviewer)
+    const _proposer = getUserProposerStats(_proposal.proposer);
+    _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
+    _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
+    _proposer.save();
+  } else if (
+    Address.fromBytes(_challenge.challenger) === event.params.recipient
+  ) {
+    // reward given for challenger (cant be reviewer)
+    const _challenger = getUserChallengerStats(_challenge.challenger);
+    _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
+    _challenger.earningsInUSD = _challenger.earningsInUSD.plus(_rewardedAmount);
+    _challenger.save();
+  } else {
+    // reward given for reviewer
+    const _reviewer = getUserReviewerStats(event.params.recipient);
+    _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
+    _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
+    _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
+    _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
+    _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _reviewer.successful,
+      _reviewer.reviews
+    );
+    _reviewer.save();
+  }
+}
+
+export function handleBondRefunded(event: BondRefunded): void {
+  // TODO later, not needed right now
+}
 
 ///
 /// --- HELPER FUNCTIONS ---
@@ -233,10 +346,10 @@ function getDashboard(): Dashboard {
   let _dashboard = Dashboard.load(_id);
   if (_dashboard === null) {
     _dashboard = new Dashboard(_id);
-    _dashboard.totalRequests = BigInt.fromI32(0);
-    _dashboard.activeChallenges = BigInt.fromI32(0);
-    _dashboard.proposals = BigInt.fromI32(0);
-    _dashboard.proposalsSuccessful = BigInt.fromI32(0);
+    _dashboard.totalRequests = INT32_ZERO;
+    _dashboard.activeChallenges = INT32_ZERO;
+    _dashboard.proposals = INT32_ZERO;
+    _dashboard.proposalsSuccessful = INT32_ZERO;
     _dashboard.proposalSuccessRate = BigDecimal.fromString("0");
   }
   return _dashboard;
@@ -266,9 +379,9 @@ function getUserRequesterStats(address: Bytes): UserRequesterStats {
   let _stats = UserRequesterStats.load(address);
   if (_stats === null) {
     _stats = new UserRequesterStats(address);
-    _stats.requests = BigInt.fromI32(0);
-    _stats.requestsActive = BigInt.fromI32(0);
-    _stats.successful = BigInt.fromI32(0);
+    _stats.requests = INT32_ZERO;
+    _stats.requestsActive = INT32_ZERO;
+    _stats.successful = INT32_ZERO;
     _stats.successRate = BigDecimal.fromString("0");
     _stats.requestAvgResolution = BigDecimal.fromString("0");
   }
@@ -289,10 +402,10 @@ function getUserProposerStats(address: Bytes): UserProposerStats {
   let _stats = UserProposerStats.load(address);
   if (_stats === null) {
     _stats = new UserProposerStats(address);
-    _stats.proposals = BigInt.fromI32(0);
-    _stats.proposalsActive = BigInt.fromI32(0);
-    _stats.successful = BigInt.fromI32(0);
-    _stats.challenged = BigInt.fromI32(0);
+    _stats.proposals = INT32_ZERO;
+    _stats.proposalsActive = INT32_ZERO;
+    _stats.successful = INT32_ZERO;
+    _stats.challenged = INT32_ZERO;
     _stats.successRate = BigDecimal.fromString("0");
     _stats.earnings = BigDecimal.fromString("0");
     _stats.earningsInUSD = BigDecimal.fromString("0");
@@ -314,9 +427,9 @@ function getUserChallengerStats(address: Bytes): UserChallengerStats {
   let _stats = UserChallengerStats.load(address);
   if (_stats === null) {
     _stats = new UserChallengerStats(address);
-    _stats.challenges = BigInt.fromI32(0);
-    _stats.challengesActive = BigInt.fromI32(0);
-    _stats.successful = BigInt.fromI32(0);
+    _stats.challenges = INT32_ZERO;
+    _stats.challengesActive = INT32_ZERO;
+    _stats.successful = INT32_ZERO;
     _stats.successRate = BigDecimal.fromString("0");
     _stats.earnings = BigDecimal.fromString("0");
     _stats.earningsInUSD = BigDecimal.fromString("0");
@@ -338,13 +451,13 @@ function getUserReviewerStats(address: Bytes): UserReviewerStats {
   let _stats = UserReviewerStats.load(address);
   if (_stats === null) {
     _stats = new UserReviewerStats(address);
-    _stats.reviews = BigInt.fromI32(0);
-    _stats.reviewsActive = BigInt.fromI32(0);
-    _stats.successful = BigInt.fromI32(0);
+    _stats.reviews = INT32_ZERO;
+    _stats.reviewsActive = INT32_ZERO;
+    _stats.successful = INT32_ZERO;
     _stats.successRate = BigDecimal.fromString("0");
     _stats.earnings = BigDecimal.fromString("0");
     _stats.earningsInUSD = BigDecimal.fromString("0");
-    _stats.agreementApproval = BigInt.fromI32(0);
+    _stats.agreementApproval = INT32_ZERO;
     _stats.agreementApprovalRate = BigDecimal.fromString("0");
     _stats.agreementRate = BigDecimal.fromString("0");
   }
@@ -355,7 +468,7 @@ function getRequest(address: Bytes): Request {
   let _request = Request.load(address);
   if (_request === null) {
     _request = new Request(address);
-    _request.challengeWindow = BigInt.fromI32(0);
+    _request.challengeWindow = INT32_ZERO;
     _request.createdAt = 0;
     _request.answerType = 0;
     _request.question = "";
@@ -364,9 +477,9 @@ function getRequest(address: Bytes): Request {
     _request.isCrossChain = false;
     _request.status = 0;
     _request.truthMeaning = "";
-    _request.originAddress = Bytes.fromI32(0);
-    _request.originChainId = Bytes.fromI32(0);
-    _request.rewardAmount = BigInt.fromI32(0);
+    _request.originAddress = EMPTY_BYTES;
+    _request.originChainId = EMPTY_BYTES;
+    _request.rewardAmount = INT32_ZERO;
   }
   return _request;
 }
@@ -376,7 +489,7 @@ function getRequestProposal(id: Bytes): RequestProposal {
   if (_proposal === null) {
     _proposal = new RequestProposal(id);
     _proposal.createdAt = 0;
-    _proposal.answer = Bytes.fromI32(0);
+    _proposal.answer = EMPTY_BYTES;
     _proposal.isChallenged = false;
   }
   return _proposal;
@@ -387,10 +500,10 @@ function getProposalChallenge(id: Bytes): ProposalChallenge {
   if (_challenge === null) {
     _challenge = new ProposalChallenge(id);
     _challenge.createdAt = 0;
-    _challenge.answer = Bytes.fromI32(0);
-    _challenge.reason = Bytes.fromI32(0);
-    _challenge.votesFor = BigInt.fromI32(0);
-    _challenge.votesAgainst = BigInt.fromI32(0);
+    _challenge.answer = EMPTY_BYTES;
+    _challenge.reason = EMPTY_BYTES;
+    _challenge.votesFor = INT32_ZERO;
+    _challenge.votesAgainst = INT32_ZERO;
   }
   return _challenge;
 }
@@ -400,7 +513,19 @@ function getChallengeReview(id: Bytes): ChallengeReview {
   if (_review === null) {
     _review = new ChallengeReview(id);
     _review.createdAt = 0;
-    _review.reason = Bytes.fromI32(0);
+    _review.reason = EMPTY_BYTES;
   }
   return _review;
+}
+
+function divBigIntAndCreateTwoDigitDecimal(a: BigInt, b: BigInt): BigDecimal {
+  return BigDecimal.fromString(
+    BigInt.fromString(
+      a
+        .toBigDecimal()
+        .div(b.toBigDecimal())
+        .times(BigDecimal.fromString("10000"))
+        .toString()
+    ).toString()
+  ).div(BigDecimal.fromString("100"));
 }

@@ -8,7 +8,7 @@ dataSources:
     name: OracleCoordinator
     network: fuji
     source:
-      address: "0xcfd22abbBF3Db82cbF7a689646d8B1c93791eE65"
+      address: "0xCe12403260F74aFDE59477a6dAfC33bCcC205371"
       abi: OracleCoordinator
       startBlock: 42036486
     mapping:
