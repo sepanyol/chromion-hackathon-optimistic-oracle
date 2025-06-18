@@ -16,7 +16,7 @@ contract SetupFixturesOracleChain is BaseScript {
 
     RequestTypes.RequestParams defaultRequestParams =
         RequestTypes.RequestParams({
-            requester: abi.encodePacked(address(0)),
+            requester: abi.encode(address(0)),
             answerType: RequestTypes.AnswerType.Bool,
             challengeWindow: 86400,
             rewardAmount: 5e6,
@@ -111,7 +111,7 @@ contract SetupFixturesOracleChain is BaseScript {
         usdc.approve(address(factory), 100e6);
 
         RequestTypes.RequestParams memory _params = defaultRequestParams;
-        _params.requester = abi.encodePacked(_requester);
+        _params.requester = abi.encode(_requester);
         address createdRequest = factory.createRequest(_params);
         console.log(
             string.concat(
@@ -127,7 +127,7 @@ contract SetupFixturesOracleChain is BaseScript {
         (, address _requester, ) = vm.readCallers();
 
         RequestTypes.RequestParams memory _params = defaultRequestParams;
-        _params.requester = abi.encodePacked(_requester);
+        _params.requester = abi.encode(_requester);
         address createdRequest = factory.createRequest(_params);
         console.log(
             string.concat(
@@ -138,7 +138,7 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.stopBroadcast();
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_PROPOSER"));
-        oracle.proposeAnswer(createdRequest, abi.encodePacked(true));
+        oracle.proposeAnswer(createdRequest, abi.encode(true));
     }
 
     function fixtures_Challenged() public {
@@ -146,7 +146,7 @@ contract SetupFixturesOracleChain is BaseScript {
         (, address _requester, ) = vm.readCallers();
 
         RequestTypes.RequestParams memory _params = defaultRequestParams;
-        _params.requester = abi.encodePacked(_requester);
+        _params.requester = abi.encode(_requester);
         address createdRequest = factory.createRequest(_params);
         console.log(
             string.concat(
@@ -157,13 +157,13 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.stopBroadcast();
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_PROPOSER"));
-        oracle.proposeAnswer(createdRequest, abi.encodePacked(true));
+        oracle.proposeAnswer(createdRequest, abi.encode(true));
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
-            abi.encodePacked(false),
-            abi.encodePacked("because of yada yada yada")
+            abi.encode(false),
+            abi.encode("because of yada yada yada")
         );
     }
 
@@ -172,7 +172,7 @@ contract SetupFixturesOracleChain is BaseScript {
         (, address _requester, ) = vm.readCallers();
 
         RequestTypes.RequestParams memory _params = defaultRequestParams;
-        _params.requester = abi.encodePacked(_requester);
+        _params.requester = abi.encode(_requester);
         address createdRequest = factory.createRequest(_params);
         console.log(
             string.concat(
@@ -183,19 +183,19 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.stopBroadcast();
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_PROPOSER"));
-        oracle.proposeAnswer(createdRequest, abi.encodePacked(true));
+        oracle.proposeAnswer(createdRequest, abi.encode(true));
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
-            abi.encodePacked(false),
-            abi.encodePacked("because of yada yada yada")
+            abi.encode(false),
+            abi.encode("because of yada yada yada")
         );
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_REVIEWER_1"));
         oracle.submitReview(
             createdRequest,
-            abi.encodePacked("because of yada yada yada"),
+            abi.encode("because of yada yada yada"),
             true
         );
     }
@@ -205,7 +205,7 @@ contract SetupFixturesOracleChain is BaseScript {
         (, address _requester, ) = vm.readCallers();
 
         RequestTypes.RequestParams memory _params = defaultRequestParams;
-        _params.requester = abi.encodePacked(_requester);
+        _params.requester = abi.encode(_requester);
         address createdRequest = factory.createRequest(_params);
         console.log(
             string.concat(
@@ -216,19 +216,19 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.stopBroadcast();
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_PROPOSER"));
-        oracle.proposeAnswer(createdRequest, abi.encodePacked(true));
+        oracle.proposeAnswer(createdRequest, abi.encode(true));
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
-            abi.encodePacked(false),
-            abi.encodePacked("because of yada yada yada")
+            abi.encode(false),
+            abi.encode("because of yada yada yada")
         );
 
         vm.broadcast(vm.envUint("PRIVATE_KEY_REVIEWER_1"));
         oracle.submitReview(
             createdRequest,
-            abi.encodePacked("because of yada yada yada"),
+            abi.encode("because of yada yada yada"),
             false
         );
     }
