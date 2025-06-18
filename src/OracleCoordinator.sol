@@ -64,7 +64,7 @@ contract OracleCoordinator is
     mapping(address => UserStats) private userStats;
 
     /// @dev Maps outcome keys to true if the outcome succeeded
-    mapping(bytes32 => bool) private proposalChallengeOutcome;
+    mapping(bytes32 => bool) public proposalChallengeOutcome;
 
     /// @dev Maps a request to the claimable reward amount for reviewers
     mapping(address => uint256) public reviewerClaimAmount;
@@ -544,19 +544,19 @@ contract OracleCoordinator is
         return (false, _status);
     }
 
-    /// @dev Internal helper to compute outcome identifier for supporting votes
+    /// @inheritdoc IOracleCoordinator
     function outcomeIdFor(address _request) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "FOR"));
     }
 
-    /// @dev Internal helper to compute outcome identifier for opposing votes
+    /// @inheritdoc IOracleCoordinator
     function outcomeIdAgainst(
         address _request
     ) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "AGAINST"));
     }
 
-    /// @dev Internal helper to compute a reviewer's support vote ID
+    /// @inheritdoc IOracleCoordinator
     function reviewerVoteIdFor(
         address _request,
         address _reviewer
@@ -564,7 +564,7 @@ contract OracleCoordinator is
         _id = keccak256(abi.encodePacked(_request, "-", _reviewer, "-", "FOR"));
     }
 
-    /// @dev Internal helper to compute a reviewer's oppose vote ID
+    /// @inheritdoc IOracleCoordinator
     function reviewerVoteIdAgainst(
         address _request,
         address _reviewer
