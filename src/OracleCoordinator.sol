@@ -11,6 +11,7 @@ import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
@@ -580,7 +581,7 @@ contract OracleCoordinator is
         RequestTypes.RequestStatus _status
     ) internal {
         bytes memory _originAddress = requestStore[_request].originAddress();
-        if (keccak256(_originAddress) != keccak256(abi.encode(address(0)))) {
+        if (uint256(bytes32(_originAddress)) > 0) {
             bytes memory _message = abi.encode(
                 _originAddress,
                 abi.encodeWithSelector(
@@ -608,7 +609,7 @@ contract OracleCoordinator is
         bytes memory _answer
     ) internal {
         bytes memory _originAddress = requestStore[_request].originAddress();
-        if (keccak256(_originAddress) != keccak256(abi.encode(address(0)))) {
+        if (uint256(bytes32(_originAddress)) > 0) {
             bytes memory _message = abi.encode(
                 _originAddress,
                 abi.encodeWithSelector(
