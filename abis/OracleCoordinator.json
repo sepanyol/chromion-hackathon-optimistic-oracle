@@ -626,6 +626,44 @@
   },
   {
     "type": "function",
+    "name": "outcomeIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "outcomeIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
     "name": "performUpkeep",
     "inputs": [
       {
@@ -730,6 +768,54 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",

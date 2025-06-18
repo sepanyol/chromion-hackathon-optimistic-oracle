@@ -214,15 +214,15 @@ contract OracleCoordinator is
         );
 
         require(
-            !reviewerVote[_reviewerVoteIdFor(_request, msg.sender)] &&
-                !reviewerVote[_reviewerVoteIdAgainst(_request, msg.sender)],
+            !reviewerVote[reviewerVoteIdFor(_request, msg.sender)] &&
+                !reviewerVote[reviewerVoteIdAgainst(_request, msg.sender)],
             "Already reviewed"
         );
 
         reviewerVote[
             supportsChallenge
-                ? _reviewerVoteIdFor(_request, msg.sender)
-                : _reviewerVoteIdAgainst(_request, msg.sender)
+                ? reviewerVoteIdFor(_request, msg.sender)
+                : reviewerVoteIdAgainst(_request, msg.sender)
         ] = true;
 
         Challenge storage _challenge = proposalStore[_request].challenge;
@@ -305,7 +305,7 @@ contract OracleCoordinator is
             // proposer bond + reward (-> 80% challenger, -> 10% reviewer, -> 10% platform)
             if (_challenge.votesFor > _challenge.votesAgainst) {
                 _updateRequestAnswer(_request, _challenge.answer);
-                proposalChallengeOutcome[_outcomeIdFor(_request)] = true;
+                proposalChallengeOutcome[outcomeIdFor(_request)] = true;
 
                 // base rewards
                 uint256 _amount = _rewardAmount + PROPOSER_BOND; // requester reward + proposer bond
@@ -342,7 +342,7 @@ contract OracleCoordinator is
                 );
             } else {
                 _updateRequestAnswer(_request, _proposal.answer);
-                proposalChallengeOutcome[_outcomeIdAgainst(_request)] = true;
+                proposalChallengeOutcome[outcomeIdAgainst(_request)] = true;
 
                 uint256 _proposerShare = (_rewardAmount * 9) / 10; // only 90%, cause of being challenge
 
@@ -491,12 +491,12 @@ contract OracleCoordinator is
         address _request,
         address _claimer
     ) internal view returns (bool _is) {
-        bool _successFor = proposalChallengeOutcome[_outcomeIdFor(_request)] &&
-            reviewerVote[_reviewerVoteIdFor(_request, _claimer)];
+        bool _successFor = proposalChallengeOutcome[outcomeIdFor(_request)] &&
+            reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _successAgainst = proposalChallengeOutcome[
-            _outcomeIdFor(_request)
-        ] && reviewerVote[_reviewerVoteIdFor(_request, _claimer)];
+            outcomeIdFor(_request)
+        ] && reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _success = _successFor || _successAgainst;
 
@@ -545,32 +545,30 @@ contract OracleCoordinator is
     }
 
     /// @dev Internal helper to compute outcome identifier for supporting votes
-    function _outcomeIdFor(
-        address _request
-    ) internal pure returns (bytes32 _id) {
+    function outcomeIdFor(address _request) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "FOR"));
     }
 
     /// @dev Internal helper to compute outcome identifier for opposing votes
-    function _outcomeIdAgainst(
+    function outcomeIdAgainst(
         address _request
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "AGAINST"));
     }
 
     /// @dev Internal helper to compute a reviewer's support vote ID
-    function _reviewerVoteIdFor(
+    function reviewerVoteIdFor(
         address _request,
         address _reviewer
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", _reviewer, "-", "FOR"));
     }
 
     /// @dev Internal helper to compute a reviewer's oppose vote ID
-    function _reviewerVoteIdAgainst(
+    function reviewerVoteIdAgainst(
         address _request,
         address _reviewer
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(
             abi.encodePacked(_request, "-", _reviewer, "-", "AGAINST")
         );
