@@ -1,0 +1,184 @@
+type Dashboard @entity(immutable: false) {
+  id: Bytes!
+  totalRequests: BigInt!
+  activeChallenges: BigInt!
+  proposals: BigInt!
+  proposalsSuccessful: BigInt!
+  proposalSuccessRate: BigDecimal!
+}
+
+# type RequestScoringHeatmap @entity(immutable: true) {
+#   id: Bytes!
+#   clarity: BigInt!
+#   logical_consistency: BigInt!
+#   completeness: BigInt!
+#   source_trust: BigInt!
+#   ambiguity: BigInt!
+#   time_reference: BigInt!
+# }
+
+# type RequestScoringRatings @entity(immutable: true) {
+#   id: Bytes!
+#   clarity: BigDecimal!
+#   logical_consistency: BigDecimal!
+#   completeness: BigDecimal!
+#   source_trust: BigDecimal!
+#   ambiguity: BigDecimal!
+#   time_reference: BigDecimal!
+# }
+
+# type RequestScoring @entity(immutable: true) {
+#   id: Bytes!
+#   score: BigInt!
+#   heatmap: RequestScoringHeatmap!
+#   ratings: RequestScoringRatings!
+#   final_decision: String!
+# }
+
+type Request @entity(immutable: false) {
+  id: Bytes!
+  requester: UserRequester!
+  originAddress: Bytes!
+  originChainId: Bytes!
+  answerType: Int!
+  challengeWindow: BigInt!
+  rewardAmount: BigInt!
+  question: String!
+  context: String!
+  answer: Bytes
+  truthMeaning: String!
+  isCrossChain: Boolean!
+  createdAt: Timestamp!
+  status: Int!
+  # scoring: RequestScoring
+
+  proposal: RequestProposal @derivedFrom(field: "request")
+  challenge: ProposalChallenge @derivedFrom(field: "request")
+  reviews: [ChallengeReview!] @derivedFrom(field: "request")
+}
+
+type RequestProposal @entity(immutable: false) {
+  id: Bytes! # Request.id
+  createdAt: Timestamp!
+  answer: Bytes!
+  isChallenged: Boolean! # default: false
+  request: Request!
+  proposer: UserProposer!
+  challenge: ProposalChallenge @derivedFrom(field: "proposal")
+  reviews: [ChallengeReview!] @derivedFrom(field: "proposal")
+}
+
+type ProposalChallenge @entity(immutable: false) {
+  id: Bytes! # Request.id
+  answer: Bytes!
+  reason: Bytes
+  votesFor: BigInt! # votes for a challenge: number of votes that support a challenge
+  votesAgainst: BigInt! # votes against a challenge: number of votes that support a proposal
+  createdAt: Timestamp!
+
+  challenger: UserChallenger!
+  request: Request!
+  proposal: RequestProposal!
+  reviews: [ChallengeReview!] @derivedFrom(field: "challenge")
+}
+
+type ChallengeReview @entity(immutable: true) {
+  id: Bytes! # Request.id + reviewer
+  reason: Bytes!
+  supportsChallenge: Boolean! # true = supports a challenge, false = supports a proposal
+  createdAt: Timestamp!
+
+  reviewer: UserReviewer!
+  request: Request!
+  proposal: RequestProposal!
+  challenge: ProposalChallenge!
+}
+
+type UserRequesterStats @entity(immutable: false) {
+  id: Bytes!
+  requests: BigInt!
+  requestsActive: BigInt!
+  successful: BigInt! # request counts that were successful without being challenged (good quality request)
+  successRate: BigDecimal!
+  requestAvgResolution: BigDecimal! # TODO
+}
+
+type UserRequester @entity(immutable: true) {
+  id: Bytes!
+  stats: UserRequesterStats!
+  user: User! @derivedFrom(field: "requester")
+  requests: [Request!] @derivedFrom(field: "requester")
+}
+
+type UserProposerStats @entity(immutable: false) {
+  id: Bytes!
+  proposals: BigInt!
+  proposalsActive: BigInt!
+  successful: BigInt!
+  challenged: BigInt! # number of proposals that got challenged but still won
+  successRate: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
+}
+
+type UserProposer @entity(immutable: true) {
+  id: Bytes!
+  stats: UserProposerStats!
+  user: User! @derivedFrom(field: "proposer")
+  proposals: [RequestProposal!] @derivedFrom(field: "proposer")
+}
+
+type UserChallengerStats @entity(immutable: false) {
+  id: Bytes!
+  challenges: BigInt!
+  challengesActive: BigInt!
+  successful: BigInt!
+  successRate: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
+}
+
+type UserChallenger @entity(immutable: true) {
+  id: Bytes!
+  stats: UserChallengerStats!
+  user: User! @derivedFrom(field: "challenger")
+  challenges: [ProposalChallenge!] @derivedFrom(field: "challenger")
+}
+
+type UserReviewerStats @entity(immutable: false) {
+  id: Bytes!
+  reviews: BigInt!
+  reviewsActive: BigInt!
+  successful: BigInt!
+  successRate: BigDecimal!
+  earnings: BigDecimal! # right now, it's the amount ot tokens (without decimals) 1 USDC == 1e6 earnings # TODO
+  earningsInUSD: BigDecimal! # same as .earnings # TODO
+  agreementApproval: BigInt! # TODO
+  agreementApprovalRate: BigDecimal! # TODO
+  agreementRate: BigDecimal! # TODO
+}
+
+type UserReviewer @entity(immutable: true) {
+  id: Bytes!
+  stats: UserReviewerStats!
+  user: User! @derivedFrom(field: "reviewer")
+  reviews: [ChallengeReview!] @derivedFrom(field: "reviewer")
+}
+
+type User @entity(immutable: false) {
+  id: Bytes!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  # ipfsURI: String
+  # additionalUserData: AdditionalUserData @derivedFrom(field: "id")
+  requester: UserRequester
+  proposer: UserProposer
+  challenger: UserChallenger
+  reviewer: UserReviewer
+}
+
+# type AdditionalUserData @entity(immutable: true) {
+#   id: Bytes!
+#   hash: String!
+#   content: String!
+# }

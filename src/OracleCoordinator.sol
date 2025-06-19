@@ -6,10 +6,12 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+import {IOracleRelayer} from "./interfaces/IOracleRelayer.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
@@ -46,6 +48,9 @@ contract OracleCoordinator is
     /// @notice ERC20 token used for bonds and rewards (e.g., USDC)
     IERC20 public immutable usdc;
 
+    /// @notice Oracle Relayer to communicate cross chain
+    IOracleRelayer public immutable relayer;
+
     /// @notice Address of the platform treasury or DAO
     address public platform;
 
@@ -59,7 +64,7 @@ contract OracleCoordinator is
     mapping(address => UserStats) private userStats;
 
     /// @dev Maps outcome keys to true if the outcome succeeded
-    mapping(bytes32 => bool) private proposalChallengeOutcome;
+    mapping(bytes32 => bool) public proposalChallengeOutcome;
 
     /// @dev Maps a request to the claimable reward amount for reviewers
     mapping(address => uint256) public reviewerClaimAmount;
@@ -87,12 +92,14 @@ contract OracleCoordinator is
     /// @param _usdc ERC20 token used for all bond and reward transfers
     constructor(
         address _platform, // multi sig
+        address _relayer, // oracle relayer
         address _usdc
     ) {
         require(_platform != address(0), "invalid address");
         require(_usdc != address(0), "invalid address");
         platform = _platform;
         usdc = IERC20(_usdc);
+        relayer = IOracleRelayer(_relayer);
         _grantRole(DEFAULT_ADMIN_ROLE, _platform);
     }
 
@@ -207,15 +214,15 @@ contract OracleCoordinator is
         );
 
         require(
-            !reviewerVote[_reviewerVoteIdFor(_request, msg.sender)] &&
-                !reviewerVote[_reviewerVoteIdAgainst(_request, msg.sender)],
+            !reviewerVote[reviewerVoteIdFor(_request, msg.sender)] &&
+                !reviewerVote[reviewerVoteIdAgainst(_request, msg.sender)],
             "Already reviewed"
         );
 
         reviewerVote[
             supportsChallenge
-                ? _reviewerVoteIdFor(_request, msg.sender)
-                : _reviewerVoteIdAgainst(_request, msg.sender)
+                ? reviewerVoteIdFor(_request, msg.sender)
+                : reviewerVoteIdAgainst(_request, msg.sender)
         ] = true;
 
         Challenge storage _challenge = proposalStore[_request].challenge;
@@ -298,7 +305,7 @@ contract OracleCoordinator is
             // proposer bond + reward (-> 80% challenger, -> 10% reviewer, -> 10% platform)
             if (_challenge.votesFor > _challenge.votesAgainst) {
                 _updateRequestAnswer(_request, _challenge.answer);
-                proposalChallengeOutcome[_outcomeIdFor(_request)] = true;
+                proposalChallengeOutcome[outcomeIdFor(_request)] = true;
 
                 // base rewards
                 uint256 _amount = _rewardAmount + PROPOSER_BOND; // requester reward + proposer bond
@@ -335,7 +342,7 @@ contract OracleCoordinator is
                 );
             } else {
                 _updateRequestAnswer(_request, _proposal.answer);
-                proposalChallengeOutcome[_outcomeIdAgainst(_request)] = true;
+                proposalChallengeOutcome[outcomeIdAgainst(_request)] = true;
 
                 uint256 _proposerShare = (_rewardAmount * 9) / 10; // only 90%, cause of being challenge
 
@@ -409,6 +416,33 @@ contract OracleCoordinator is
     }
 
     /// @inheritdoc IOracleCoordinator
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    ) external view returns (address[] memory _requests, uint256 _totalCount) {
+        _totalCount = requests.length();
+        _limit = _maxLimit(_limit, _offset, _totalCount);
+        _requests = new address[](_limit);
+        for (uint256 _start = 0; _start + _offset < _limit + _offset; _start++)
+            _requests[_start] = requests.at(_start + _offset);
+    }
+
+    /// Helper function to figure out the max limit of a list
+    /// @param limit limit that has been targeted
+    /// @param offset offset that has been targeted
+    /// @param count the amount of entries the calculation should be based on
+    /// @dev is used to not overflow the possible available limits of a list
+    function _maxLimit(
+        uint256 limit,
+        uint256 offset,
+        uint256 count
+    ) internal pure returns (uint256) {
+        if (limit + offset > count && offset < count) return count - offset;
+        else if (limit + offset <= count) return limit;
+        else return 0;
+    }
+
+    /// @inheritdoc IOracleCoordinator
     function getProposal(
         address _request
     ) external view returns (Proposal memory _proposal) {
@@ -457,12 +491,12 @@ contract OracleCoordinator is
         address _request,
         address _claimer
     ) internal view returns (bool _is) {
-        bool _successFor = proposalChallengeOutcome[_outcomeIdFor(_request)] &&
-            reviewerVote[_reviewerVoteIdFor(_request, _claimer)];
+        bool _successFor = proposalChallengeOutcome[outcomeIdFor(_request)] &&
+            reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _successAgainst = proposalChallengeOutcome[
-            _outcomeIdFor(_request)
-        ] && reviewerVote[_reviewerVoteIdFor(_request, _claimer)];
+            outcomeIdFor(_request)
+        ] && reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _success = _successFor || _successAgainst;
 
@@ -510,33 +544,31 @@ contract OracleCoordinator is
         return (false, _status);
     }
 
-    /// @dev Internal helper to compute outcome identifier for supporting votes
-    function _outcomeIdFor(
-        address _request
-    ) internal pure returns (bytes32 _id) {
+    /// @inheritdoc IOracleCoordinator
+    function outcomeIdFor(address _request) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "FOR"));
     }
 
-    /// @dev Internal helper to compute outcome identifier for opposing votes
-    function _outcomeIdAgainst(
+    /// @inheritdoc IOracleCoordinator
+    function outcomeIdAgainst(
         address _request
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", "AGAINST"));
     }
 
-    /// @dev Internal helper to compute a reviewer's support vote ID
-    function _reviewerVoteIdFor(
+    /// @inheritdoc IOracleCoordinator
+    function reviewerVoteIdFor(
         address _request,
         address _reviewer
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(abi.encodePacked(_request, "-", _reviewer, "-", "FOR"));
     }
 
-    /// @dev Internal helper to compute a reviewer's oppose vote ID
-    function _reviewerVoteIdAgainst(
+    /// @inheritdoc IOracleCoordinator
+    function reviewerVoteIdAgainst(
         address _request,
         address _reviewer
-    ) internal pure returns (bytes32 _id) {
+    ) public pure returns (bytes32 _id) {
         _id = keccak256(
             abi.encodePacked(_request, "-", _reviewer, "-", "AGAINST")
         );
@@ -546,10 +578,27 @@ contract OracleCoordinator is
         address _request,
         RequestTypes.RequestStatus _status
     ) internal {
-        // TODO relayer call
-        // if (requestStore[_request]) {
-        // sendMessage();
-        // }
+        bytes memory _originAddress = requestStore[_request].originAddress();
+        if (uint256(bytes32(_originAddress)) > 0) {
+            bytes memory _message = abi.encode(
+                _originAddress,
+                abi.encodeWithSelector(
+                    IBaseRequestContract.updateStatus.selector,
+                    _status
+                )
+            );
+            // TODO how does this look like for SOLANA?
+            relayer.sendMessage(
+                relayer.chainIdToChainSelector(
+                    abi.decode(
+                        requestStore[_request].originChainId(),
+                        (uint256)
+                    )
+                ),
+                _message,
+                false
+            );
+        }
         requestStore[_request].updateStatus(_status);
     }
 
@@ -557,10 +606,27 @@ contract OracleCoordinator is
         address _request,
         bytes memory _answer
     ) internal {
-        // TODO relayer call
-        // if (requestStore[_request]) {
-        // sendMessage();
-        // }
+        bytes memory _originAddress = requestStore[_request].originAddress();
+        if (uint256(bytes32(_originAddress)) > 0) {
+            bytes memory _message = abi.encode(
+                _originAddress,
+                abi.encodeWithSelector(
+                    IBaseRequestContract.updateAnswer.selector,
+                    _answer
+                )
+            );
+            // TODO how does this look like for SOLANA?
+            relayer.sendMessage(
+                relayer.chainIdToChainSelector(
+                    abi.decode(
+                        requestStore[_request].originChainId(),
+                        (uint256)
+                    )
+                ),
+                _message,
+                false
+            );
+        }
         requestStore[_request].updateAnswer(_answer);
     }
 

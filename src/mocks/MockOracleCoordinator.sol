@@ -28,6 +28,11 @@ contract MockOracleCoordinator is IOracleCoordinator {
 
     function claimReward(address _request) external {}
 
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    ) external view returns (address[] memory _requests, uint256 _totalCount) {}
+
     function getProposal(
         address _request
     ) external view returns (Proposal memory) {}
@@ -80,4 +85,32 @@ contract MockOracleCoordinator is IOracleCoordinator {
     function REVIEWER_BOND() external view returns (uint256) {}
 
     function usdc() external view returns (IERC20) {}
+
+    function outcomeIdFor(address _request) public pure returns (bytes32 _id) {
+        _id = keccak256(abi.encodePacked(_request, "-", "FOR"));
+    }
+
+    function outcomeIdAgainst(
+        address _request
+    ) public pure returns (bytes32 _id) {
+        _id = keccak256(abi.encodePacked(_request, "-", "AGAINST"));
+    }
+
+    function reviewerVoteIdFor(
+        address _request,
+        address _reviewer
+    ) public pure returns (bytes32 _id) {
+        _id = keccak256(abi.encodePacked(_request, "-", _reviewer, "-", "FOR"));
+    }
+
+    function reviewerVoteIdAgainst(
+        address _request,
+        address _reviewer
+    ) public pure returns (bytes32 _id) {
+        _id = keccak256(
+            abi.encodePacked(_request, "-", _reviewer, "-", "AGAINST")
+        );
+    }
+
+    function proposalChallengeOutcome(bytes32) external view returns (bool) {}
 }

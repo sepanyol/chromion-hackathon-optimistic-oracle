@@ -13,6 +13,12 @@ interface IRequestFactory {
     /// @notice Address of the oracle coordinator or relayer, depending on the chain.
     function oracleOrRelayer() external returns (address);
 
+    /// @notice Address of the factory on the home chain
+    function homeFactory() external returns (address);
+
+    /// @notice Chain id of the home chain
+    function homeChainId() external returns (uint256);
+
     /// @notice Flag indicating whether this factory is deployed on the OracleChain.
     function isOracleChain() external returns (bool);
 

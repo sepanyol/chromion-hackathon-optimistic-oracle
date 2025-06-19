@@ -1,0 +1,85 @@
+specVersion: 1.3.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: OracleCoordinator
+    network: fuji
+    source:
+      address: "0xCe12403260F74aFDE59477a6dAfC33bCcC205371"
+      abi: OracleCoordinator
+      startBlock: 42036486
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - RequestRegistered
+        - AnswerProposed
+        - ChallengeSubmitted
+        - ReviewSubmitted
+        - RequestResolved
+        - RewardDistributed
+        - BondRefunded
+      abis:
+        - name: OracleCoordinator
+          file: ./abis/OracleCoordinator.json
+        - name: RequestContract
+          file: ./abis/RequestContract.json
+        - name: RequestFactory
+          file: ./abis/RequestFactory.json
+      eventHandlers:
+        - event: RequestRegistered(indexed address,bytes)
+          handler: handleRequestRegistered
+        - event: AnswerProposed(indexed address,indexed address,bytes)
+          handler: handleAnswerProposed
+        - event: ChallengeSubmitted(indexed address,indexed address,bytes,bytes)
+          handler: handleChallengeSubmitted
+        - event: ReviewSubmitted(indexed address,indexed address,bytes,bool)
+          handler: handleReviewSubmitted
+        - event: RequestResolved(indexed address,uint8)
+          handler: handleRequestResolved
+        - event: RewardDistributed(indexed address,indexed address,uint256)
+          handler: handleRewardDistributed
+        - event: BondRefunded(indexed address,indexed address,uint256)
+          handler: handleBondRefunded
+      file: ./src/oracle-coordinator.ts
+templates:
+  - kind: file/ipfs
+    name: RequestContextEvaluation
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Request
+        # - RequestScoringHeatmap
+        # - RequestScoringRatings
+        # - RequestScoring
+      abis:
+        - name: RequestContract
+          file: ./abis/RequestContract.json
+      handler: handleEvaluateContext
+      file: ./src/request-contract.ts
+  - name: RequestContract
+    kind: ethereum/contract
+    network: fuji
+    source:
+      abi: RequestContract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Request
+      abis:
+        - name: RequestContract
+          file: ./abis/RequestContract.json
+      eventHandlers:
+        - event: RequestStatusUpdated(uint8)
+          handler: handleRequestStatusUpdate
+        - event: RequestAnswerUpdated(bytes)
+          handler: handleRequestAnswerUpdate
+      file: ./src/request-contract.ts
