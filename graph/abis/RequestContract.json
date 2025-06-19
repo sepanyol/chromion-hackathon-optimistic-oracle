@@ -365,38 +365,12 @@
   },
   {
     "type": "event",
-    "name": "RequestForwarded",
-    "inputs": [
-      {
-        "name": "relayer",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RequestInitialized",
-    "inputs": [
-      {
-        "name": "requester",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "RequestInitialized",
     "inputs": [
       {
         "name": "requester",
         "type": "bytes",
-        "indexed": false,
+        "indexed": true,
         "internalType": "bytes"
       }
     ],

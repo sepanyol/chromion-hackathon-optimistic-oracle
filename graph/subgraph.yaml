@@ -55,6 +55,9 @@ templates:
       language: wasm/assemblyscript
       entities:
         - Request
+        # - RequestScoringHeatmap
+        # - RequestScoringRatings
+        # - RequestScoring
       abis:
         - name: RequestContract
           file: ./abis/RequestContract.json
