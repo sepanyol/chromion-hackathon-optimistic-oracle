@@ -7,6 +7,7 @@ export async function resolveUrls(context: string): Promise<string> {
   const urls = [...context.matchAll(urlRegex)].map((m) => m[0]);
   let enriched = context;
   for (const url of urls) {
+    console.log(`read url ${url}`);
     try {
       const html = await axios
         .get(url, {
@@ -19,8 +20,10 @@ export async function resolveUrls(context: string): Promise<string> {
       const dom = new JSDOM(html, { url });
       const article = new Readability(dom.window.document).parse();
       enriched += `\n\n[${url}]\n${article?.textContent ?? "No content"}`;
+      console.log(`...enriched data from ${url}`);
     } catch (e) {
       enriched += `\n\n[${url}] ERROR: could not load`;
+      console.log(`...could not load data from ${url}`);
     }
   }
   return enriched;

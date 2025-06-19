@@ -4,6 +4,7 @@ import { resolveUrls } from "./urlResolver";
 
 export async function performScoring(question: string, context: string) {
   const resolved = await resolveUrls(context);
+  console.log(`...perform scoring`);
   const prompt = `Question: ${question}\n\nContext: ${resolved}`;
   const response = await openai.chat.completions.create({
     model: "gpt-4",
@@ -14,5 +15,6 @@ export async function performScoring(question: string, context: string) {
     temperature: 0.3,
   });
   const content = response.choices[0].message?.content ?? "{}";
+  console.log(`...received scoring`);
   return JSON.parse(content);
 }
