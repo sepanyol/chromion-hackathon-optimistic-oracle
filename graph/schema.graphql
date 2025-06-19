@@ -7,33 +7,33 @@ type Dashboard @entity(immutable: false) {
   proposalSuccessRate: BigDecimal!
 }
 
-# type RequestScoringHeatmap @entity(immutable: true) {
-#   id: Bytes!
-#   clarity: BigInt!
-#   logical_consistency: BigInt!
-#   completeness: BigInt!
-#   source_trust: BigInt!
-#   ambiguity: BigInt!
-#   time_reference: BigInt!
-# }
+type RequestScoringHeatmap @entity(immutable: true) {
+  id: Bytes!
+  clarity: BigInt!
+  logical_consistency: BigInt!
+  completeness: BigInt!
+  source_trust: BigInt!
+  ambiguity: BigInt!
+  time_reference: BigInt!
+}
 
-# type RequestScoringRatings @entity(immutable: true) {
-#   id: Bytes!
-#   clarity: BigDecimal!
-#   logical_consistency: BigDecimal!
-#   completeness: BigDecimal!
-#   source_trust: BigDecimal!
-#   ambiguity: BigDecimal!
-#   time_reference: BigDecimal!
-# }
+type RequestScoringRatings @entity(immutable: true) {
+  id: Bytes!
+  clarity: BigDecimal!
+  logical_consistency: BigDecimal!
+  completeness: BigDecimal!
+  source_trust: BigDecimal!
+  ambiguity: BigDecimal!
+  time_reference: BigDecimal!
+}
 
-# type RequestScoring @entity(immutable: true) {
-#   id: Bytes!
-#   score: BigInt!
-#   heatmap: RequestScoringHeatmap!
-#   ratings: RequestScoringRatings!
-#   final_decision: String!
-# }
+type RequestScoring @entity(immutable: true) {
+  id: Bytes!
+  score: BigInt!
+  heatmap: RequestScoringHeatmap!
+  ratings: RequestScoringRatings!
+  final_decision: String!
+}
 
 type Request @entity(immutable: false) {
   id: Bytes!
@@ -50,7 +50,7 @@ type Request @entity(immutable: false) {
   isCrossChain: Boolean!
   createdAt: Timestamp!
   status: Int!
-  # scoring: RequestScoring
+  scoring: RequestScoring
 
   proposal: RequestProposal @derivedFrom(field: "request")
   challenge: ProposalChallenge @derivedFrom(field: "request")

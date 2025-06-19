@@ -210,127 +210,127 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
 }
 
 export function handleRequestResolved(event: RequestResolved): void {
-  const _request = getRequest(event.params.request);
-  const _proposal = getRequestProposal(_request.id);
-  const _challenge = getProposalChallenge(_request.id);
-  const _challengerStats = getUserChallengerStats(_challenge.challenger);
-  const _proposerStats = getUserProposerStats(_proposal.proposer);
-  const _dashboard = getDashboard();
+  // const _request = getRequest(event.params.request);
+  // const _proposal = getRequestProposal(_request.id);
+  // const _challenge = getProposalChallenge(_request.id);
+  // const _challengerStats = getUserChallengerStats(_challenge.challenger);
+  // const _proposerStats = getUserProposerStats(_proposal.proposer);
+  // const _dashboard = getDashboard();
 
-  const oracleContract = OracleCoordinator.bind(event.address);
-  const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
+  // const oracleContract = OracleCoordinator.bind(event.address);
+  // const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
 
-  const idFor = oracleContract.outcomeIdFor(Address.fromBytes(_request.id));
-  const idAgainst = oracleContract.outcomeIdAgainst(
-    Address.fromBytes(_request.id)
-  );
-  const outcomeFor = oracleContract.proposalChallengeOutcome(idFor);
-  const outcomeAgainst = oracleContract.proposalChallengeOutcome(idAgainst);
+  // const idFor = oracleContract.outcomeIdFor(Address.fromBytes(_request.id));
+  // const idAgainst = oracleContract.outcomeIdAgainst(
+  //   Address.fromBytes(_request.id)
+  // );
+  // const outcomeFor = oracleContract.proposalChallengeOutcome(idFor);
+  // const outcomeAgainst = oracleContract.proposalChallengeOutcome(idAgainst);
 
-  // update request with status and answer
-  _request.status = requestContract.status();
-  _request.answer = requestContract.answer();
+  // // update request with status and answer
+  // _request.status = requestContract.status();
+  // _request.answer = requestContract.answer();
 
-  // reduce active proposals for proposer
-  _proposerStats.proposalsActive =
-    _proposerStats.proposalsActive.minus(INT32_ONE);
+  // // reduce active proposals for proposer
+  // _proposerStats.proposalsActive =
+  //   _proposerStats.proposalsActive.minus(INT32_ONE);
 
-  if (!outcomeFor && !outcomeAgainst) {
-    // not challenged at all
-    _dashboard.proposalsSuccessful =
-      _dashboard.proposalsSuccessful.plus(INT32_ONE);
+  // if (!outcomeFor && !outcomeAgainst) {
+  //   // not challenged at all
+  //   _dashboard.proposalsSuccessful =
+  //     _dashboard.proposalsSuccessful.plus(INT32_ONE);
 
-    // increas successful proposal for proposer
-    _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
-  } else {
-    // reduce dashboard challenges
-    _dashboard.activeChallenges = _dashboard.activeChallenges.minus(INT32_ONE);
+  //   // increas successful proposal for proposer
+  //   _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+  // } else {
+  //   // reduce dashboard challenges
+  //   _dashboard.activeChallenges = _dashboard.activeChallenges.minus(INT32_ONE);
 
-    // reduce active challenges for challenger
-    _challengerStats.challengesActive =
-      _challengerStats.challengesActive.minus(INT32_ONE);
+  //   // reduce active challenges for challenger
+  //   _challengerStats.challengesActive =
+  //     _challengerStats.challengesActive.minus(INT32_ONE);
 
-    if (outcomeFor) {
-      // challenged and challenged won
-      // add sucessful challenge
-      _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
-    } else {
-      // challenged and proposal won
+  //   if (outcomeFor) {
+  //     // challenged and challenged won
+  //     // add sucessful challenge
+  //     _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
+  //   } else {
+  //     // challenged and proposal won
 
-      // increase successful proposal
-      _dashboard.proposalsSuccessful =
-        _dashboard.proposalsSuccessful.plus(INT32_ONE);
+  //     // increase successful proposal
+  //     _dashboard.proposalsSuccessful =
+  //       _dashboard.proposalsSuccessful.plus(INT32_ONE);
 
-      // increase successful proposal for proposer
-      _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+  //     // increase successful proposal for proposer
+  //     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
 
-      // increase challenged and won proposal for proposer
-      _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
-    }
+  //     // increase challenged and won proposal for proposer
+  //     _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
+  //   }
 
-    // recalc success rate of challenger
-    _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-      _challengerStats.successful,
-      _challengerStats.challenges
-    );
-  }
+  //   // recalc success rate of challenger
+  //   _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+  //     _challengerStats.successful,
+  //     _challengerStats.challenges
+  //   );
+  // }
 
-  // recalc success rate
-  _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
-    _dashboard.proposalsSuccessful,
-    _dashboard.proposals
-  );
+  // // recalc success rate
+  // _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
+  //   _dashboard.proposalsSuccessful,
+  //   _dashboard.proposals
+  // );
 
-  // recalc success rate for proposer
-  _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-    _proposerStats.successful,
-    _proposerStats.proposals
-  );
+  // // recalc success rate for proposer
+  // _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+  //   _proposerStats.successful,
+  //   _proposerStats.proposals
+  // );
 
-  _request.save();
-  _proposerStats.save();
-  _challengerStats.save();
-  _dashboard.save();
+  // _request.save();
+  // _proposerStats.save();
+  // _challengerStats.save();
+  // _dashboard.save();
 }
 
 export function handleRewardDistributed(event: RewardDistributed): void {
-  // gather earnings for users
-  const _request = getRequest(event.params.request);
-  const _proposal = getRequestProposal(_request.id);
-  const _rewardedAmount = event.params.amount.toBigDecimal();
-  if (!_proposal.challenge) {
-    // not challenges
-    if (Address.fromBytes(_proposal.proposer) === event.params.recipient) {
-      const _proposer = getUserProposerStats(_proposal.proposer);
-      _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
-      _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
-      _proposer.save();
-    } else {
-      console.log("ERROR on unchallenged proposal");
-    }
-  } else {
-    const _challenge = getProposalChallenge(_request.id);
-    if (Address.fromBytes(_challenge.challenger) === event.params.recipient) {
-      // reward given for challenger (cant be reviewer)
-      const _challenger = getUserChallengerStats(_challenge.challenger);
-      _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
-      _challenger.earningsInUSD =
-        _challenger.earningsInUSD.plus(_rewardedAmount);
-      _challenger.save();
-    } else {
-      // reward given for reviewer
-      const _reviewer = getUserReviewerStats(event.params.recipient);
-      _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
-      _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
-      _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
-      _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
-      _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
-        _reviewer.successful,
-        _reviewer.reviews
-      );
-      _reviewer.save();
-    }
-  }
+  // // gather earnings for users
+  // const _request = getRequest(event.params.request);
+  // const _proposal = getRequestProposal(_request.id);
+  // const _rewardedAmount = event.params.amount.toBigDecimal();
+  // if (!_proposal.challenge) {
+  //   // not challenges
+  //   if (Address.fromBytes(_proposal.proposer) === event.params.recipient) {
+  //     const _proposer = getUserProposerStats(_proposal.proposer);
+  //     _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
+  //     _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
+  //     _proposer.save();
+  //   } else {
+  //     console.log("ERROR on unchallenged proposal");
+  //   }
+  // } else {
+  //   const _challenge = getProposalChallenge(_request.id);
+  //   if (Address.fromBytes(_challenge.challenger) === event.params.recipient) {
+  //     // reward given for challenger (cant be reviewer)
+  //     const _challenger = getUserChallengerStats(_challenge.challenger);
+  //     _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
+  //     _challenger.earningsInUSD =
+  //       _challenger.earningsInUSD.plus(_rewardedAmount);
+  //     _challenger.save();
+  //   } else {
+  //     // reward given for reviewer
+  //     const _reviewer = getUserReviewerStats(event.params.recipient);
+  //     _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
+  //     _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
+  //     _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
+  //     _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
+  //     _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
+  //       _reviewer.successful,
+  //       _reviewer.reviews
+  //     );
+  //     _reviewer.save();
+  //   }
+  // }
 }
 
 export function handleBondRefunded(event: BondRefunded): void {

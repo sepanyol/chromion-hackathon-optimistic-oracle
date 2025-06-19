@@ -10,7 +10,7 @@ dataSources:
     source:
       address: "0xCe12403260F74aFDE59477a6dAfC33bCcC205371"
       abi: OracleCoordinator
-      startBlock: 42036486
+      startBlock: 42047099
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -55,9 +55,9 @@ templates:
       language: wasm/assemblyscript
       entities:
         - Request
-        # - RequestScoringHeatmap
-        # - RequestScoringRatings
-        # - RequestScoring
+        - RequestScoringHeatmap
+        - RequestScoringRatings
+        - RequestScoring
       abis:
         - name: RequestContract
           file: ./abis/RequestContract.json
