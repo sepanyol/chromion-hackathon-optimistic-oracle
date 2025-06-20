@@ -15,54 +15,10 @@ https://book.getfoundry.sh/
 
 ## Usage
 
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
+### Test Smart Contracts
 
 ```shell
 $ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
 ```
 
 ### View Coverage
@@ -71,33 +27,57 @@ $ cast --help
 $ npm run coverage
 ```
 
-### Deployment on localfork
+## Oracle Contracts
 
 Requirements
 
 - create key store account ORACLE_DEPLOYER
 - this wallet needs gas tokens to work
+- if you want to perform on a local fork, you should use `anvil -f avalancheFuji` for this
 
-#### Start up oracle chain
-
-```shell
-$ anvil -f avalancheFuji
-```
-
-#### Deploy contracts
+### Deploy
 
 ```shell
 # Deploy on local fork
 $ forge script ./script/DeployTestnet.s.sol:DeployTestnet --fork-url http://127.0.0.1:8545 --account ORACLE_DEPLOYER --broadcast
 # Deploy on testnets
 $ forge script ./script/DeployTestnet.s.sol:DeployTestnet --account ORACLE_DEPLOYER --broadcast
+# Deploy on mainnet
+# $ forge script ./script/DeployMainnet.s.sol:DeployMainnet --account ORACLE_DEPLOYER --broadcast
 ```
 
-#### Setup fixtures oracle chain (should only be used on testnet)
+### Setup Fixtures
 
 ```shell
-# on local fork
+# local fork
 $ forge script script/SetupFixturesOracleChain.s.sol:SetupFixturesOracleChain --fork-url http://127.0.0.1:8545 --account ORACLE_DEPLOYER --broadcast
-# on testnet
+# testnet
 $ forge script script/SetupFixturesOracleChain.s.sol:SetupFixturesOracleChain --account ORACLE_DEPLOYER --broadcast
+
+```
+
+## Subgraph
+
+```shell
+$ graph deploy --ipfs https://ipfs.network.thegraph.com demo-oracle
+```
+
+## AI Scoring Feature
+
+```shell
+$ cd ai-scorer
+```
+
+### Start ai scoring checker
+
+One time:
+
+```shell
+$ npm run execute
+```
+
+Loop time:
+
+```shell
+$ npm run execute-loop
 ```

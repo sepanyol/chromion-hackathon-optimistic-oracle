@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "tsup src/index.ts --format esm --out-dir dist",
-    "execute": "npm run build && node ./dist/index.js"
+    "execute": "npm run build && node ./dist/index.js",
+    "build-loop": "tsup src/index-loop.ts --format esm --out-dir dist",
+    "execute-loop": "npm run build-loop && node ./dist/index-loop.js"
   },
   "keywords": [],
   "author": "",
