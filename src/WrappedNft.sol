@@ -12,6 +12,7 @@ contract WrappedNft is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUP
 
     event DepositedNft(address indexed user, uint256 wNft, address indexed requesterNft, uint256 nftId);
     event FeedbackSubmitted(address indexed requester, string message, bool accepted);
+    event WithdrawnNft(address indexed toRequester, uint256 tokenId, uint256 nftId);
 
     struct Feedback {
         address requester;
@@ -47,7 +48,7 @@ contract WrappedNft is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUP
         require(msg.sender != address(0), "Invalid address");
         require(_NftId > 0, "Invalid token ID");
 
-        IERC721(requesterNft).transfer(msg.sender, address(this), _NftId);
+        IERC721(requesterNft)._transfer(msg.sender, address(this), _NftId);
         
         
         ownershipId[wNftId++][requesterNft] = _NftId;
