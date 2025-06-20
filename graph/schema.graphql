@@ -29,10 +29,10 @@ type RequestScoringRatings @entity(immutable: true) {
 
 type RequestScoring @entity(immutable: true) {
   id: Bytes!
-  score: BigInt!
+  score: BigInt! 
   heatmap: RequestScoringHeatmap!
   ratings: RequestScoringRatings!
-  final_decision: String!
+  final_decision: BigInt! 
 }
 
 type Request @entity(immutable: false) {

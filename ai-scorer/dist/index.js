@@ -336,7 +336,7 @@ var SCORING_REGISTRY_ADDERSS = `${process.env.SCORING_REGISTRY_ADDRESS}`;
 var handler = async () => {
   const RequestQuery = gql`
     query {
-      requests(where: { scoring: null }, first: 1) {
+      requests(where: { scoring: null }, first: 10) {
         scoring {
           id
         }

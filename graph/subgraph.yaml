@@ -46,9 +46,13 @@ dataSources:
         - event: BondRefunded(indexed address,indexed address,uint256)
           handler: handleBondRefunded
       file: ./src/oracle-coordinator.ts
-templates:
-  - kind: file/ipfs
-    name: RequestContextEvaluation
+  - kind: ethereum
+    name: RequestScoringRegistry
+    network: fuji
+    source:
+      address: "0xA70Fffa215348afBB607BB85DC9f9D43D2039c1a"
+      abi: RequestScoringRegistry
+      startBlock: 42170997
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -59,10 +63,13 @@ templates:
         - RequestScoringRatings
         - RequestScoring
       abis:
-        - name: RequestContract
-          file: ./abis/RequestContract.json
-      handler: handleEvaluateContext
-      file: ./src/request-contract.ts
+        - name: RequestScoringRegistry
+          file: ./abis/RequestScoringRegistry.json
+      eventHandlers:
+        - event: AddedScoring(indexed address,bytes16)
+          handler: handleAddedScoring
+      file: ./src/scoring-registry.ts
+templates:
   - name: RequestContract
     kind: ethereum/contract
     network: fuji

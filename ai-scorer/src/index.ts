@@ -30,7 +30,7 @@ const SCORING_REGISTRY_ADDERSS =
 export const handler = async () => {
   const RequestQuery = gql`
     query {
-      requests(where: { scoring: null }, first: 1) {
+      requests(where: { scoring: null }, first: 10) {
         scoring {
           id
         }
