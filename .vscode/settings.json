@@ -1,12 +1,7 @@
 {
   "solidity.packageDefaultDependenciesContractsDirectory": "src",
   "solidity.packageDefaultDependenciesDirectory": "lib",
-  "wake.compiler.solc.remappings": [
-    "ds-test/=lib/forge-std/lib/ds-test/src/",
-    "forge-std/=lib/forge-std/src/",
-    "@openzeppelin/=lib/openzeppelin-contracts/",
-    "@chainlink/contracts/=lib/chainlink/contracts/",
-    "@chainlink/contracts-ccip/=lib/chainlink-ccip/chains/evm/",
-    "@chainlink/local/=node_modules/@chainlink/local/"
-  ]
+  "solidity.compileUsingRemoteVersion": "v0.8.24+commit.e11b9ed9"
+ 
+
 }
