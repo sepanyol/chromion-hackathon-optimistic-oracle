@@ -37,9 +37,11 @@ contract SetupFixturesOracleChain is BaseScript {
 
         usdc = IERC20(vm.envAddress("AVALANCHE_FUJI_UTILITY_TOKEN_ADDRESS"));
         oracle = IOracleCoordinator(
-            readAddress(block.chainid, "OracleCoordinator")
+            _readAddress(block.chainid, "OracleCoordinator")
         );
-        factory = IRequestFactory(readAddress(block.chainid, "RequestFactory"));
+        factory = IRequestFactory(
+            _readAddress(block.chainid, "RequestFactory")
+        );
 
         setUpFixtures_localfork();
     }
