@@ -29,14 +29,17 @@ export async function performScoring(
 ): Promise<RequestScoring> {
   const resolved = await resolveUrls(context);
   console.log(`...perform scoring`);
-  const prompt = `Question: ${question}\n\nContext: ${resolved}`;
+  const prompt = `Question: ${question}\n\nContext: ${resolved.slice(
+    0,
+    10000
+  )}`;
   const response = await openai.chat.completions.create({
-    model: "gpt-4",
+    model: "o4-mini",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
-    temperature: 0.3,
+    // temperature: 0.3,
   });
   const content = response.choices[0].message?.content ?? "{}";
   console.log(`...received scoring`);
