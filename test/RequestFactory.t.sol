@@ -131,9 +131,9 @@ contract RequestFactoryTest is Test {
             oracleRelayer,
             abi.encodeWithSelector(
                 IOracleRelayer.chainIdToChainSelector.selector,
-                block.chainid
+                1
             ),
-            abi.encode(1337)
+            abi.encode(uint64(1337))
         );
 
         vm.mockCall(
