@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {IOracleRelayer} from "../src/interfaces/IOracleRelayer.sol";
 import {IOracleCoordinator} from "../src/interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "../src/interfaces/IBaseRequestContract.sol";
 
@@ -10,9 +11,8 @@ import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {RequestTypes} from "../src/types/RequestTypes.sol";
 
 import {MockUSDC} from "../src/mocks/MockUSDC.sol";
+import {MockOracleRelayer} from "../src/mocks/MockOracleRelayer.sol";
 import {MockBaseRequestContract} from "../src/mocks/MockBaseRequestContract.sol";
-
-// import {console} from "forge-std/console.sol";
 
 contract OracleCoordinatorTest is Test {
     OracleCoordinator coordinator;
@@ -27,10 +27,16 @@ contract OracleCoordinatorTest is Test {
     address request;
     address requester = address(0x1234);
     MockBaseRequestContract requestContract;
+    MockOracleRelayer oracleRelayer;
 
     function setUp() public {
         usdc = new MockUSDC();
-        coordinator = new OracleCoordinator(platform, address(usdc));
+        oracleRelayer = new MockOracleRelayer();
+        coordinator = new OracleCoordinator(
+            platform,
+            address(oracleRelayer),
+            address(usdc)
+        );
 
         // GRANT ROLES
         vm.startPrank(platform);
@@ -59,6 +65,13 @@ contract OracleCoordinatorTest is Test {
 
         vm.prank(factory);
         usdc.approve(address(coordinator), type(uint256).max);
+
+        // origin address mock for status changes
+        vm.mockCall(
+            request,
+            abi.encodeWithSelector(IBaseRequestContract.originAddress.selector),
+            abi.encode(abi.encode(address(0)))
+        );
 
         // register upfront
         vm.prank(factory);
@@ -111,10 +124,69 @@ contract OracleCoordinatorTest is Test {
             abi.encode(simRewardAmount)
         );
 
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.originAddress.selector),
+            abi.encode(abi.encode(address(0)))
+        );
+
         deal(address(usdc), factory, 200e6);
 
         vm.prank(factory);
         usdc.approve(address(coordinator), type(uint256).max);
+
+        vm.expectEmit(true, true, false, false);
+        emit IOracleCoordinator.RequestRegistered(
+            simRequest,
+            abi.encode(simRequester) // bytes
+        );
+
+        vm.prank(factory);
+        coordinator.registerRequest(simRequest);
+    }
+
+    function test_registerRequest_crossChain_Successful() public {
+        address simRequest = address(0x1212);
+        address simRequester = address(0x2323);
+        uint256 simRewardAmount = 100e6;
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.requester.selector),
+            abi.encode(abi.encode(simRequester))
+        );
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.rewardAmount.selector),
+            abi.encode(simRewardAmount)
+        );
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.originAddress.selector),
+            abi.encode(abi.encode(address(0xdead)))
+        );
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IBaseRequestContract.originChainId.selector),
+            abi.encode(abi.encode(1337))
+        );
+
+        vm.mockCall(
+            simRequest,
+            abi.encodeWithSelector(IOracleRelayer.chainIdToChainSelector.selector),
+            abi.encode(1337)
+        );
+
+        deal(address(usdc), factory, 200e6);
+
+        vm.prank(factory);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        vm.expectEmit(false, false, false, false);
+        emit MockOracleRelayer.event_sendMessage();
 
         vm.expectEmit(true, true, false, false);
         emit IOracleCoordinator.RequestRegistered(

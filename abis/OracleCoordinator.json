@@ -8,6 +8,11 @@
         "internalType": "address"
       },
       {
+        "name": "_relayer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_usdc",
         "type": "address",
         "internalType": "address"
@@ -372,6 +377,35 @@
   },
   {
     "type": "function",
+    "name": "getRequests",
+    "inputs": [
+      {
+        "name": "_limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_requests",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "_totalCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getReviewTally",
     "inputs": [
       {
@@ -592,6 +626,44 @@
   },
   {
     "type": "function",
+    "name": "outcomeIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "outcomeIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
     "name": "performUpkeep",
     "inputs": [
       {
@@ -612,6 +684,25 @@
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "proposalChallengeOutcome",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -649,6 +740,19 @@
   },
   {
     "type": "function",
+    "name": "relayer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IOracleRelayer"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "renounceRole",
     "inputs": [
       {
@@ -683,6 +787,54 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdAgainst",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "reviewerVoteIdFor",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_id",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -834,25 +986,6 @@
         "type": "bytes",
         "indexed": false,
         "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RequestRegistered",
-    "inputs": [
-      {
-        "name": "request",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "requester",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
       }
     ],
     "anonymous": false

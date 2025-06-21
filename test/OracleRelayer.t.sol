@@ -2,13 +2,18 @@
 pragma solidity 0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {OracleRelayer} from "../src/OracleRelayer.sol";
+import {OracleRelayer, IERC20} from "../src/OracleRelayer.sol";
 import {MockUSDC} from "../src/mocks/MockUSDC.sol";
 import {LINK as MockLINK} from "../src/mocks/MockLink.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/contracts/interfaces/IRouterClient.sol";
 import {Client} from "@chainlink/contracts-ccip/contracts/libraries/Client.sol";
 
 //import {CCIPLocalSimulatorFork} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
+interface Callee {
+    function doCall(uint256) external;
+
+    function doCallWithReturn(uint256) external returns (bool);
+}
 
 contract OracleRelayerTest is Test {
     // Chain Selectors for different networks
@@ -32,12 +37,18 @@ contract OracleRelayerTest is Test {
     uint256 ethereumSepoliaFork;
     uint256 arbitrumSepoliaFork;
 
+    uint256 baseSepoliaChainId;
+    uint256 avalancheFujiChainId;
+
     // CCIPLocalSimulatorFork public ccipSimulatorFork;
 
     OracleRelayer public sourceOracleRelayer;
+    MockUSDC public mockUSDCSource;
+    MockLINK public mockLINKSource;
+
     OracleRelayer public destOracleRelayer;
-    MockUSDC public mockUSDC;
-    MockLINK public mockLINK;
+    MockUSDC public mockUSDCDest;
+    MockLINK public mockLINKDest;
     address public owner;
 
     function setUp() public {
@@ -60,20 +71,25 @@ contract OracleRelayerTest is Test {
 
         // Deploy contracts on Base Sepolia
         vm.selectFork(baseSepoliaFork);
-        mockUSDC = new MockUSDC();
-        mockLINK = new MockLINK();
+        baseSepoliaChainId = block.chainid;
+        mockUSDCSource = new MockUSDC();
+        mockLINKSource = new MockLINK();
         sourceOracleRelayer = new OracleRelayer(
-            address(mockLINK),
+            address(mockLINKSource),
             BASE_SEPOLIA_ROUTER
         );
+        vm.makePersistent(address(sourceOracleRelayer));
 
         // Deploy contracts on Avalanche Fuji
         vm.selectFork(avalancheFujiFork);
-        MockLINK destMockLINK = new MockLINK();
+        avalancheFujiChainId = block.chainid;
+        mockUSDCDest = new MockUSDC();
+        mockLINKDest = new MockLINK();
         destOracleRelayer = new OracleRelayer(
-            address(destMockLINK),
+            address(mockLINKDest),
             AVALANCHE_FUJI_ROUTER
         );
+        vm.makePersistent(address(destOracleRelayer));
     }
 
     function testCrossChainMessage() public {
@@ -81,17 +97,26 @@ contract OracleRelayerTest is Test {
         vm.selectFork(baseSepoliaFork);
 
         // Allowlist destination chain (Avalanche Fuji)
-        sourceOracleRelayer.allowlistDestinationChain(
+        sourceOracleRelayer.addDestinationRelayer(
+            avalancheFujiChainId,
             AVALANCHE_FUJI_SELECTOR,
-            true
+            address(destOracleRelayer)
         );
 
+        // allow test contract to send
+        sourceOracleRelayer.addSenders(address(this));
+
         // Prepare message data
-        address receiver = address(0xCAFE);
-        bytes memory message = abi.encode("Hello from Base Sepolia");
+        address callee = makeAddr("callee");
+        uint256 calleeParam = uint256(1337);
+        bytes memory calleeSig = abi.encodeWithSelector(
+            Callee.doCall.selector,
+            calleeParam
+        );
+        bytes memory data = abi.encode(callee, calleeSig);
 
         // Mint and approve LINK tokens for fees
-        mockLINK.mint(address(sourceOracleRelayer), 1000e18);
+        mockLINKSource.mint(address(sourceOracleRelayer), 1000e18);
 
         // Mock the router calls for sending message
         vm.mockCall(
@@ -110,8 +135,7 @@ contract OracleRelayerTest is Test {
         // Send message to Avalanche Fuji (no tokens)
         bytes32 messageId = sourceOracleRelayer.sendMessage(
             AVALANCHE_FUJI_SELECTOR,
-            receiver,
-            message,
+            data,
             false // pay with LINK
         );
 
@@ -121,11 +145,14 @@ contract OracleRelayerTest is Test {
         vm.selectFork(avalancheFujiFork);
 
         // Allowlist source chain and sender
-        destOracleRelayer.allowlistSourceChainAndSender(
+        destOracleRelayer.addDestinationRelayer(
+            baseSepoliaChainId,
             BASE_SEPOLIA_SELECTOR,
-            address(sourceOracleRelayer),
-            true
+            address(sourceOracleRelayer)
         );
+
+        // allow test contract to send
+        destOracleRelayer.addSenders(address(this));
 
         // Since your contract always accesses destTokenAmounts[0], we need to provide at least one token
         // even for "message only" tests. Use a dummy token with 0 amount.
@@ -133,74 +160,59 @@ contract OracleRelayerTest is Test {
             messageId: messageId,
             sourceChainSelector: BASE_SEPOLIA_SELECTOR,
             sender: abi.encode(address(sourceOracleRelayer)),
-            data: abi.encode(receiver, message),
-            destTokenAmounts: new Client.EVMTokenAmount[](1) // Must have at least 1 element
+            data: data,
+            destTokenAmounts: new Client.EVMTokenAmount[](0) // Must have at least 1 element
         });
 
-        // Add dummy token with 0 amount to prevent array bounds error
-        any2evmMessage.destTokenAmounts[0] = Client.EVMTokenAmount({
-            token: address(mockUSDC), // Dummy token
-            amount: 0 // No actual tokens
-        });
+        vm.mockCall(callee, calleeSig, abi.encode(""));
 
         // Receive message
         destOracleRelayer.ccipReceive(any2evmMessage);
     }
 
-    function testAllowlistDestinationChain() public {
+    function test_addDestinationRelayer_Successfull() public {
         vm.selectFork(baseSepoliaFork);
-        uint64 chainId = 1234;
-        sourceOracleRelayer.allowlistDestinationChain(chainId, true);
-        assertTrue(sourceOracleRelayer.allowlistedDestinationChains(chainId));
-        sourceOracleRelayer.allowlistDestinationChain(chainId, false);
-        assertFalse(sourceOracleRelayer.allowlistedDestinationChains(chainId));
-    }
-
-    function testAllowlistSourceChainAndSender() public {
-        vm.selectFork(baseSepoliaFork);
-        uint64 chainId = 5678;
-        address sender = address(0xBEEF);
-        sourceOracleRelayer.allowlistSourceChainAndSender(
+        uint256 chainId = 1234;
+        uint64 chainSelector = 1234;
+        sourceOracleRelayer.addDestinationRelayer(
             chainId,
-            sender,
-            true
+            chainSelector,
+            address(0x1234)
         );
-        assertTrue(
-            sourceOracleRelayer.allowlistedSourceChainAndSender(chainId, sender)
+        assertEq(
+            sourceOracleRelayer.allowedDestinationRelayers(chainSelector),
+            abi.encode(address(0x1234))
         );
-        sourceOracleRelayer.allowlistSourceChainAndSender(
-            chainId,
-            sender,
-            false
-        );
-        assertFalse(
-            sourceOracleRelayer.allowlistedSourceChainAndSender(chainId, sender)
+        sourceOracleRelayer.removeDestinationRelayer(chainId);
+        assertEq(
+            sourceOracleRelayer.allowedDestinationRelayers(chainSelector),
+            bytes("")
         );
     }
 
-    function testSendMessageRevertsIfNotAllowlisted() public {
+    function test_sendMessage_RevertIf_InvalidSender() public {
         vm.selectFork(baseSepoliaFork);
         uint64 chainId = 9999;
-        address receiver = address(0xCAFE);
         bytes memory message = abi.encode("Hello");
         bool payWithNative = false;
-        vm.expectRevert("Destination chain not allowlisted");
-        sourceOracleRelayer.sendMessage(
-            chainId,
-            receiver,
-            message,
-            payWithNative
-        );
+        vm.expectRevert("Invalid sender");
+        sourceOracleRelayer.sendMessage(chainId, message, payWithNative);
     }
 
-    function testSendMessageWithToken() public {
+    function test_sendMessageWithToken_Successful() public {
         vm.selectFork(baseSepoliaFork);
 
-        uint64 chainId = 1234;
-        sourceOracleRelayer.allowlistDestinationChain(chainId, true);
-        address receiver = address(0xCAFE);
+        uint256 chainId = 1234;
+        uint64 chainSelector = 1234;
+        address testRelayer = address(0x1234);
+        sourceOracleRelayer.addDestinationRelayer(
+            chainId,
+            chainSelector,
+            testRelayer
+        );
+        sourceOracleRelayer.addSenders(address(this));
         bytes memory message = abi.encode("Hello");
-        address token = address(mockUSDC);
+        address token = address(mockUSDCSource);
         uint256 amount = 100e6;
         bool includeTokens = true;
         bool payWithNative = false;
@@ -212,16 +224,16 @@ contract OracleRelayerTest is Test {
 
         // Create the expected message structure
         Client.EVM2AnyMessage memory expectedMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(receiver),
+            receiver: abi.encode(testRelayer),
             data: message,
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(
                 Client.GenericExtraArgsV2({
-                    gasLimit: 200_000,
+                    gasLimit: 900_000,
                     allowOutOfOrderExecution: false
                 })
             ),
-            feeToken: address(mockLINK)
+            feeToken: address(mockLINKSource)
         });
 
         // Mock the router's getFee function
@@ -229,10 +241,10 @@ contract OracleRelayerTest is Test {
             BASE_SEPOLIA_ROUTER,
             abi.encodeWithSelector(
                 IRouterClient.getFee.selector,
-                chainId,
+                chainSelector,
                 expectedMessage
             ),
-            abi.encode(1000e18)
+            abi.encode(uint256(10e18))
         );
 
         // Mock the router's ccipSend function
@@ -241,21 +253,20 @@ contract OracleRelayerTest is Test {
             BASE_SEPOLIA_ROUTER,
             abi.encodeWithSelector(
                 IRouterClient.ccipSend.selector,
-                chainId,
+                chainSelector,
                 expectedMessage
             ),
             abi.encode(expectedMessageId)
         );
 
         // Mint and approve tokens
-        mockUSDC.mint(address(this), amount);
-        mockUSDC.approve(address(sourceOracleRelayer), amount);
-        mockLINK.mint(address(sourceOracleRelayer), 1000e18);
+        mockUSDCSource.mint(address(this), amount);
+        mockUSDCSource.approve(address(sourceOracleRelayer), amount);
+        mockLINKSource.mint(address(sourceOracleRelayer), 10e18);
 
         // Send message with token
         bytes32 messageId = sourceOracleRelayer.sendMessageWithToken(
-            chainId,
-            receiver,
+            chainSelector,
             message,
             token,
             amount,
@@ -266,15 +277,16 @@ contract OracleRelayerTest is Test {
         assertEq(messageId, expectedMessageId);
     }
 
-    function testCcipReceive() public {
+    function test_ccipReceive_Successful() public {
         vm.selectFork(avalancheFujiFork);
 
-        uint64 sourceChainId = 5678;
+        uint256 sourceChainId = 5678;
+        uint64 sourceChainSelector = 5678;
         address sender = address(0xBEEF);
-        destOracleRelayer.allowlistSourceChainAndSender(
+        destOracleRelayer.addDestinationRelayer(
             sourceChainId,
-            sender,
-            true
+            sourceChainSelector,
+            sender
         );
 
         bytes32 messageId = bytes32(uint256(0x456));
@@ -284,47 +296,48 @@ contract OracleRelayerTest is Test {
         // Since your contract always accesses destTokenAmounts[0], provide dummy token
         Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
             messageId: messageId,
-            sourceChainSelector: sourceChainId,
+            sourceChainSelector: sourceChainSelector,
             sender: abi.encode(sender),
             data: abi.encode(callee, abi.encode(text)),
-            destTokenAmounts: new Client.EVMTokenAmount[](1) // Must have at least 1 element
-        });
-
-        // Add dummy token with 0 amount
-        message.destTokenAmounts[0] = Client.EVMTokenAmount({
-            token: address(mockUSDC),
-            amount: 0
+            destTokenAmounts: new Client.EVMTokenAmount[](0) // Must have at least 1 element
         });
 
         // This should not revert
         destOracleRelayer.ccipReceive(message);
     }
 
-    function testCcipReceiveWithTokens() public {
+    function test_ccipReceive_WithTokens_Successful() public {
         vm.selectFork(avalancheFujiFork);
 
-        uint64 sourceChainId = 5678;
+        uint256 sourceChainId = 5678;
+        uint64 sourceChainSelector = 5678;
         address sender = address(0xBEEF);
-        destOracleRelayer.allowlistSourceChainAndSender(
+        destOracleRelayer.addDestinationRelayer(
             sourceChainId,
-            sender,
-            true
+            sourceChainSelector,
+            sender
         );
 
         bytes32 messageId = bytes32(uint256(0x456));
-        address token = address(mockUSDC);
+        address token = address(mockUSDCSource);
         uint256 amount = 200e6;
-        address callee = address(0xDEAD);
-        string memory text = "Test Data";
+        address callee = makeAddr("callee");
+        uint256 calleeParam = uint256(1337);
+        bytes memory calleeSig = abi.encodeWithSelector(
+            Callee.doCall.selector,
+            calleeParam
+        );
+        bytes memory data = abi.encode(callee, calleeSig);
 
         // Create message with tokens - ensure proper data encoding
         Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
             messageId: messageId,
-            sourceChainSelector: sourceChainId,
+            sourceChainSelector: sourceChainSelector,
             sender: abi.encode(sender),
-            data: abi.encode(callee, abi.encode(text)), // Double encoding to match expected format
+            data: data,
             destTokenAmounts: new Client.EVMTokenAmount[](1)
         });
+
         message.destTokenAmounts[0] = Client.EVMTokenAmount({
             token: token,
             amount: amount
@@ -335,7 +348,7 @@ contract OracleRelayerTest is Test {
         vm.mockCall(
             token,
             abi.encodeWithSelector(
-                bytes4(keccak256("balanceOf(address)")),
+                IERC20.balanceOf.selector,
                 address(destOracleRelayer)
             ),
             abi.encode(amount)
@@ -343,19 +356,17 @@ contract OracleRelayerTest is Test {
 
         vm.mockCall(
             token,
-            abi.encodeWithSelector(
-                bytes4(keccak256("transfer(address,uint256)")),
-                callee,
-                amount
-            ),
+            abi.encodeWithSelector(IERC20.approve.selector, callee, amount),
             abi.encode(true)
         );
+
+        vm.mockCall(callee, calleeSig, bytes(""));
 
         // This should not revert
         destOracleRelayer.ccipReceive(message);
     }
 
-    function testReceiveMessageRevertsIfNotAllowlisted() public {
+    function test_ccipReceive_RevertIf_NotAllowlisted() public {
         vm.selectFork(avalancheFujiFork);
 
         uint64 sourceChainId = 9999; // Not allowlisted
@@ -371,15 +382,102 @@ contract OracleRelayerTest is Test {
             sourceChainSelector: sourceChainId,
             sender: abi.encode(sender),
             data: abi.encode(callee, message),
-            destTokenAmounts: new Client.EVMTokenAmount[](1)
-        });
-
-        any2evmMessage.destTokenAmounts[0] = Client.EVMTokenAmount({
-            token: address(mockUSDC),
-            amount: 0
+            destTokenAmounts: new Client.EVMTokenAmount[](0)
         });
 
         vm.expectRevert("Source chain or sender not allowlisted");
         destOracleRelayer.ccipReceive(any2evmMessage);
     }
+
+    function test_ccipReceive_RevertIf_CalleeCallFails() public {
+        uint256 sourceChainId = 9999; // Not allowlisted
+        uint64 sourceChainSelector = 9999; // Not allowlisted
+        address sender = address(0xBEEF);
+
+        bytes32 messageId = bytes32(uint256(0x456));
+        address callee = address(0xDEAD);
+        uint256 calleeParam = uint256(1337);
+        bytes memory calleeSig = abi.encodeWithSelector(
+            Callee.doCallWithReturn.selector,
+            calleeParam
+        );
+        bytes memory data = abi.encode(callee, calleeSig);
+
+        // Even for failing tests, need to provide token array to prevent bounds error
+        Client.Any2EVMMessage memory any2evmMessage = Client.Any2EVMMessage({
+            messageId: messageId,
+            sourceChainSelector: sourceChainSelector,
+            sender: abi.encode(sender),
+            data: data,
+            destTokenAmounts: new Client.EVMTokenAmount[](0)
+        });
+
+        vm.selectFork(avalancheFujiFork);
+
+        // add this to receive proper message
+        mockLINKDest.mint(address(destOracleRelayer), 1e18);
+        destOracleRelayer.addDestinationRelayer(
+            sourceChainId,
+            sourceChainSelector,
+            sender
+        );
+
+        vm.mockCallRevert(callee, calleeSig, bytes(""));
+
+        vm.expectRevert("Failed call to callee");
+        destOracleRelayer.ccipReceive(any2evmMessage);
+    }
+
+    function test_recoverAssets_Ether_Successful() public {
+        vm.selectFork(baseSepoliaFork);
+
+        address _relayer = address(sourceOracleRelayer);
+
+        deal(_relayer, 1 ether);
+
+        assertEq(
+            _relayer.balance,
+            1 ether,
+            "Relayer should have a balance of 1 ether"
+        );
+
+        uint256 _balanceBefore = address(this).balance;
+
+        sourceOracleRelayer.recoverAsset(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        );
+
+        assertEq(_relayer.balance, 0, "Relayer should have no balance");
+        assertEq(address(this).balance - _balanceBefore, 1 ether);
+    }
+
+    function test_recoverAssets_Address_Successful() public {
+        vm.selectFork(baseSepoliaFork);
+        mockLINKSource.mint(address(sourceOracleRelayer), 1e18);
+        uint256 _balanceBefore = mockLINKSource.balanceOf(address(this));
+        sourceOracleRelayer.recoverAsset(address(mockLINKSource));
+        assertEq(
+            mockLINKSource.balanceOf(address(sourceOracleRelayer)),
+            0,
+            "Relayer should have no asset balance"
+        );
+        assertEq(
+            mockLINKSource.balanceOf(address(this)) - _balanceBefore,
+            1e18
+        );
+    }
+
+    function test_recoverAssets_RevertIf_InsufficientBalances() public {
+        vm.selectFork(baseSepoliaFork);
+
+        vm.expectRevert("Native balance insufficient");
+        sourceOracleRelayer.recoverAsset(
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE)
+        );
+
+        vm.expectRevert("Asset balance insufficient");
+        sourceOracleRelayer.recoverAsset(address(mockLINKSource));
+    }
+
+    receive() external payable {}
 }

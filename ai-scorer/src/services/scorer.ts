@@ -2,17 +2,46 @@ import { openai } from "../config/openai";
 import { systemPrompt } from "../utils/prompts";
 import { resolveUrls } from "./urlResolver";
 
-export async function performScoring(question: string, context: string) {
+type RequestScoring = {
+  score: number;
+  heatmap: {
+    clarity: number;
+    logical_consistency: number;
+    completeness: number;
+    source_trust: number;
+    ambiguity: number;
+    time_reference: number;
+  };
+  ratings: {
+    clarity: number;
+    logical_consistency: number;
+    completeness: number;
+    source_trust: number;
+    ambiguity: number;
+    time_reference: number;
+  };
+  final_decision: number;
+};
+
+export async function performScoring(
+  question: string,
+  context: string
+): Promise<RequestScoring> {
   const resolved = await resolveUrls(context);
-  const prompt = `Question: ${question}\n\nContext: ${resolved}`;
+  console.log(`...perform scoring`);
+  const prompt = `Question: ${question}\n\nContext: ${resolved.slice(
+    0,
+    10000
+  )}`;
   const response = await openai.chat.completions.create({
-    model: "gpt-4",
+    model: "o4-mini",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
-    temperature: 0.3,
+    // temperature: 0.3,
   });
   const content = response.choices[0].message?.content ?? "{}";
-  return JSON.parse(content);
+  console.log(`...received scoring`);
+  return JSON.parse(content) as RequestScoring;
 }

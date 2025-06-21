@@ -2,15 +2,15 @@
 pragma solidity 0.8.24;
 
 import "./BaseScript.sol";
-import "./Deploy.s.sol";
+import "./DeployTestnet.s.sol";
 import "./SetupFixturesOracleChain.s.sol";
 
 contract DeployAndSetup is BaseScript {
     function run() public {
-        Deploy _deploy = new Deploy();
-        SetupFixturesOracleChain _setupFixturesOracleChain = new SetupFixturesOracleChain();
+        // DeployTestnet _deploy = new Deploy();
+        // SetupFixturesOracleChain _setupFixturesOracleChain = new SetupFixturesOracleChain();
 
-        _deploy.run();
-        _setupFixturesOracleChain.run();
+        // _deploy.run();
+        // _setupFixturesOracleChain.run();
     }
 }

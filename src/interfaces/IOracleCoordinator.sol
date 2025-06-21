@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import {RequestTypes} from "../types/RequestTypes.sol";
+import {IBaseRequestContract} from "../interfaces/IBaseRequestContract.sol";
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
@@ -54,9 +55,6 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     // ============================
     // ========= Events ===========
     // ============================
-
-    /// @notice Emitted when a new request is registered
-    event RequestRegistered(address indexed request, address indexed requester);
 
     /// @notice Emitted when a new request is registered from non-EVM chain
     event RequestRegistered(address indexed request, bytes requester);
@@ -172,6 +170,45 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
 
     /// @notice ERC20 token used for bonds and rewards (e.g., USDC)
     function usdc() external view returns (IERC20);
+
+    /// @notice Challenge outcome a specific proposel (computed bytes32)
+    function proposalChallengeOutcome(bytes32) external view returns (bool);
+
+    /// Returns the computed outcome id for a challenged proposal of a given request
+    /// @param _request address of the request
+    function outcomeIdFor(address _request) external pure returns (bytes32 _id);
+
+    /// Returns the computed outcome id against a challenged proposal of a given request
+    /// @param _request address of the request
+    function outcomeIdAgainst(
+        address _request
+    ) external pure returns (bytes32 _id);
+
+    /// Returns the computed reviewer vote for a challenged proposal of a given request
+    /// @param _request address of the request
+    /// @param _reviewer address of the reviewer
+    function reviewerVoteIdFor(
+        address _request,
+        address _reviewer
+    ) external pure returns (bytes32 _id);
+
+    /// Returns the computed reviewer vote against a challenged proposal of a given request
+    /// @param _request address of the request
+    /// @param _reviewer address of the reviewer
+    function reviewerVoteIdAgainst(
+        address _request,
+        address _reviewer
+    ) external pure returns (bytes32 _id);
+
+    /// Returns a list of protocols based on the service provider address
+    /// @param _limit amount of requests
+    /// @param _offset index to start from until limit
+    /// @return _requests list of requests
+    /// @return _totalCount total amount of requests
+    function getRequests(
+        uint256 _limit,
+        uint256 _offset
+    ) external view returns (address[] memory _requests, uint256 _totalCount);
 
     /// @notice Returns the full proposal information for a given request
     /// @param _request The address of the request

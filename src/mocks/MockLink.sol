@@ -3,8 +3,6 @@ pragma solidity 0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-
-
 contract LINK is ERC20 {
     constructor() ERC20("Mock LINK", "mLINK") {
         _mint(msg.sender, 1_000_000e18);
@@ -17,6 +15,4 @@ contract LINK is ERC20 {
     function decimals() public pure override returns (uint8) {
         return 18;
     }
-
-
 }

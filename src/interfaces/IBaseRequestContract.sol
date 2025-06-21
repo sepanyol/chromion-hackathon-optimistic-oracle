@@ -7,17 +7,9 @@ import {RequestTypes} from "../types/RequestTypes.sol";
 /// @notice Interface for interacting with request contracts across chains
 /// @dev Used by the OracleCoordinator, Relayer, and other system modules
 interface IBaseRequestContract {
-    /// @notice Emitted when the request is initialized
-    /// @param requester The user who created the request
-    event RequestInitialized(address indexed requester);
-
     /// @notice Emitted when the request is initialized from another chain
     /// @param requester The user who created the request
-    event RequestInitialized(bytes requester);
-
-    /// @notice Emitted when the request is forwarded to the Oracle Chain
-    /// @param relayer The address of the relayer contract
-    event RequestForwarded(address indexed relayer);
+    event RequestInitialized(bytes indexed requester);
 
     /// @notice Emitted when a status update is performed by the oracle coordinator or relayer
     /// @param newStatus The updated status of the request
@@ -52,9 +44,9 @@ interface IBaseRequestContract {
     /// @return The creation time as a UNIX timestamp
     function createdAt() external view returns (uint40);
 
-    /// @notice Returns a flag to check whether this request is on oracle chain or not
-    /// @return Flag
-    function isOracleChain() external view returns (bool);
+    // /// @notice Returns a flag to check whether this request is on oracle chain or not
+    // /// @return Flag
+    // function isOracleChain() external view returns (bool);
 
     /// @notice Returns the question that defines the request
     /// @return A natural-language question string

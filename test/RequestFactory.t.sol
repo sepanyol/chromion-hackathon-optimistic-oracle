@@ -3,16 +3,18 @@ pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
-// import "forge-std/console.sol";
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {MockUSDC} from "../src/mocks/MockUSDC.sol";
 import {MockOracleCoordinator} from "../src/mocks/MockOracleCoordinator.sol";
-import {RequestFactory} from "../src/RequestFactory.sol";
 import {RequestContract} from "../src/RequestContract.sol";
 import {RequestTypes} from "../src/types/RequestTypes.sol";
-import {IOracleCoordinator} from "../src/interfaces/IOracleCoordinator.sol";
+import {RequestFactory} from "../src/RequestFactory.sol";
 import {IBaseRequestContract} from "../src/interfaces/IBaseRequestContract.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IOracleCoordinator} from "../src/interfaces/IOracleCoordinator.sol";
+import {IRequestFactory} from "../src/interfaces/IRequestFactory.sol";
+import {IOracleRelayer} from "../src/interfaces/IOracleRelayer.sol";
 
 contract RequestFactoryTest is Test {
     RequestFactory public factory;
@@ -31,10 +33,18 @@ contract RequestFactoryTest is Test {
         vm.prank(requester);
         usdc.approve(address(this), type(uint256).max);
 
-        factory = new RequestFactory(address(usdc), oracleCoordinator, true);
+        factory = new RequestFactory(
+            address(usdc),
+            oracleCoordinator,
+            address(0),
+            0,
+            true
+        );
         factoryCrossChain = new RequestFactory(
             address(usdc),
             oracleRelayer,
+            address(factory),
+            1,
             false
         );
 
@@ -117,9 +127,22 @@ contract RequestFactoryTest is Test {
             isCrossChain: true
         });
 
-        // TODO Replace with Send Message Event From CCIP
-        // vm.expectEmit(true, true, false, false);
-        // emit MockOracleCoordinator.registerRequestEmit();
+        vm.mockCall(
+            oracleRelayer,
+            abi.encodeWithSelector(
+                IOracleRelayer.chainIdToChainSelector.selector,
+                1
+            ),
+            abi.encode(uint64(1337))
+        );
+
+        vm.mockCall(
+            oracleRelayer,
+            abi.encodeWithSelector(
+                IOracleRelayer.sendMessageWithToken.selector
+            ),
+            abi.encode(bytes32(keccak256("testid")))
+        );
 
         vm.expectEmit(false, false, false, false);
         emit RequestFactory.RequestCreated(address(0), p);
