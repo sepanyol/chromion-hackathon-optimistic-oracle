@@ -1,8 +1,18 @@
-import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import {
+  Address,
+  BigDecimal,
+  BigInt,
+  Bytes,
+  crypto,
+  ethereum,
+  log,
+} from "@graphprotocol/graph-ts";
+
 import {
   AnswerProposed,
   BondRefunded,
   ChallengeSubmitted,
+  OracleCoordinator,
   RequestRegistered,
   RequestResolved,
   ReviewSubmitted,
@@ -26,14 +36,24 @@ import {
   getUserReviewerStats,
   INT32_ONE,
 } from "./helpers";
+import { createMockedFunction } from "matchstick-as";
+import { User } from "../generated/schema";
 
 export function handleRequestRegistered(event: RequestRegistered): void {
   const _request = getRequest(event.params.request);
+
+  if (event.params.requester.length < 32) {
+    log.warning("Invalid requester bytes length: {}", [
+      event.params.requester.toHex(),
+    ]);
+    return;
+  }
   const _user = getUser(
     Address.fromBytes(
       Bytes.fromUint8Array(event.params.requester.subarray(12, 32))
     )
   );
+
   const _requester = getUserRequester(_user.id);
   const _requesterStats = getUserRequesterStats(_requester.stats);
   const _dashboard = getDashboard();
@@ -47,10 +67,9 @@ export function handleRequestRegistered(event: RequestRegistered): void {
   _request.rewardAmount = requestContract.rewardAmount();
   _request.question = requestContract.question();
   _request.context = requestContract.context();
-  _request.answer = requestContract.answer();
   _request.truthMeaning = requestContract.truthMeaning();
   _request.isCrossChain = !requestContract.isOracleChain();
-  _request.createdAt = requestContract.createdAt().toI64();
+  _request.createdAt = event.block.timestamp;
   _request.status = requestContract.status();
 
   // connect user with requester
@@ -68,10 +87,10 @@ export function handleRequestRegistered(event: RequestRegistered): void {
   _dashboard.totalRequests = _dashboard.totalRequests.plus(INT32_ONE);
 
   _dashboard.save();
-  _requesterStats.save();
-  _requester.save();
   _request.save();
   _user.save();
+  _requester.save();
+  _requesterStats.save();
 }
 
 export function handleAnswerProposed(event: AnswerProposed): void {
@@ -89,7 +108,7 @@ export function handleAnswerProposed(event: AnswerProposed): void {
   _proposal.request = _request.id;
   _proposal.proposer = _proposer.id;
   _proposal.answer = event.params.answer;
-  _proposal.createdAt = event.block.timestamp.toI64();
+  _proposal.createdAt = event.block.timestamp;
 
   // enrich proposer
   _proposer.stats = _proposerStats.id;
@@ -128,7 +147,7 @@ export function handleChallengeSubmitted(event: ChallengeSubmitted): void {
   // enrich challenge
   _challenge.answer = event.params.answer;
   _challenge.reason = event.params.reason;
-  _challenge.createdAt = event.block.timestamp.toI64();
+  _challenge.createdAt = event.block.timestamp;
   _challenge.challenger = _challenger.id;
   _challenge.proposal = _proposal.id;
   _challenge.request = _request.id;
@@ -171,7 +190,7 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
 
   // enrich review
   _review.reason = event.params.reason;
-  _review.createdAt = event.block.timestamp.toI64();
+  _review.createdAt = event.block.timestamp;
   _review.supportsChallenge = event.params.supportsChallenge;
   _review.reviewer = _reviewer.id;
   _review.challenge = _challenge.id;
@@ -200,112 +219,137 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
 }
 
 export function handleRequestResolved(event: RequestResolved): void {
-  // const _request = getRequest(event.params.request);
-  // const _proposal = getRequestProposal(_request.id);
-  // const _challenge = getProposalChallenge(_request.id);
-  // const _challengerStats = getUserChallengerStats(_challenge.challenger);
-  // const _proposerStats = getUserProposerStats(_proposal.proposer);
-  // const _dashboard = getDashboard();
-  // const oracleContract = OracleCoordinator.bind(event.address);
-  // const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
-  // const idFor = oracleContract.outcomeIdFor(Address.fromBytes(_request.id));
-  // const idAgainst = oracleContract.outcomeIdAgainst(
-  //   Address.fromBytes(_request.id)
-  // );
-  // const outcomeFor = oracleContract.proposalChallengeOutcome(idFor);
-  // const outcomeAgainst = oracleContract.proposalChallengeOutcome(idAgainst);
-  // // update request with status and answer
-  // _request.status = requestContract.status();
-  // _request.answer = requestContract.answer();
-  // // reduce active proposals for proposer
-  // _proposerStats.proposalsActive =
-  //   _proposerStats.proposalsActive.minus(INT32_ONE);
-  // if (!outcomeFor && !outcomeAgainst) {
-  //   // not challenged at all
-  //   _dashboard.proposalsSuccessful =
-  //     _dashboard.proposalsSuccessful.plus(INT32_ONE);
-  //   // increas successful proposal for proposer
-  //   _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
-  // } else {
-  //   // reduce dashboard challenges
-  //   _dashboard.activeChallenges = _dashboard.activeChallenges.minus(INT32_ONE);
-  //   // reduce active challenges for challenger
-  //   _challengerStats.challengesActive =
-  //     _challengerStats.challengesActive.minus(INT32_ONE);
-  //   if (outcomeFor) {
-  //     // challenged and challenged won
-  //     // add sucessful challenge
-  //     _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
-  //   } else {
-  //     // challenged and proposal won
-  //     // increase successful proposal
-  //     _dashboard.proposalsSuccessful =
-  //       _dashboard.proposalsSuccessful.plus(INT32_ONE);
-  //     // increase successful proposal for proposer
-  //     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
-  //     // increase challenged and won proposal for proposer
-  //     _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
-  //   }
-  //   // recalc success rate of challenger
-  //   _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-  //     _challengerStats.successful,
-  //     _challengerStats.challenges
-  //   );
-  // }
-  // // recalc success rate
-  // _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
-  //   _dashboard.proposalsSuccessful,
-  //   _dashboard.proposals
-  // );
-  // // recalc success rate for proposer
-  // _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-  //   _proposerStats.successful,
-  //   _proposerStats.proposals
-  // );
-  // _request.save();
-  // _proposerStats.save();
-  // _challengerStats.save();
-  // _dashboard.save();
+  const _dashboard = getDashboard();
+  const _request = getRequest(event.params.request);
+  const _proposal = getRequestProposal(_request.id);
+  const _proposerStats = getUserProposerStats(_proposal.proposer);
+  const oracleContract = OracleCoordinator.bind(event.address);
+  const requestContract = RequestContract.bind(Address.fromBytes(_request.id));
+
+  const idFor = oracleContract.outcomeIdFor(Address.fromBytes(_request.id));
+  const idAgainst = oracleContract.outcomeIdAgainst(
+    Address.fromBytes(_request.id)
+  );
+
+  const outcomeFor = oracleContract.proposalChallengeOutcome(idFor);
+  const outcomeAgainst = oracleContract.proposalChallengeOutcome(idAgainst);
+
+  // update request with status and answer
+  _request.status = requestContract.status();
+  _request.answer = requestContract.answer();
+
+  // reduce active proposals for proposer
+  _proposerStats.proposalsActive =
+    _proposerStats.proposalsActive.minus(INT32_ONE);
+
+  if (!outcomeFor && !outcomeAgainst) {
+    // not challenged at all
+    _dashboard.proposalsSuccessful =
+      _dashboard.proposalsSuccessful.plus(INT32_ONE);
+
+    // increas successful proposal for proposer
+    _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+  } else {
+    // only in here, there is a challenge
+    const _challenge = getProposalChallenge(_request.id);
+    const _challengerStats = getUserChallengerStats(_challenge.challenger);
+
+    // reduce dashboard challenges
+    _dashboard.activeChallenges = _dashboard.activeChallenges.minus(INT32_ONE);
+
+    // reduce active challenges for challenger
+    _challengerStats.challengesActive =
+      _challengerStats.challengesActive.minus(INT32_ONE);
+
+    if (outcomeFor) {
+      // challenged and challenged won
+      // add sucessful challenge
+      _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
+    } else {
+      // challenged and proposal won
+      // increase successful proposal
+      _dashboard.proposalsSuccessful =
+        _dashboard.proposalsSuccessful.plus(INT32_ONE);
+
+      // increase successful proposal for proposer
+      _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
+
+      // increase challenged and won proposal for proposer
+      _proposerStats.challenged = _proposerStats.challenged.plus(INT32_ONE);
+    }
+
+    // recalc success rate of challenger
+    _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _challengerStats.successful,
+      _challengerStats.challenges
+    );
+
+    _challengerStats.save();
+  }
+
+  // recalc success rate
+  _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
+    _dashboard.proposalsSuccessful,
+    _dashboard.proposals
+  );
+
+  // recalc success rate for proposer
+  _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+    _proposerStats.successful,
+    _proposerStats.proposals
+  );
+
+  _request.save();
+  _proposerStats.save();
+  _dashboard.save();
 }
 
 export function handleRewardDistributed(event: RewardDistributed): void {
-  // // gather earnings for users
-  // const _request = getRequest(event.params.request);
-  // const _proposal = getRequestProposal(_request.id);
-  // const _rewardedAmount = event.params.amount.toBigDecimal();
-  // if (!_proposal.challenge) {
-  //   // not challenges
-  //   if (Address.fromBytes(_proposal.proposer) === event.params.recipient) {
-  //     const _proposer = getUserProposerStats(_proposal.proposer);
-  //     _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
-  //     _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
-  //     _proposer.save();
-  //   } else {
-  //     console.log("ERROR on unchallenged proposal");
-  //   }
-  // } else {
-  //   const _challenge = getProposalChallenge(_request.id);
-  //   if (Address.fromBytes(_challenge.challenger) === event.params.recipient) {
-  //     // reward given for challenger (cant be reviewer)
-  //     const _challenger = getUserChallengerStats(_challenge.challenger);
-  //     _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
-  //     _challenger.earningsInUSD =
-  //       _challenger.earningsInUSD.plus(_rewardedAmount);
-  //     _challenger.save();
-  //   } else {
-  //     // reward given for reviewer
-  //     const _reviewer = getUserReviewerStats(event.params.recipient);
-  //     _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
-  //     _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
-  //     _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
-  //     _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
-  //     _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
-  //       _reviewer.successful,
-  //       _reviewer.reviews
-  //     );
-  //     _reviewer.save();
-  //   }
-  // }
+  // gather earnings for users
+  const _request = getRequest(event.params.request);
+  const _proposal = getRequestProposal(_request.id);
+  const _proposer = getUserProposerStats(_proposal.proposer);
+
+  const _rewardedAmount = event.params.amount.toBigDecimal();
+
+  if (
+    !_proposal.isChallenged ||
+    Address.fromBytes(_proposer.id) == event.params.recipient
+  ) {
+    // not challenged, only can be proposer receiving reward
+    // or
+    // challenged, but challenger has no supporters (technical draw), so the proposer wins
+    _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
+    _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
+    _proposer.save();
+  } else {
+    const _user = User.load(event.params.recipient);
+    if (_user !== null) {
+      const _challenge = getProposalChallenge(_request.id);
+      if (Address.fromBytes(_challenge.challenger) == event.params.recipient) {
+        // reward given for challenger (cant be reviewer)
+        const _challenger = getUserChallengerStats(_challenge.challenger);
+        _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
+        _challenger.earningsInUSD =
+          _challenger.earningsInUSD.plus(_rewardedAmount);
+        _challenger.save();
+      } else {
+        // reward given for reviewer
+        const _reviewer = getUserReviewerStats(event.params.recipient);
+        _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
+        _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
+        _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
+        _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
+        _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
+          _reviewer.successful,
+          _reviewer.reviews
+        );
+        _reviewer.save();
+      }
+    } else {
+      // only platform
+    }
+  }
 }
 
 export function handleBondRefunded(event: BondRefunded): void {
@@ -316,14 +360,14 @@ export function handleBondRefunded(event: BondRefunded): void {
 /// --- HELPER FUNCTIONS ---
 ///
 
-function divBigIntAndCreateTwoDigitDecimal(a: BigInt, b: BigInt): BigDecimal {
-  return BigDecimal.fromString(
-    BigInt.fromString(
-      a
-        .toBigDecimal()
-        .div(b.toBigDecimal())
-        .times(BigDecimal.fromString("10000"))
-        .toString()
-    ).toString()
-  ).div(BigDecimal.fromString("100"));
+export function divBigIntAndCreateTwoDigitDecimal(
+  a: BigInt,
+  b: BigInt
+): BigDecimal {
+  return a
+    .toBigDecimal()
+    .div(b.toBigDecimal())
+    .times(BigDecimal.fromString("10000"))
+    .truncate(0)
+    .div(BigDecimal.fromString("100"));
 }

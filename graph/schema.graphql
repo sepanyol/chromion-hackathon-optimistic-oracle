@@ -29,10 +29,10 @@ type RequestScoringRatings @entity(immutable: true) {
 
 type RequestScoring @entity(immutable: true) {
   id: Bytes!
-  score: BigInt! 
+  score: BigInt!
   heatmap: RequestScoringHeatmap!
   ratings: RequestScoringRatings!
-  final_decision: BigInt! 
+  final_decision: BigInt!
 }
 
 type Request @entity(immutable: false) {
@@ -48,7 +48,7 @@ type Request @entity(immutable: false) {
   answer: Bytes
   truthMeaning: String!
   isCrossChain: Boolean!
-  createdAt: Timestamp!
+  createdAt: BigInt!
   status: Int!
   scoring: RequestScoring
 
@@ -59,7 +59,7 @@ type Request @entity(immutable: false) {
 
 type RequestProposal @entity(immutable: false) {
   id: Bytes! # Request.id
-  createdAt: Timestamp!
+  createdAt: BigInt!
   answer: Bytes!
   isChallenged: Boolean! # default: false
   request: Request!
@@ -74,7 +74,7 @@ type ProposalChallenge @entity(immutable: false) {
   reason: Bytes
   votesFor: BigInt! # votes for a challenge: number of votes that support a challenge
   votesAgainst: BigInt! # votes against a challenge: number of votes that support a proposal
-  createdAt: Timestamp!
+  createdAt: BigInt!
 
   challenger: UserChallenger!
   request: Request!
@@ -86,7 +86,7 @@ type ChallengeReview @entity(immutable: true) {
   id: Bytes! # Request.id + reviewer
   reason: Bytes!
   supportsChallenge: Boolean! # true = supports a challenge, false = supports a proposal
-  createdAt: Timestamp!
+  createdAt: BigInt!
 
   reviewer: UserReviewer!
   request: Request!
@@ -167,18 +167,10 @@ type UserReviewer @entity(immutable: true) {
 
 type User @entity(immutable: false) {
   id: Bytes!
-  createdAt: Timestamp!
-  updatedAt: Timestamp!
-  # ipfsURI: String
-  # additionalUserData: AdditionalUserData @derivedFrom(field: "id")
+  createdAt: BigInt!
+  updatedAt: BigInt!
   requester: UserRequester
   proposer: UserProposer
   challenger: UserChallenger
   reviewer: UserReviewer
 }
-
-# type AdditionalUserData @entity(immutable: true) {
-#   id: Bytes!
-#   hash: String!
-#   content: String!
-# }
