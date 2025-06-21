@@ -208,6 +208,24 @@ contract WrappedNft is
         _price = additionalData[_wNftId].price;
     }
 
+    struct RequestInfo {
+        bool isResolved;
+        address request;
+    }
+
+    // TODO function to check whether the issued request on the oracle is resolved or not
+    function getRequestInfo(
+        uint256 _wNftId
+    ) external view returns (RequestInfo memory _requestInfo) {
+        address _request = additionalData[_wNftId].activeRequest;
+        if (_request != address(0)) {
+            _requestInfo.request = _request;
+            _requestInfo.isResolved =
+                IBaseRequestContract(_request).status() ==
+                RequestTypes.RequestStatus.Resolved;
+        }
+    }
+
     // TODO nonReentrant
     function buy(uint256 _wNftId) external {
         require(additionalData[_wNftId].openToBuyer, "Not open for sale yet");
