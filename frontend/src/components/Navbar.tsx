@@ -1,9 +1,14 @@
 // components/Navbar.tsx
-'use client';
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bell, Settings, ChevronDown, Wallet, Copy, ExternalLink } from 'lucide-react';
+"use client";
+import {
+  useAppKitAccount,
+  useAppKitNetwork,
+  useDisconnect,
+} from "@reown/appkit/react";
+import { ChevronDown, Copy, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
 
 interface NavbarProps {
   showNavigation?: boolean;
@@ -11,33 +16,48 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
   const pathname = usePathname();
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress] = useState('0x742d35Cc6635C0532925a3b8D89d6A98abcf');
+  const { isConnected, address: walletAddress } = useAppKitAccount();
+  const { disconnect } = useDisconnect();
+  const { caipNetwork } = useAppKitNetwork();
+
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const [networkName, setNetworkName] = useState("");
+
   const [notifications, setNotifications] = useState(3);
 
   const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', active: pathname === '/dashboard' },
-    { name: 'Requester', href: '/requester', active: pathname === '/requester' },
-    { name: 'Solver', href: '/solver', active: pathname === '/solver' },
-    { name: 'Challenger', href: '/challenger', active: pathname === '/challenger' },
-    { name: 'Reviewer', href: '/reviewer', active: pathname === '/reviewer' }
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      active: pathname === "/dashboard",
+    },
+    {
+      name: "Requester",
+      href: "/requester",
+      active: pathname === "/requester",
+    },
+    { name: "Solver", href: "/solver", active: pathname === "/solver" },
+    {
+      name: "Challenger",
+      href: "/challenger",
+      active: pathname === "/challenger",
+    },
+    { name: "Reviewer", href: "/reviewer", active: pathname === "/reviewer" },
   ];
 
-  const handleConnectWallet = () => {
-    setIsWalletConnected(true);
-    // In real app, integrate with MetaMask/WalletConnect
-  };
-
   const handleDisconnectWallet = () => {
-    setIsWalletConnected(false);
+    disconnect();
     setShowWalletDropdown(false);
   };
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
-    // You could add a toast notification here
-  };
+  const copyAddress = useCallback(() => {
+    if (walletAddress) navigator.clipboard.writeText(walletAddress);
+  }, [walletAddress]);
+
+  useEffect(() => {
+    if (isConnected && caipNetwork) setNetworkName(caipNetwork.name);
+    else setNetworkName("");
+  }, [isConnected, caipNetwork]);
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -46,11 +66,8 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
           {/* Logo */}
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
-                <span className="text-white font-bold text-sm">O</span>
-              </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                OptOracle
+                Equolibrium
               </h1>
             </Link>
 
@@ -63,8 +80,8 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
                     href={item.href}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       item.active
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
                     {item.name}
@@ -77,22 +94,23 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
           {/* Right side */}
           <div className="flex items-center space-x-4">
             {/* Network Status (only show if wallet connected) */}
-            {isWalletConnected && (
+            {isConnected && (
               <div className="hidden sm:flex items-center space-x-2 px-3 py-1 bg-green-50 rounded-lg border border-green-200">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-700 font-medium">Ethereum</span>
+                <span className="text-sm text-green-700 font-medium">
+                  {networkName}
+                </span>
               </div>
             )}
 
             {/* Wallet Connection */}
-            {!isWalletConnected ? (
-              <button
-                onClick={handleConnectWallet}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+            {!isConnected ? (
+              <div
+              // onClick={handleConnectWallet}
+              // className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
               >
-                <Wallet className="w-4 h-4" />
-                <span>Connect Wallet</span>
-              </button>
+                <appkit-button />
+              </div>
             ) : (
               <div className="relative">
                 <button
@@ -101,7 +119,11 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full"></div>
                   <span className="text-sm font-medium text-gray-700">
-                    {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    {walletAddress && (
+                      <>
+                        {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                      </>
+                    )}
                   </span>
                   <ChevronDown className="w-4 h-4 text-gray-500" />
                 </button>
@@ -113,7 +135,12 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
                       <p className="text-sm text-gray-500">Connected Wallet</p>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-sm font-medium text-gray-900 font-mono">
-                          {walletAddress.slice(0, 12)}...{walletAddress.slice(-8)}
+                          {walletAddress && (
+                            <>
+                              {walletAddress.slice(0, 12)}...
+                              {walletAddress.slice(-8)}
+                            </>
+                          )}
                         </p>
                         <button
                           onClick={copyAddress}
@@ -123,25 +150,33 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
                         </button>
                       </div>
                     </div>
-                    <div className="py-1">
-                      <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full">
-                        <ExternalLink className="w-4 h-4" />
-                        <span>View on Etherscan</span>
-                      </button>
-                      <button
-                        onClick={handleDisconnectWallet}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
-                      >
-                        <span>Disconnect</span>
-                      </button>
-                    </div>
+                    {caipNetwork && caipNetwork.blockExplorers && (
+                      <div className="py-1">
+                        <a
+                          href={`${caipNetwork.blockExplorers.default.url}/address/${walletAddress}`}
+                          target="_blank"
+                          className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          <span>
+                            View on {caipNetwork.blockExplorers.default.name}
+                          </span>
+                        </a>
+                        <button
+                          onClick={handleDisconnectWallet}
+                          className="cursor-pointer flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                        >
+                          <span>Disconnect</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* Notifications */}
-            <div className="relative">
+            {/* <div className="relative">
               <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 hover:bg-gray-100 rounded-lg">
                 <Bell className="w-5 h-5" />
                 {notifications > 0 && (
@@ -150,17 +185,17 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
                   </span>
                 )}
               </button>
-            </div>
+            </div> */}
 
             {/* Settings */}
-            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 hover:bg-gray-100 rounded-lg">
+            {/* <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200 hover:bg-gray-100 rounded-lg">
               <Settings className="w-5 h-5" />
-            </button>
+            </button> */}
 
             {/* User Avatar */}
-            <div className="w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
+            {/* <div className="w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
               <span className="text-white text-sm font-medium">AJ</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
