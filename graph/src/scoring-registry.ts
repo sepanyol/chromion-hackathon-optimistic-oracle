@@ -1,5 +1,6 @@
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
+  Request,
   RequestScoring,
   RequestScoringHeatmap,
   RequestScoringRatings,
@@ -12,8 +13,10 @@ import { getRequest } from "./helpers";
 
 export function handleAddedScoring(event: AddedScoring): void {
   const id = event.params.request;
-  const request = getRequest(id);
 
+  if (Request.load(id) == null) return;
+
+  const request = getRequest(id);
   const scoringContract = RequestScoringRegistry.bind(event.address);
   const scoringResponse = scoringContract.getScoring(id);
 

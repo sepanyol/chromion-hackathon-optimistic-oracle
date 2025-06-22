@@ -163,7 +163,8 @@ export function createReviewSubmittedEvent(
 export function createRewardDistributedEvent(
   request: Address,
   recipient: Address,
-  amount: BigInt
+  amount: BigInt,
+  rewardType: BigInt
 ): RewardDistributed {
   let rewardDistributedEvent = changetype<RewardDistributed>(newMockEvent());
 
@@ -177,6 +178,12 @@ export function createRewardDistributedEvent(
   );
   rewardDistributedEvent.parameters.push(
     new ethereum.EventParam("amount", ethereum.Value.fromUnsignedBigInt(amount))
+  );
+  rewardDistributedEvent.parameters.push(
+    new ethereum.EventParam(
+      "rewardType",
+      ethereum.Value.fromUnsignedBigInt(rewardType)
+    )
   );
 
   return rewardDistributedEvent;

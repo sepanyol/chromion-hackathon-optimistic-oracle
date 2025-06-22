@@ -244,11 +244,17 @@ describe("Describe entity assertions", () => {
       createRewardDistributedEvent(
         REQUEST_ID,
         PROPOSER_ID,
-        BigInt.fromI64(100000)
+        BigInt.fromI64(100000),
+        BigInt.fromI32(1)
       )
     );
     handleRewardDistributed(
-      createRewardDistributedEvent(REQUEST_ID, PLATFORM, BigInt.fromI64(100000))
+      createRewardDistributedEvent(
+        REQUEST_ID,
+        PLATFORM,
+        BigInt.fromI64(100000),
+        BigInt.fromI32(1)
+      )
     );
   });
 });
