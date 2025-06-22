@@ -165,6 +165,22 @@ type UserReviewer @entity(immutable: true) {
   reviews: [ChallengeReview!] @derivedFrom(field: "reviewer")
 }
 
+enum ActivityType {
+  NULL
+  CREATED
+  PROPOSED
+  CHALLENGED
+  REVIEWED
+  RESOLVED
+}
+type RecentActivity @entity(immutable: true) {
+  id: Bytes! # request id ++ txhash ++ logindex
+  user: User # null == SYSTEM
+  request: Request!
+  createdAt: BigInt!
+  activity: ActivityType! # 1=created, 2=proposed, 3=challenged, 4=reviewed, 5=resolved
+}
+
 type User @entity(immutable: false) {
   id: Bytes!
   createdAt: BigInt!
@@ -173,4 +189,5 @@ type User @entity(immutable: false) {
   proposer: UserProposer
   challenger: UserChallenger
   reviewer: UserReviewer
+  recentActivity: [RecentActivity!] @derivedFrom(field: "user")
 }

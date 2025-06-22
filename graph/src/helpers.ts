@@ -3,12 +3,14 @@ import {
   BigInt,
   ByteArray,
   Bytes,
+  ethereum,
   Value,
 } from "@graphprotocol/graph-ts";
 import {
   ChallengeReview,
   Dashboard,
   ProposalChallenge,
+  RecentActivity,
   Request,
   RequestProposal,
   User,
@@ -191,4 +193,21 @@ export function getChallengeReview(id: Bytes): ChallengeReview {
     _review.reason = Bytes.empty();
   }
   return _review;
+}
+
+export enum ActivityType {
+  NULL,
+  CREATED,
+  PROPOSED,
+  CHALLENGED,
+  REVIEWED,
+  RESOLVED,
+}
+export function createActivity(
+  requestId: Bytes,
+  event: ethereum.Event
+): RecentActivity {
+  return new RecentActivity(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  );
 }
