@@ -14,6 +14,7 @@ contract MockOracleCoordinator is IOracleCoordinator {
 
     function challengeAnswer(
         address _request,
+        bool _proposalTooEarly,
         bytes calldata _answer,
         bytes calldata _reason
     ) external {}

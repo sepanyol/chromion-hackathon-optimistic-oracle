@@ -308,47 +308,37 @@ export function handleRewardDistributed(event: RewardDistributed): void {
   // gather earnings for users
   const _request = getRequest(event.params.request);
   const _proposal = getRequestProposal(_request.id);
-  const _proposer = getUserProposerStats(_proposal.proposer);
-
   const _rewardedAmount = event.params.amount.toBigDecimal();
 
-  if (
-    !_proposal.isChallenged ||
-    Address.fromBytes(_proposer.id) == event.params.recipient
-  ) {
-    // not challenged, only can be proposer receiving reward
-    // or
-    // challenged, but challenger has no supporters (technical draw), so the proposer wins
+  // Proposer
+  if (event.params.rewardType == 1) {
+    const _proposer = getUserProposerStats(_proposal.proposer);
     _proposer.earnings = _proposer.earnings.plus(_rewardedAmount);
     _proposer.earningsInUSD = _proposer.earningsInUSD.plus(_rewardedAmount);
     _proposer.save();
-  } else {
-    const _user = User.load(event.params.recipient);
-    if (_user !== null) {
-      const _challenge = getProposalChallenge(_request.id);
-      if (Address.fromBytes(_challenge.challenger) == event.params.recipient) {
-        // reward given for challenger (cant be reviewer)
-        const _challenger = getUserChallengerStats(_challenge.challenger);
-        _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
-        _challenger.earningsInUSD =
-          _challenger.earningsInUSD.plus(_rewardedAmount);
-        _challenger.save();
-      } else {
-        // reward given for reviewer
-        const _reviewer = getUserReviewerStats(event.params.recipient);
-        _reviewer.earnings = _reviewer.earnings.plus(_rewardedAmount);
-        _reviewer.earningsInUSD = _reviewer.earningsInUSD.plus(_rewardedAmount);
-        _reviewer.successful = _reviewer.successful.plus(INT32_ONE);
-        _reviewer.reviewsActive = _reviewer.reviewsActive.minus(INT32_ONE);
-        _reviewer.successRate = divBigIntAndCreateTwoDigitDecimal(
-          _reviewer.successful,
-          _reviewer.reviews
-        );
-        _reviewer.save();
-      }
-    } else {
-      // only platform
-    }
+  }
+
+  // Challenger
+  if (event.params.rewardType == 2) {
+    const _challenge = getProposalChallenge(_request.id);
+    const _challenger = getUserChallengerStats(_challenge.challenger);
+    _challenger.earnings = _challenger.earnings.plus(_rewardedAmount);
+    _challenger.earningsInUSD = _challenger.earningsInUSD.plus(_rewardedAmount);
+    _challenger.save();
+  }
+
+  // Reviewer
+  if (event.params.rewardType == 3) {
+    const _stats = getUserReviewerStats(event.params.recipient);
+    _stats.earnings = _stats.earnings.plus(_rewardedAmount);
+    _stats.earningsInUSD = _stats.earningsInUSD.plus(_rewardedAmount);
+    _stats.successful = _stats.successful.plus(INT32_ONE);
+    _stats.reviewsActive = _stats.reviewsActive.minus(INT32_ONE);
+    _stats.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _stats.successful,
+      _stats.reviews
+    );
+    _stats.save();
   }
 }
 

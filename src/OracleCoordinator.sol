@@ -157,6 +157,7 @@ contract OracleCoordinator is
     /// @inheritdoc IOracleCoordinator
     function challengeAnswer(
         address _request,
+        bool,
         bytes calldata answer,
         bytes calldata reason
     ) external validRequest(_request) nonReentrant {
@@ -290,7 +291,8 @@ contract OracleCoordinator is
             emit RewardDistributed(
                 _request,
                 _proposal.proposer,
-                _proposerShare
+                _proposerShare,
+                RewardType.Proposer
             );
 
             require(
@@ -330,7 +332,8 @@ contract OracleCoordinator is
                 emit RewardDistributed(
                     _request,
                     _challenge.challenger,
-                    _challengerShare
+                    _challengerShare,
+                    RewardType.Challenger
                 );
 
                 require(
@@ -366,7 +369,8 @@ contract OracleCoordinator is
                 emit RewardDistributed(
                     _request,
                     _proposal.proposer,
-                    _proposerShare
+                    _proposerShare,
+                    RewardType.Proposer
                 );
 
                 // reward is transfered to proposer
@@ -381,7 +385,12 @@ contract OracleCoordinator is
         }
 
         if (_platformShare > 0) {
-            emit RewardDistributed(_request, platform, _platformShare);
+            emit RewardDistributed(
+                _request,
+                platform,
+                _platformShare,
+                RewardType.Platform
+            );
 
             require(
                 usdc.transfer(platform, _platformShare),
@@ -411,7 +420,8 @@ contract OracleCoordinator is
         emit RewardDistributed(
             _request,
             msg.sender,
-            reviewerClaimAmount[_request]
+            reviewerClaimAmount[_request],
+            RewardType.Reviewer
         );
     }
 
