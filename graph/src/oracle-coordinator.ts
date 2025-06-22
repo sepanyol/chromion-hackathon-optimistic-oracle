@@ -276,10 +276,12 @@ export function handleRequestResolved(event: RequestResolved): void {
   _proposerStats.proposalsActive =
     _proposerStats.proposalsActive.minus(INT32_ONE);
 
+  _dashboard.proposalsFinished = _dashboard.proposalsFinished.plus(INT32_ONE);
+
   if (!outcomeFor && !outcomeAgainst) {
     // not challenged at all
-    _dashboard.proposalsSuccessful =
-      _dashboard.proposalsSuccessful.plus(INT32_ONE);
+    _dashboard.proposalsFinishedSuccessful =
+      _dashboard.proposalsFinishedSuccessful.plus(INT32_ONE);
 
     // increas successful proposal for proposer
     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
@@ -302,8 +304,8 @@ export function handleRequestResolved(event: RequestResolved): void {
     } else {
       // challenged and proposal won
       // increase successful proposal
-      _dashboard.proposalsSuccessful =
-        _dashboard.proposalsSuccessful.plus(INT32_ONE);
+      _dashboard.proposalsFinishedSuccessful =
+        _dashboard.proposalsFinishedSuccessful.plus(INT32_ONE);
 
       // increase successful proposal for proposer
       _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
@@ -321,10 +323,10 @@ export function handleRequestResolved(event: RequestResolved): void {
     _challengerStats.save();
   }
 
-  // recalc success rate
+  // recalc proposal success rate
   _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
-    _dashboard.proposalsSuccessful,
-    _dashboard.proposals
+    _dashboard.proposalsFinishedSuccessful,
+    _dashboard.proposalsFinished
   );
 
   // recalc success rate for proposer

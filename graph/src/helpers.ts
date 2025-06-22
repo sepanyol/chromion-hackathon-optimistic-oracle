@@ -38,7 +38,8 @@ export function getDashboard(): Dashboard {
     _dashboard.totalRequests = BigInt.zero();
     _dashboard.activeChallenges = BigInt.zero();
     _dashboard.proposals = BigInt.zero();
-    _dashboard.proposalsSuccessful = BigInt.zero();
+    _dashboard.proposalsFinished = BigInt.zero();
+    _dashboard.proposalsFinishedSuccessful = BigInt.zero();
     _dashboard.proposalSuccessRate = BigDecimal.fromString("0");
   }
   return _dashboard;

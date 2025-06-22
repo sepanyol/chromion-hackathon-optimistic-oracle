@@ -3,7 +3,8 @@ type Dashboard @entity(immutable: false) {
   totalRequests: BigInt!
   activeChallenges: BigInt!
   proposals: BigInt!
-  proposalsSuccessful: BigInt!
+  proposalsFinished: BigInt!
+  proposalsFinishedSuccessful: BigInt!
   proposalSuccessRate: BigDecimal!
 }
 
