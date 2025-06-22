@@ -10,6 +10,13 @@ import CrossChainStatus from "@/components/CrossChainStatus";
 import RequestModal from "@/components/RequestModal";
 import { TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRecentActivity } from "@/utils/api/fetchRecentActivity";
+import { lowerCase, upperFirst } from "lodash";
+import { ActivityItem, ActivityItemStatus } from "@/types/Activities";
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+TimeAgo.addDefaultLocale(en);
 
 export interface StatData {
   title: string;
@@ -17,14 +24,6 @@ export interface StatData {
   change: string;
   changeType: "positive" | "negative";
   icon: React.ReactNode;
-}
-
-export interface ActivityItem {
-  id: string;
-  title: string;
-  user: string;
-  time: string;
-  status: "Proposed" | "Challenged" | "Resolved";
 }
 
 export interface ActiveRequest {
@@ -43,6 +42,7 @@ export interface CrossChainNetwork {
 }
 
 const Dashboard: React.FC = () => {
+  const timeAgo = new TimeAgo(navigator.language);
   const [stats, setStats] = useState<StatData[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [requests, setRequests] = useState<ActiveRequest[]>([]);
@@ -86,30 +86,6 @@ const Dashboard: React.FC = () => {
         },
       ]);
 
-      setActivities([
-        {
-          id: "1",
-          title: 'New proposal submitted for "TSLA Q4 earnings beat estimate"',
-          user: "0x7420...2eef",
-          time: "2 minutes ago",
-          status: "Proposed",
-        },
-        {
-          id: "2",
-          title: 'Challenge raised on "BTC price above $50k"',
-          user: "0x8b2c...3ef4",
-          time: "18 minutes ago",
-          status: "Challenged",
-        },
-        {
-          id: "3",
-          title: 'Request resolved: "ETH merge completion date"',
-          user: "0x1eef...7c8b",
-          time: "1 hour ago",
-          status: "Resolved",
-        },
-      ]);
-
       setRequests([
         {
           id: "1",
@@ -143,7 +119,8 @@ const Dashboard: React.FC = () => {
       setNetworks([
         { network: "Avalanche", status: "Active" },
         { network: "Ethereum", status: "Active" },
-        { network: "Base", status: "Syncing" },
+        { network: "Base", status: "Active" },
+        { network: "Arbitrum", status: "Active" },
       ]);
 
       setIsLoading(false);
@@ -151,6 +128,39 @@ const Dashboard: React.FC = () => {
 
     loadData();
   }, []);
+
+  // get most recent activity
+  const recentActivity = useQuery({
+    queryKey: ["dashboard", "recent-activity"],
+    queryFn: async () => await fetchRecentActivity(),
+  });
+
+  useEffect(() => {
+    if (!recentActivity.isSuccess) return;
+    if (!recentActivity.data) return;
+    if (!recentActivity.data.data) return;
+    if (recentActivity.data.data.recentActivities) {
+      setActivities(
+        recentActivity.data.data.recentActivities.map(
+          (activity: any) =>
+            ({
+              id: activity.id,
+              title: `${activity.request.question}`,
+              user:
+                activity.user === null
+                  ? null
+                  : `${activity.user.id.slice(0, 6)}...${activity.user.id.slice(
+                      -4
+                    )}`,
+              time: timeAgo.format(Number(activity.createdAt) * 1000),
+              status: upperFirst(
+                lowerCase(activity.activity)
+              ) as ActivityItemStatus,
+            } as ActivityItem)
+        )
+      );
+    }
+  }, [recentActivity.isSuccess, recentActivity.data]);
 
   // Filter requests based on search and tab
   const filteredRequests = requests.filter((request) => {
