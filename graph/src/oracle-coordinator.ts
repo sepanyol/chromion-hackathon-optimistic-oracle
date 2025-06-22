@@ -20,6 +20,8 @@ import {
 } from "../generated/OracleCoordinator/OracleCoordinator";
 import { RequestContract } from "../generated/templates/RequestContract/RequestContract";
 import {
+  ActivityType,
+  createActivity,
   getChallengeReview,
   getDashboard,
   getProposalChallenge,
@@ -37,7 +39,7 @@ import {
   INT32_ONE,
 } from "./helpers";
 import { createMockedFunction } from "matchstick-as";
-import { User } from "../generated/schema";
+import { RecentActivity, User } from "../generated/schema";
 
 export function handleRequestRegistered(event: RequestRegistered): void {
   const _request = getRequest(event.params.request);
@@ -86,6 +88,14 @@ export function handleRequestRegistered(event: RequestRegistered): void {
   // update dashboard
   _dashboard.totalRequests = _dashboard.totalRequests.plus(INT32_ONE);
 
+  // add recent activity
+  const _activity = createActivity(_request.id, event);
+  _activity.request = _request.id;
+  _activity.user = _user.id;
+  _activity.createdAt = event.block.timestamp;
+  _activity.activity = "CREATED";
+  _activity.save();
+
   _dashboard.save();
   _request.save();
   _user.save();
@@ -122,6 +132,14 @@ export function handleAnswerProposed(event: AnswerProposed): void {
 
   // update dashboard
   _dashboard.proposals = _dashboard.proposals.plus(INT32_ONE);
+
+  // add recent activity
+  const _activity = createActivity(_request.id, event);
+  _activity.request = _request.id;
+  _activity.user = _user.id;
+  _activity.createdAt = event.block.timestamp;
+  _activity.activity = "PROPOSED";
+  _activity.save();
 
   _dashboard.save();
   _request.save();
@@ -169,6 +187,14 @@ export function handleChallengeSubmitted(event: ChallengeSubmitted): void {
   // flag proposal as challenges
   _proposal.isChallenged = true;
 
+  // add recent activity
+  const _activity = createActivity(_request.id, event);
+  _activity.request = _request.id;
+  _activity.user = _user.id;
+  _activity.createdAt = event.block.timestamp;
+  _activity.activity = "CHALLENGED";
+  _activity.save();
+
   _proposal.save();
   _request.save();
   _challenge.save();
@@ -211,6 +237,14 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
     _challenge.votesAgainst = _challenge.votesAgainst.plus(INT32_ONE);
   }
 
+  // add recent activity
+  const _activity = createActivity(_request.id, event);
+  _activity.request = _request.id;
+  _activity.user = _user.id;
+  _activity.createdAt = event.block.timestamp;
+  _activity.activity = "REVIEWED";
+  _activity.save();
+
   _challenge.save();
   _user.save();
   _review.save();
@@ -242,10 +276,12 @@ export function handleRequestResolved(event: RequestResolved): void {
   _proposerStats.proposalsActive =
     _proposerStats.proposalsActive.minus(INT32_ONE);
 
+  _dashboard.proposalsFinished = _dashboard.proposalsFinished.plus(INT32_ONE);
+
   if (!outcomeFor && !outcomeAgainst) {
     // not challenged at all
-    _dashboard.proposalsSuccessful =
-      _dashboard.proposalsSuccessful.plus(INT32_ONE);
+    _dashboard.proposalsFinishedSuccessful =
+      _dashboard.proposalsFinishedSuccessful.plus(INT32_ONE);
 
     // increas successful proposal for proposer
     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
@@ -268,8 +304,8 @@ export function handleRequestResolved(event: RequestResolved): void {
     } else {
       // challenged and proposal won
       // increase successful proposal
-      _dashboard.proposalsSuccessful =
-        _dashboard.proposalsSuccessful.plus(INT32_ONE);
+      _dashboard.proposalsFinishedSuccessful =
+        _dashboard.proposalsFinishedSuccessful.plus(INT32_ONE);
 
       // increase successful proposal for proposer
       _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
@@ -287,10 +323,10 @@ export function handleRequestResolved(event: RequestResolved): void {
     _challengerStats.save();
   }
 
-  // recalc success rate
+  // recalc proposal success rate
   _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
-    _dashboard.proposalsSuccessful,
-    _dashboard.proposals
+    _dashboard.proposalsFinishedSuccessful,
+    _dashboard.proposalsFinished
   );
 
   // recalc success rate for proposer
@@ -298,6 +334,13 @@ export function handleRequestResolved(event: RequestResolved): void {
     _proposerStats.successful,
     _proposerStats.proposals
   );
+
+  // add recent activity
+  const _activity = createActivity(_request.id, event);
+  _activity.request = _request.id;
+  _activity.createdAt = event.block.timestamp;
+  _activity.activity = "RESOLVED";
+  _activity.save();
 
   _request.save();
   _proposerStats.save();
