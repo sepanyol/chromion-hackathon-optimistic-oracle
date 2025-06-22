@@ -14,17 +14,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchRecentActivity } from "@/utils/api/fetchRecentActivity";
 import { lowerCase, upperFirst } from "lodash";
 import { ActivityItem, ActivityItemStatus } from "@/types/Activities";
-import TimeAgo from "javascript-time-ago";
-import en from "javascript-time-ago/locale/en";
-TimeAgo.addDefaultLocale(en);
-
-export interface StatData {
-  title: string;
-  value: string;
-  change: string;
-  changeType: "positive" | "negative";
-  icon: React.ReactNode;
-}
+import { useRecentActivity } from "@/hooks/useRecentActivities";
+import { useDashboard } from "@/hooks/useDashboard";
+import { StatData } from "@/types/StatsCards";
+import { timeAgo } from "@/utils/time-ago";
 
 export interface ActiveRequest {
   id: string;
@@ -42,7 +35,6 @@ export interface CrossChainNetwork {
 }
 
 const Dashboard: React.FC = () => {
-  const timeAgo = new TimeAgo(navigator.language);
   const [stats, setStats] = useState<StatData[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [requests, setRequests] = useState<ActiveRequest[]>([]);
@@ -61,30 +53,6 @@ const Dashboard: React.FC = () => {
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setStats([
-        {
-          title: "Total Requests",
-          value: "12,847",
-          change: "+12% from last week",
-          changeType: "positive",
-          icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
-        },
-        {
-          title: "Active Disputes",
-          value: "23",
-          change: "-5% from yesterday",
-          changeType: "negative",
-          icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
-        },
-        {
-          title: "Success Rate",
-          value: "97.8%",
-          change: "+0.3% this month",
-          changeType: "positive",
-          icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-        },
-      ]);
 
       setRequests([
         {
@@ -129,11 +97,53 @@ const Dashboard: React.FC = () => {
     loadData();
   }, []);
 
+  // get dashboard
+  const dashboard = useDashboard();
+  useEffect(() => {
+    if (!dashboard.isSuccess) return;
+    if (!dashboard.data) return;
+
+    setStats([
+      {
+        title: "Total Requests",
+        value: Number(dashboard.data.totalRequests).toLocaleString(
+          navigator.language
+        ),
+        change: null,
+        changeType: null,
+        icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
+      },
+      {
+        title: "Active Disputes",
+        value: Number(dashboard.data.activeChallenges).toLocaleString(
+          navigator.language
+        ),
+        change: null,
+        changeType: null,
+        icon: <AlertTriangle className="w-6 h-6 text-red-600" />,
+      },
+      {
+        title: "Success Rate",
+        value: `${Number(dashboard.data.proposalSuccessRate).toLocaleString(
+          navigator.language,
+          {
+            maximumFractionDigits: 2,
+            maximumSignificantDigits: 2,
+            minimumFractionDigits: 2,
+            minimumSignificantDigits: 2,
+          }
+        )}%`,
+
+        change: null,
+        changeType: null,
+        icon: <CheckCircle className="w-6 h-6 text-green-600" />,
+      },
+    ]);
+    dashboard.data;
+  }, [dashboard.data, dashboard.isSuccess]);
+
   // get most recent activity
-  const recentActivity = useQuery({
-    queryKey: ["dashboard", "recent-activity"],
-    queryFn: async () => await fetchRecentActivity(),
-  });
+  const recentActivity = useRecentActivity();
 
   useEffect(() => {
     if (!recentActivity.isSuccess) return;
