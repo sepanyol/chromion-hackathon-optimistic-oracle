@@ -121,6 +121,11 @@
         "internalType": "address"
       },
       {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
         "name": "answer",
         "type": "bytes",
         "internalType": "bytes"
@@ -1080,6 +1085,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "rewardType",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum IOracleCoordinator.RewardType"
       }
     ],
     "anonymous": false

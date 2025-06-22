@@ -202,9 +202,15 @@ contract DeployTestnet is BaseScript {
             vm.stopBroadcast();
         }
 
-        console.log("TODO: Automate Upkeep Registration");
-        console.log("TODO: Purge Existing Upkeeps LINK");
-        console.log("-- until then, use SetupFinalizer.s.sol");
+        // console.log("TODO: Automate Upkeep Registration");
+        // console.log("TODO: Purge Existing Upkeeps LINK");
+        console.log("TODO: Add new Automation to CL");
+        console.log(
+            "TODO: Revoke FINALIZER_ROLE of old Automation address on Oracle"
+        );
+        console.log(
+            "TODO: Grant FINALIZER_ROLE to new Automation address on Oracle"
+        );
 
         // {
         //     // TODO move to SetupFinalizer Script
@@ -272,13 +278,15 @@ contract DeployTestnet is BaseScript {
                     _instance.recoverAsset(_linkToken);
 
             _instance = new OracleRelayer(_linkToken, _router);
-            _writeDeploymentJson(
-                _chainId,
-                "OracleRelayer",
-                address(_instance),
-                _args,
-                _code
-            );
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "OracleRelayer",
+                    address(_instance),
+                    _args,
+                    _code
+                );
+            }
 
             // send link to new relayer
             vm.stopBroadcast();
@@ -310,13 +318,15 @@ contract DeployTestnet is BaseScript {
         bytes memory _code = type(OracleCoordinator).creationCode;
         if (_shouldDeploy(_chainId, "OracleCoordinator", _args, _code)) {
             _instance = new OracleCoordinator(_platform, _relayer, _usdc);
-            _writeDeploymentJson(
-                _chainId,
-                "OracleCoordinator",
-                address(_instance),
-                _args,
-                _code
-            );
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "OracleCoordinator",
+                    address(_instance),
+                    _args,
+                    _code
+                );
+            }
         }
         _instance = OracleCoordinator(
             _readAddress(_chainId, "OracleCoordinator")
@@ -347,29 +357,30 @@ contract DeployTestnet is BaseScript {
                 _homeChainId,
                 _isOracleChain
             );
-            _writeDeploymentJson(
-                _chainId,
-                "RequestFactory",
-                address(_instance),
-                _args,
-                _code
-            );
-            _writeDeploymentJson(
-                _chainId,
-                "RequestContract",
-                _instance.implementation(),
-                abi.encode(
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "RequestFactory",
                     address(_instance),
-                    _usdc,
-                    _oracle,
-                    _homeFactory,
-                    _homeChainId,
-                    _isOracleChain
-                ),
-                type(RequestContract).creationCode
-            );
+                    _args,
+                    _code
+                );
+                _writeDeploymentJson(
+                    _chainId,
+                    "RequestContract",
+                    _instance.implementation(),
+                    abi.encode(
+                        address(_instance),
+                        _usdc,
+                        _oracle,
+                        _homeFactory,
+                        _homeChainId,
+                        _isOracleChain
+                    ),
+                    type(RequestContract).creationCode
+                );
+            }
         }
         _instance = RequestFactory(_readAddress(_chainId, "RequestFactory"));
     }
-
 }

@@ -12,6 +12,17 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 /// challenges, review voting, and request finalization. It integrates with Chainlink Automation for lifecycle handling.
 interface IOracleCoordinator is AutomationCompatibleInterface {
     // ============================
+    // ========== Enums ===========
+    // ============================
+    /// @notice Used for flagging the kind or reward type thats given
+    enum RewardType {
+        Platform,
+        Proposer,
+        Challenger,
+        Reviewer
+    }
+
+    // ============================
     // ========= Structs ==========
     // ============================
 
@@ -40,6 +51,18 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
         uint40 timestamp; ///< Timestamp of when the proposal was submitted
         bytes answer; ///< Proposed answer payload
         Challenge challenge; ///< Embedded challenge (if any)
+
+        // TODO handle too early proposals
+        // Proposer does proposal and commits with bond
+        // Challenger can give too early info as alternative answer
+        // Reviewer decide whether it's too early or not
+        // Too Early winning Rewards:
+        // - 10% of proposer bond to plattform
+        // - Rest distributed as follows:
+        //   - 40% of proposer bond + initial reward go back to requester for compensation
+        //   - 40% of proposer bond is given to the challenger
+        //   - 20% of proposer bons is given to the reviewer voted for too early challenge
+        // bool isTooEarly; 
     }
 
     /// @notice Statistics for a participant's activity within the protocol
@@ -92,7 +115,8 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     event RewardDistributed(
         address indexed request,
         address indexed recipient,
-        uint256 amount
+        uint256 amount,
+        RewardType rewardType
     );
 
     /// @notice Emitted when a bond is refunded to a participant
@@ -124,6 +148,7 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     /// @param _reason A justification string or hash indicating why the answer is incorrect.
     function challengeAnswer(
         address _request,
+        bool _proposalTooEarly,
         bytes calldata _answer,
         bytes calldata _reason
     ) external;
