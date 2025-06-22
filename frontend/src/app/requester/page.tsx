@@ -162,11 +162,11 @@ const RequesterPage: React.FC = () => {
           </div>
 
           {/* Quick Actions */}
-          <RequesterQuickActions
+          {/* <RequesterQuickActions
             onNewQuestion={handleNewQuestion}
             onUseTemplate={handleUseTemplate}
             onViewAnalytics={handleViewAnalytics}
-          />
+          /> */}
 
           {/* My Questions */}
           <MyQuestions questions={questions} />

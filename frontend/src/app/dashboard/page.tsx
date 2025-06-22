@@ -1,33 +1,25 @@
 // app/dashboard/page.tsx
 "use client";
-import React, { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
-import StatCard from "@/components/StatCard";
 import ActivityFeed from "@/components/ActivityFeed";
-import RequestsTable from "@/components/RequestsTable";
-import QuickActions from "@/components/QuickActions";
 import CrossChainStatus from "@/components/CrossChainStatus";
-import RequestModal from "@/components/RequestModal";
-import { TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { Loader } from "@/components/Loader";
+import Navbar from "@/components/Navbar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
-import { useQuery } from "@tanstack/react-query";
-import { fetchRecentActivity } from "@/utils/api/fetchRecentActivity";
-import { lowerCase, upperFirst } from "lodash";
-import { ActivityItem, ActivityItemStatus } from "@/types/Activities";
-import { useRecentActivity } from "@/hooks/useRecentActivities";
+import QuickActions from "@/components/QuickActions";
+import RequestsTable from "@/components/RequestsTable";
+import StatCard from "@/components/StatCard";
+import { useActiveRequests } from "@/hooks/useActiveRequests";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useRecentActivity } from "@/hooks/useRecentActivities";
+import { ActivityItem, ActivityItemStatus } from "@/types/Activities";
+import { ActiveRequest } from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
+import { getReadableRequestStatus, RequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-
-export interface ActiveRequest {
-  id: string;
-  request: string;
-  type: string;
-  reward: string;
-  status: "Open" | "Proposed" | "Challenged";
-  timeLeft: string;
-  requestedTime: string;
-}
+import { lowerCase, upperFirst } from "lodash";
+import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 
 export interface CrossChainNetwork {
   network: string;
@@ -51,39 +43,6 @@ const Dashboard: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setRequests([
-        {
-          id: "1",
-          request: "Will TSLA stock price exceed $300 by Q1 2024?",
-          type: "Boolean",
-          reward: "500 USDC",
-          status: "Open",
-          timeLeft: "22h 15m",
-          requestedTime: "2 hours ago",
-        },
-        {
-          id: "2",
-          request: "Current market value of 123 Main St, NYC",
-          type: "RWA Valuation",
-          reward: "1,200 USDC",
-          status: "Proposed",
-          timeLeft: "18h 42m",
-          requestedTime: "5 hours ago",
-        },
-        {
-          id: "3",
-          request: "BTC price on December 31, 2024",
-          type: "Price Feed",
-          reward: "800 USDC",
-          status: "Challenged",
-          timeLeft: "6h 30m",
-          requestedTime: "1 day ago",
-        },
-      ]);
-
       setNetworks([
         { network: "Avalanche", status: "Active" },
         { network: "Ethereum", status: "Active" },
@@ -99,6 +58,7 @@ const Dashboard: React.FC = () => {
 
   // get dashboard
   const dashboard = useDashboard();
+
   useEffect(() => {
     if (!dashboard.isSuccess) return;
     if (!dashboard.data) return;
@@ -172,48 +132,77 @@ const Dashboard: React.FC = () => {
     }
   }, [recentActivity.isSuccess, recentActivity.data]);
 
+  // get active requests
+  const [statusForActiveRequests, setStatusForActiveRequests] =
+    useState<RequestStatus>();
+  const activeRequests = useActiveRequests(statusForActiveRequests);
+
+  useEffect(() => {
+    if (!activeRequests.isSuccess) return;
+    if (!activeRequests.data) return;
+    setRequests(
+      activeRequests.data.map((request: any) => {
+        return {
+          id: request.id,
+          request: request.question,
+          type: request.answerType == 0 ? "Boolean" : "RWA Valuation",
+          reward: `${formatUnits(BigInt(request.rewardAmount), 6)} USDC`,
+          statusLabel: getReadableRequestStatus(request.status),
+          status: request.status,
+          timeLeft:
+            request.proposal !== null && request.challenge === null
+              ? timeAgo.format(
+                  (Number(request.proposal.createdAt) +
+                    Number(request.challengeWindow)) *
+                    1000,
+                  { future: true }
+                )
+              : request.challenge === null
+              ? "unchallenged"
+              : timeAgo.format(
+                  (Number(request.challenge.createdAt) + 86400) * 1000,
+                  "mini-minute-now",
+                  { future: true }
+                ),
+          requestedTime: timeAgo.format(Number(request.createdAt) * 1000),
+        };
+      })
+    );
+  }, [activeRequests.isSuccess, activeRequests.data]);
+
   // Filter requests based on search and tab
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.request.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab =
-      selectedTab === "all" || request.status.toLowerCase() === selectedTab;
+      selectedTab === "all" ||
+      request.statusLabel.toLowerCase() === selectedTab;
     return matchesSearch && matchesTab;
   });
 
+  useEffect(() => {
+    switch (selectedTab) {
+      case "all":
+        return setStatusForActiveRequests(undefined);
+      case "open":
+        return setStatusForActiveRequests(RequestStatus.Open);
+      case "proposed":
+        return setStatusForActiveRequests(RequestStatus.Proposed);
+      case "challenged":
+        return setStatusForActiveRequests(RequestStatus.Challenged);
+    }
+  }, [selectedTab]);
+
   const handlePropose = (requestId: string) => {
-    setRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId ? { ...req, status: "Proposed" as const } : req
-      )
-    );
     // In real app, would make API call
   };
 
   const handleChallenge = (requestId: string) => {
-    setRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId ? { ...req, status: "Challenged" as const } : req
-      )
-    );
     // In real app, would make API call
   };
 
-  const handleNewRequest = (requestData: any) => {
-    const newRequest: ActiveRequest = {
-      id: Date.now().toString(),
-      request: requestData.description,
-      type: requestData.type,
-      reward: `${requestData.reward} USDC`,
-      status: "Open",
-      timeLeft: "24h 0m",
-      requestedTime: "Just now",
-    };
-
-    setRequests((prev) => [newRequest, ...prev]);
-    setShowRequestModal(false);
-  };
+  const handleNewRequest = (requestData: any) => {};
 
   if (isLoading) {
     return (
@@ -253,7 +242,7 @@ const Dashboard: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             <CrossChainStatus networks={networks} />
-            <QuickActions onNewRequest={() => setShowRequestModal(true)} />
+            {/* <QuickActions onNewRequest={() => setShowRequestModal(true)} /> */}
           </div>
         </div>
 
@@ -266,13 +255,13 @@ const Dashboard: React.FC = () => {
 
               <div className="flex items-center space-x-4">
                 {/* Search */}
-                <input
+                {/* <input
                   type="text"
                   placeholder="Search requests..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                />
+                  className="px-3 py-2 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                /> */}
 
                 {/* Filter Tabs */}
                 <div className="flex bg-gray-100 rounded-lg p-1">
@@ -287,7 +276,7 @@ const Dashboard: React.FC = () => {
                             : "text-gray-600 hover:text-gray-900"
                         }`}
                       >
-                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {upperFirst(tab)}
                       </button>
                     )
                   )}
@@ -296,11 +285,17 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <RequestsTable
-            requests={filteredRequests}
-            onPropose={handlePropose}
-            onChallenge={handleChallenge}
-          />
+          {activeRequests.isLoading || activeRequests.isFetching ? (
+            <div className="p-4 flex flex-row justify-center items-center">
+              <Loader size={36} />
+            </div>
+          ) : (
+            <RequestsTable
+              requests={filteredRequests}
+              onPropose={handlePropose}
+              onChallenge={handleChallenge}
+            />
+          )}
         </div>
       </div>
 
