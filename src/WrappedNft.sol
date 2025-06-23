@@ -6,6 +6,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {MockUSDC} from "./mocks/MockUSDC.sol";
 
 import {IRequestFactory, RequestTypes} from "./interfaces/IRequestFactory.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
@@ -18,6 +19,8 @@ contract WrappedNft is
 {
     uint256 public constant EVALUATION_REQUEST_COOLDOWN = 86400 * 7;
     address public immutable requestFactory;
+
+    error NoActiveRequest();
 
     event DepositedNft(
         address indexed requester,
@@ -55,7 +58,13 @@ contract WrappedNft is
         address[] requests;
     }
 
-    IERC20 public mockUSDC;
+    
+    struct RequestInfo {
+        bool isResolved;
+        address request;
+    }
+
+    IERC20 public MockUSDC;
     uint256 private wNftId;
 
     mapping(uint256 => AdditionalData) public additionalData;
@@ -173,11 +182,7 @@ contract WrappedNft is
             "Request is not resolved yet"
         );
 
-        additionalData[_wNftId].price = abi.decode(
-            IBaseRequestContract(additionalData[_wNftId].activeRequest)
-                .answer(),
-            (uint256)
-        );
+        additionalData[_wNftId].price = abi.decode(IBaseRequestContract(additionalData[_wNftId].activeRequest).answer(), (uint256));
 
         additionalData[_wNftId].lastEvaluationTime = block.timestamp;
         additionalData[_wNftId].activeRequest = address(0);
@@ -208,31 +213,34 @@ contract WrappedNft is
         _price = additionalData[_wNftId].price;
     }
 
-    struct RequestInfo {
-        bool isResolved;
-        address request;
-    }
 
     // TODO function to check whether the issued request on the oracle is resolved or not
     function getRequestInfo(
         uint256 _wNftId
     ) external view returns (RequestInfo memory _requestInfo) {
+        require(ownerOf(_wNftId) == msg.sender, "You arent the owner of the Nft");
+
         address _request = additionalData[_wNftId].activeRequest;
+        
         if (_request != address(0)) {
             _requestInfo.request = _request;
             _requestInfo.isResolved =
                 IBaseRequestContract(_request).status() ==
                 RequestTypes.RequestStatus.Resolved;
+        }else {
+            revert NoActiveRequest();
         }
+
+        return _requestInfo;
     }
 
     // TODO nonReentrant
     function buy(uint256 _wNftId) external {
         require(additionalData[_wNftId].openToBuyer, "Not open for sale yet");
-
+        require(IERC20(MockUSDC).balanceOf(msg.sender) >= additionalData[_wNftId].price, "Insufficient Balance");
         address _nftOwner = ownerOf(_wNftId);
 
-        IERC20(mockUSDC).transferFrom(
+        IERC20(MockUSDC).transferFrom(
             msg.sender,
             _nftOwner,
             additionalData[_wNftId].price
@@ -258,6 +266,7 @@ contract WrappedNft is
     // TODO 2-step confirmation
     // when someone wants to buy, the USDC has to be deposited
     // and the owner has to accept the payment in order to sell the NFT
+    //function acceptPayment(){};
 
     function _authorizeUpgrade(
         address newImplementation
