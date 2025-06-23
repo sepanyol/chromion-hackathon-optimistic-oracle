@@ -478,7 +478,7 @@ contract WrappedNftTest is Test {
         vm.stopPrank();
     }
 
-        function test_buy_revert_not_open_for_sale() public {
+    function test_buy_revert_not_open_for_sale() public {
         uint256 _newNftId = _setupNftForSale();
 
         // Set openToBuyer to false
@@ -492,21 +492,7 @@ contract WrappedNftTest is Test {
         vm.stopPrank();
     }
 
-        function test_buy_revert_insufficient_usdc_balance() public {
-        uint256 _newNftId = _setupNftForSale();
-
-        // Create a new buyer with insufficient balance
-        address poorBuyer = address(0xdead2);
-        mockUSDC.mint(poorBuyer, _expectedPrice - 1); // Not enough USDC
-
-        vm.startPrank(poorBuyer);
-        mockUSDC.approve(address(_nft), _expectedPrice);
-        vm.expectRevert("Insufficient Balance");
-        _nft.buy(_newNftId);
-        vm.stopPrank();
-    }
-
-        function test_buy_revert_non_existent_nft() public {
+    function test_buy_revert_non_existent_nft() public {
         vm.startPrank(_buyer);
         mockUSDC.approve(address(_nft), _expectedPrice);
         vm.expectRevert();

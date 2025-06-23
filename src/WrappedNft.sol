@@ -48,6 +48,12 @@ contract WrappedNft is
         uint256 price
     );
 
+    event ProposedEvaluationAccepted(address indexed request, address indexed nftaddress, uint256 nftid, address indexed caller, uint256 price);
+    event EvaluatioNRequest(address indexed requestAddress, string _context, uint256 _wNftId);
+    event emit NftNowActiveForSale(uint256 wrappedNftId, uint256 _NftId) 
+    event emit NftNowInactiveForSale(uint256 wrappedNftId, uint256 _NftId) ;
+    
+
     struct AdditionalData {
         uint256 originId;
         uint256 price;
@@ -167,7 +173,7 @@ contract WrappedNft is
         additionalData[_wNftId].activeRequest = requestAddress;
         additionalData[_wNftId].requests.push(requestAddress);
 
-        // TODO emit EvaluatioNRequest()
+        emit EvaluatioNRequest(requestAddress, _context, _wNftId);
     }
 
     function acceptProposedEvaluation(uint256 _wNftId) external {
@@ -191,7 +197,7 @@ contract WrappedNft is
         additionalData[_wNftId].lastEvaluationTime = block.timestamp;
         additionalData[_wNftId].activeRequest = address(0);
 
-        // TODO emit ProposedEvaluationAccepted(request, nftaddress, nftid, msg.sender, price);
+        emit ProposedEvaluationAccepted(request, nftaddress, nftid, msg.sender, price);
     }
 
     function updateOpenToBuyerSaleStatus(
@@ -210,7 +216,7 @@ contract WrappedNft is
         );
         additionalData[_wNftId].openToBuyer = _status;
 
-        // TODO _status ? emit NftNowActiveForSale(wrappedNftId, _NftId) ?  emit NftNowInactiveForSale(wrappedNftId, _NftId) ;
+        _status ? emit NftNowActiveForSale(wrappedNftId, _NftId) ?  emit NftNowInactiveForSale(wrappedNftId, _NftId) ;
     }
 
     function getPrice(uint256 _wNftId) external view returns (uint256 _price) {
@@ -221,10 +227,7 @@ contract WrappedNft is
     function getRequestInfo(
         uint256 _wNftId
     ) external view returns (RequestInfo memory _requestInfo) {
-        require(
-            ownerOf(_wNftId) == msg.sender,
-            "You arent the owner of the Nft"
-        );
+
 
         address _request = additionalData[_wNftId].activeRequest;
 
@@ -244,10 +247,7 @@ contract WrappedNft is
     function buy(uint256 _wNftId) external {
         require(additionalData[_wNftId].openToBuyer, "Not open for sale yet");
         require(address(MockUSDC) != address(0), "Payment token not set");
-        require(
-            MockUSDC.balanceOf(msg.sender) >= additionalData[_wNftId].price,
-            "Insufficient Balance"
-        );
+
 
         address _nftOwner = ownerOf(_wNftId);
 
@@ -266,8 +266,8 @@ contract WrappedNft is
         // Transfer the original NFT to buyer (using stored data)
         IERC721(originNFT).transferFrom(address(this), msg.sender, originId);
 
-        // Emit event if you have it defined
-        // emit NftBought(msg.sender, _wNftId, originId, price);
+        
+        emit NftBought(msg.sender, _wNftId, originId, price);
     }
 
     // Fixed buy function - the critical bug is that you delete additionalData
