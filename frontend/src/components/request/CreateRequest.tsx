@@ -14,9 +14,6 @@ export const CreateRequest = () => {
     createRequest.initiate();
   };
 
-  console.log("createRequest.allowance.data", createRequest.allowance.data);
-  console.log("createRequest.hasAllowance", createRequest.hasAllowance);
-
   if (!state.isModalOpen) return <></>;
 
   return (

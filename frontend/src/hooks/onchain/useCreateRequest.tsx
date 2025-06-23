@@ -1,7 +1,7 @@
 import abi from "@/abis/factory.json";
 import { getFactoryByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { Address, toHex } from "viem";
+import { Address, pad, toBytes, toHex } from "viem";
 import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
 export type CreateRequestParams = {
@@ -46,7 +46,7 @@ export const useCreateRequest = ({ params }: useCreateRequestProps) => {
   const { chainId } = useAppKitNetwork();
 
   // mandatory
-  if (params) params.requester = address as Address;
+  if (params) params.requester = pad(address as Address);
 
   return useExecuteFunctionWithTokenTransfer({
     address: getFactoryByChainId(Number(chainId)),
