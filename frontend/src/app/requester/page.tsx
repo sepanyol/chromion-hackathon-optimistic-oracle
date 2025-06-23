@@ -1,18 +1,18 @@
 // app/requester/page.tsx
-'use client';
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
 import RequesterQuickActions from "@/components/Requester/RequesterQuickActions";
 import MyQuestions from "@/components/Requester/MyQuestions";
-import RequestModal from "@/components/RequestModal";
+import RequestModal from "@/components/request/RequestModal";
 import { TrendingUp, CheckCircle, Clock, Plus } from "lucide-react";
 
 export interface StatData {
   title: string;
   value: string;
   change: string;
-  changeType: 'positive' | 'negative';
+  changeType: "positive" | "negative";
   icon: React.ReactNode;
 }
 
@@ -20,7 +20,7 @@ interface Question {
   id: string;
   question: string;
   description: string;
-  status: 'Completed' | 'Pending' | 'Awaiting Review' | 'Challenged';
+  status: "Completed" | "Pending" | "Awaiting Review" | "Challenged";
   reward: string;
   timeAgo: string;
   chains: string[];
@@ -38,69 +38,69 @@ const RequesterPage: React.FC = () => {
       setIsLoading(true);
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setStats([
         {
-          title: 'Questions Submitted',
-          value: '24',
-          change: '+12% from last month',
-          changeType: 'positive',
-          icon: <TrendingUp className="w-6 h-6 text-blue-600" />
+          title: "Questions Submitted",
+          value: "24",
+          change: "+12% from last month",
+          changeType: "positive",
+          icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
         },
         {
-          title: 'Success Rate',
-          value: '96.5%',
-          change: '+2.1% from last month',
-          changeType: 'positive',
-          icon: <CheckCircle className="w-6 h-6 text-green-600" />
+          title: "Success Rate",
+          value: "96.5%",
+          change: "+2.1% from last month",
+          changeType: "positive",
+          icon: <CheckCircle className="w-6 h-6 text-green-600" />,
         },
         {
-          title: 'Avg Resolution Time',
-          value: '2.4h',
-          change: '-15min from last month',
-          changeType: 'positive',
-          icon: <Clock className="w-6 h-6 text-orange-600" />
-        }
+          title: "Avg Resolution Time",
+          value: "2.4h",
+          change: "-15min from last month",
+          changeType: "positive",
+          icon: <Clock className="w-6 h-6 text-orange-600" />,
+        },
       ]);
 
       setQuestions([
         {
-          id: '1247',
-          question: 'Weather data for NYC on Dec 15',
-          description: 'Weather data for NYC on Dec 15 • Ethereum → Base',
-          status: 'Completed',
-          reward: '+$45 USDC',
-          timeAgo: '2 minutes ago',
-          chains: ['Ethereum', 'Base']
+          id: "1247",
+          question: "Weather data for NYC on Dec 15",
+          description: "Weather data for NYC on Dec 15 • Ethereum → Base",
+          status: "Completed",
+          reward: "+$45 USDC",
+          timeAgo: "2 minutes ago",
+          chains: ["Ethereum", "Base"],
         },
         {
-          id: '1248',
-          question: 'Stock price for AAPL on specific date',
-          description: 'Stock price for AAPL • Base → Ethereum',
-          status: 'Pending',
-          reward: '$25 USDC',
-          timeAgo: '15 minutes ago',
-          chains: ['Base', 'Ethereum']
+          id: "1248",
+          question: "Stock price for AAPL on specific date",
+          description: "Stock price for AAPL • Base → Ethereum",
+          status: "Pending",
+          reward: "$25 USDC",
+          timeAgo: "15 minutes ago",
+          chains: ["Base", "Ethereum"],
         },
         {
-          id: '1249',
-          question: 'BTC price at market close',
-          description: 'Bitcoin price at market close • Ethereum',
-          status: 'Awaiting Review',
-          reward: '$50 USDC',
-          timeAgo: '1 hour ago',
-          chains: ['Ethereum']
+          id: "1249",
+          question: "BTC price at market close",
+          description: "Bitcoin price at market close • Ethereum",
+          status: "Awaiting Review",
+          reward: "$50 USDC",
+          timeAgo: "1 hour ago",
+          chains: ["Ethereum"],
         },
         {
-          id: '1250',
-          question: 'Sports game result verification',
-          description: 'NBA game result Lakers vs Warriors • Polygon',
-          status: 'Challenged',
-          reward: '$30 USDC',
-          timeAgo: '3 hours ago',
-          chains: ['Polygon']
-        }
+          id: "1250",
+          question: "Sports game result verification",
+          description: "NBA game result Lakers vs Warriors • Polygon",
+          status: "Challenged",
+          reward: "$30 USDC",
+          timeAgo: "3 hours ago",
+          chains: ["Polygon"],
+        },
       ]);
 
       setIsLoading(false);
@@ -119,7 +119,7 @@ const RequesterPage: React.FC = () => {
 
   const handleViewAnalytics = () => {
     // Navigate to analytics page or show analytics modal
-    console.log('View analytics clicked');
+    console.log("View analytics clicked");
   };
 
   const handleNewRequest = (requestData: any) => {
@@ -127,13 +127,13 @@ const RequesterPage: React.FC = () => {
       id: (Date.now() % 10000).toString(),
       question: requestData.description,
       description: requestData.description,
-      status: 'Pending',
+      status: "Pending",
       reward: `$${requestData.reward} USDC`,
-      timeAgo: 'Just now',
-      chains: ['Ethereum'] // Default to Ethereum
+      timeAgo: "Just now",
+      chains: ["Ethereum"], // Default to Ethereum
     };
-    
-    setQuestions(prev => [newQuestion, ...prev]);
+
+    setQuestions((prev) => [newQuestion, ...prev]);
     setShowRequestModal(false);
   };
 
@@ -151,7 +151,7 @@ const RequesterPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Stats Grid */}
@@ -182,12 +182,12 @@ const RequesterPage: React.FC = () => {
       </button>
 
       {/* Request Modal */}
-      {showRequestModal && (
+      {/* {showRequestModal && (
         <RequestModal
           onSubmit={handleNewRequest}
           onClose={() => setShowRequestModal(false)}
         />
-      )}
+      )} */}
 
       {/* Template Modal */}
       {showTemplateModal && (
@@ -202,32 +202,32 @@ const TemplateModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const templates = [
     {
       id: 1,
-      name: 'Stock Price Query',
-      description: 'Get current or historical stock prices',
-      category: 'Finance',
-      popular: true
+      name: "Stock Price Query",
+      description: "Get current or historical stock prices",
+      category: "Finance",
+      popular: true,
     },
     {
       id: 2,
-      name: 'Weather Data',
-      description: 'Current weather conditions for any location',
-      category: 'Environment',
-      popular: true
+      name: "Weather Data",
+      description: "Current weather conditions for any location",
+      category: "Environment",
+      popular: true,
     },
     {
       id: 3,
-      name: 'Sports Results',
-      description: 'Game results and sports statistics',
-      category: 'Sports',
-      popular: false
+      name: "Sports Results",
+      description: "Game results and sports statistics",
+      category: "Sports",
+      popular: false,
     },
     {
       id: 4,
-      name: 'Crypto Price Feed',
-      description: 'Real-time cryptocurrency prices',
-      category: 'Crypto',
-      popular: true
-    }
+      name: "Crypto Price Feed",
+      description: "Real-time cryptocurrency prices",
+      category: "Crypto",
+      popular: true,
+    },
   ];
 
   return (
@@ -235,8 +235,12 @@ const TemplateModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Choose a Template</h2>
-            <p className="text-sm text-gray-600 mt-1">Start with a pre-built template to save time</p>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Choose a Template
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Start with a pre-built template to save time
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -268,7 +272,9 @@ const TemplateModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     {template.category}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">{template.description}</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  {template.description}
+                </p>
                 <button className="w-full bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition-colors duration-200 font-medium">
                   Use Template
                 </button>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ethersproject/address": "^5.8.0",
     "@reown/appkit": "^1.7.10",
     "@reown/appkit-adapter-solana": "^1.7.10",
     "@reown/appkit-adapter-wagmi": "^1.7.10",

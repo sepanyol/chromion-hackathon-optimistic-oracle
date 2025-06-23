@@ -4,6 +4,7 @@ import "./globals.css";
 import { headers } from "next/headers"; // added
 
 import ContextProvider from "@/utils/appkit/context";
+import CreateRequestProvider from "@/components/request/CreateRequestProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -6,6 +6,12 @@ import { Loader } from "@/components/Loader";
 import Navbar from "@/components/Navbar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import QuickActions from "@/components/QuickActions";
+import { CreateRequest } from "@/components/request/CreateRequest";
+import CreateRequestProvider, {
+  ActionTypes,
+  useCreateRequestContext,
+} from "@/components/request/CreateRequestProvider";
+import RequestModal from "@/components/request/RequestModal";
 import RequestsTable from "@/components/RequestsTable";
 import StatCard from "@/components/StatCard";
 import { useActiveRequests } from "@/hooks/useActiveRequests";
@@ -20,6 +26,7 @@ import { lowerCase, upperFirst } from "lodash";
 import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { formatUnits } from "viem";
+import { useConnectors } from "wagmi";
 
 export interface CrossChainNetwork {
   network: string;
@@ -37,6 +44,9 @@ const Dashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<
     "all" | "open" | "proposed" | "challenged"
   >("all");
+
+  // create request context
+  const createContext = useCreateRequestContext();
 
   // Simulate data loading
   useEffect(() => {
@@ -202,7 +212,9 @@ const Dashboard: React.FC = () => {
     // In real app, would make API call
   };
 
-  const handleNewRequest = (requestData: any) => {};
+  const handleOnNewRequest = () => {
+    createContext.dispatch({ type: ActionTypes.OpenModal });
+  };
 
   if (isLoading) {
     return (
@@ -216,46 +228,47 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+    <CreateRequestProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showNavigation />
 
-      {/* Network Status Bar */}
-      <NetworkStatusBar />
+        {/* Network Status Bar */}
+        <NetworkStatusBar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 mb-18 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {stats.map((stat, index) => (
-                <StatCard key={index} {...stat} />
-              ))}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 mb-18 lg:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-3 space-y-8">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {stats.map((stat, index) => (
+                  <StatCard key={index} {...stat} />
+                ))}
+              </div>
+
+              {/* Recent Activity */}
+              <ActivityFeed activities={activities} />
+
+              {/* Requests Section */}
             </div>
 
-            {/* Recent Activity */}
-            <ActivityFeed activities={activities} />
-
-            {/* Requests Section */}
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <CrossChainStatus networks={networks} />
+              <QuickActions />
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <CrossChainStatus networks={networks} />
-            {/* <QuickActions onNewRequest={() => setShowRequestModal(true)} /> */}
-          </div>
-        </div>
+          <div className="bg-white mt-5 rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Active Requests
+                </h2>
 
-        <div className="bg-white mt-5 rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Active Requests
-              </h2>
-
-              <div className="flex items-center space-x-4">
-                {/* Search */}
-                {/* <input
+                <div className="flex items-center space-x-4">
+                  {/* Search */}
+                  {/* <input
                   type="text"
                   placeholder="Search requests..."
                   value={searchTerm}
@@ -263,50 +276,45 @@ const Dashboard: React.FC = () => {
                   className="px-3 py-2 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 /> */}
 
-                {/* Filter Tabs */}
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  {(["all", "open", "proposed", "challenged"] as const).map(
-                    (tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setSelectedTab(tab)}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 ${
-                          selectedTab === tab
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        {upperFirst(tab)}
-                      </button>
-                    )
-                  )}
+                  {/* Filter Tabs */}
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    {(["all", "open", "proposed", "challenged"] as const).map(
+                      (tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setSelectedTab(tab)}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 ${
+                            selectedTab === tab
+                              ? "bg-white text-blue-600 shadow-sm"
+                              : "text-gray-600 hover:text-gray-900"
+                          }`}
+                        >
+                          {upperFirst(tab)}
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
+
+            {activeRequests.isLoading || activeRequests.isFetching ? (
+              <div className="p-4 flex flex-row justify-center items-center">
+                <Loader size={36} />
+              </div>
+            ) : (
+              <RequestsTable
+                requests={filteredRequests}
+                onPropose={handlePropose}
+                onChallenge={handleChallenge}
+              />
+            )}
           </div>
-
-          {activeRequests.isLoading || activeRequests.isFetching ? (
-            <div className="p-4 flex flex-row justify-center items-center">
-              <Loader size={36} />
-            </div>
-          ) : (
-            <RequestsTable
-              requests={filteredRequests}
-              onPropose={handlePropose}
-              onChallenge={handleChallenge}
-            />
-          )}
         </div>
-      </div>
 
-      {/* Request Modal */}
-      {/* {showRequestModal && (
-        <RequestModal
-          onSubmit={handleNewRequest}
-          onClose={() => setShowRequestModal(false)}
-        />
-      )} */}
-    </div>
+        <CreateRequest />
+      </div>
+    </CreateRequestProvider>
   );
 };
 
