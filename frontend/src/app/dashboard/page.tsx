@@ -25,7 +25,7 @@ import { timeAgo } from "@/utils/time-ago";
 import { lowerCase, upperFirst } from "lodash";
 import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { formatUnits } from "viem";
+import { Address, formatUnits } from "viem";
 import { useConnectors } from "wagmi";
 
 export interface CrossChainNetwork {
@@ -126,12 +126,7 @@ const Dashboard: React.FC = () => {
             ({
               id: activity.id,
               title: `${activity.request.question}`,
-              user:
-                activity.user === null
-                  ? null
-                  : `${activity.user.id.slice(0, 6)}...${activity.user.id.slice(
-                      -4
-                    )}`,
+              user: activity.user ? activity.user.id : null,
               time: timeAgo.format(Number(activity.createdAt) * 1000),
               status: upperFirst(
                 lowerCase(activity.activity)

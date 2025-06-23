@@ -1,3 +1,5 @@
+import { Address } from "viem";
+
 export type ActivityItemStatus =
   | "Created"
   | "Proposed"
@@ -8,7 +10,7 @@ export type ActivityItemStatus =
 export interface ActivityItem {
   id: string;
   title: string;
-  user: string | null;
+  user: Address | null;
   time: string;
   status: ActivityItemStatus;
 }

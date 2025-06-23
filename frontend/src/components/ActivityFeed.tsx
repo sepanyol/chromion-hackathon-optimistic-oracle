@@ -6,6 +6,7 @@ import {
   ActivityItem as Activity,
   ActivityItemStatus,
 } from "@/types/Activities";
+import { ShortAddress } from "./utilities/ShortAddress";
 
 const getStatusColor = (status: ActivityItemStatus) => {
   switch (status) {
@@ -68,14 +69,15 @@ const ActivityItem: React.FC<{ activity: Activity }> = ({ activity }) => {
         <div className="flex items-center space-x-2 mt-1">
           <p className="text-xs text-gray-500">by</p>
           {activity.user ? (
-            <button
-              onClick={copyUserAddress}
-              className="text-xs text-blue-400 hover:text-blue-600 font-mono flex items-center space-x-1 hover:bg-blue-50 py-1 rounded transition-all duration-200"
-            >
-              <span>{activity.user}</span>
-              <Copy className="w-3 h-3" />
-            </button>
+            <ShortAddress address={activity.user} />
           ) : (
+            // <button
+            //   onClick={copyUserAddress}
+            //   className="text-xs text-blue-400 hover:text-blue-600 font-mono flex items-center space-x-1 hover:bg-blue-50 py-1 rounded transition-all duration-200"
+            // >
+            //   <span>{activity.user}</span>
+            //   <Copy className="w-3 h-3" />
+            // </button>
             <span className="text-xs text-blue-400 py-1">System</span>
           )}
           <span className="text-xs text-gray-500">•</span>
