@@ -33,16 +33,16 @@ contract WrappedNftTest is Test {
     MockUSDC mockUSDC;
 
     function setUp() public {
+        mockUSDC = new MockUSDC();
+        mockUSDC.mint(_buyer, _expectedPrice * 2);
+
         _nft = new WrappedNft(_factory);
-        _nft.initialize();
+        _nft.initialize(address(mockUSDC));
 
         _originalNFT = new MyERC721();
         _originalNFT.mint(_originNftOwner, 1);
 
-        mockUSDC = new MockUSDC();
-        mockUSDC.mint(_buyer, _expectedPrice * 2);
-
-         vm.mockCall(
+        vm.mockCall(
             _factory,
             abi.encodeWithSelector(IRequestFactory.createRequest.selector),
             abi.encode(_request)
@@ -165,7 +165,7 @@ contract WrappedNftTest is Test {
         _originalNFT.approve(address(_nft), 1);
         uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-        (,,,, address activeRequest, ) = _nft.additionalData(_newNftId);
+        (, , , , address activeRequest, ) = _nft.additionalData(_newNftId);
         assertEq(activeRequest, address(0));
 
         _nft.withdraw(_newNftId);
@@ -181,16 +181,18 @@ contract WrappedNftTest is Test {
 
         vm.warp(block.timestamp + 86400 * 7 + 1);
         _nft.evaluate(_newNftId, "Test evaluation context");
-        (,,,, address activeRequest, bool openToBuyer) = _nft.additionalData(_newNftId);
+        (, , , , address activeRequest, bool openToBuyer) = _nft.additionalData(
+            _newNftId
+        );
         assertNotEq(activeRequest, address(0));
         assertEq(openToBuyer, false);
         vm.stopPrank();
     }
 
-    function test_evaluate_Failed() public{
+    function test_evaluate_Failed() public {
         vm.startPrank(_originNftOwner);
         _originalNFT.approve(address(_nft), 1);
-        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));        
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
         vm.expectRevert("Cooldown still active");
         _nft.evaluate(_newNftId, "Test evaluation context");
         vm.stopPrank();
@@ -199,34 +201,46 @@ contract WrappedNftTest is Test {
     function test_acceptProposedEvaluation_pass() public {
         vm.startPrank(_originNftOwner);
         _originalNFT.approve(address(_nft), 1);
-        uint256 _newNftId = _nft.deposit(1, address(_originalNFT)); 
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
         vm.warp(block.timestamp + 86400 * 7 + 1);
         _nft.evaluate(_newNftId, "Test evaluation context");
 
         _nft.acceptProposedEvaluation(_newNftId);
-        (, uint256 price, uint256 lastEvaluationTime,, address activeRequest,) = _nft.additionalData(_newNftId);
+        (
+            ,
+            uint256 price,
+            uint256 lastEvaluationTime,
+            ,
+            address activeRequest,
+
+        ) = _nft.additionalData(_newNftId);
         assertEq(activeRequest, address(0));
         assertEq(price, _expectedPrice, "Price should be updated");
-        assertEq(lastEvaluationTime, block.timestamp, "Last evaluation time should be current timestamp");
+        assertEq(
+            lastEvaluationTime,
+            block.timestamp,
+            "Last evaluation time should be current timestamp"
+        );
 
         vm.stopPrank();
-
     }
 
     function test_acceptProposedEvaluation_RequestNotExist() public {
         vm.startPrank(_originNftOwner);
         _originalNFT.approve(address(_nft), 1);
-        uint256 _newNftId = _nft.deposit(1, address(_originalNFT)); 
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
         vm.expectRevert("No request existing");
-         _nft.acceptProposedEvaluation(_newNftId);
+        _nft.acceptProposedEvaluation(_newNftId);
     }
 
-    function test_acceptProposedEvaluation_RevertWhen_RequestNotResolved() public {
+    function test_acceptProposedEvaluation_RevertWhen_RequestNotResolved()
+        public
+    {
         vm.startPrank(_originNftOwner);
         _originalNFT.approve(address(_nft), 1);
-        uint256 _newNftId = _nft.deposit(1, address(_originalNFT)); 
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
         vm.warp(block.timestamp + 86400 * 7 + 1);
         _nft.evaluate(_newNftId, "Test evaluation context");
@@ -236,11 +250,10 @@ contract WrappedNftTest is Test {
             abi.encodeWithSelector(IBaseRequestContract.status.selector),
             abi.encode(RequestTypes.RequestStatus.Pending)
         );
-        
-        
+
         vm.expectRevert("Request is not resolved yet");
         _nft.acceptProposedEvaluation(_newNftId);
-        
+
         vm.stopPrank();
     }
 
@@ -254,11 +267,11 @@ contract WrappedNftTest is Test {
 
         _nft.acceptProposedEvaluation(_newNftId);
         _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
-        (, uint256 price,,, address activeRequest, bool openToBuyer) = _nft.additionalData(_newNftId); 
+        (, uint256 price, , , address activeRequest, bool openToBuyer) = _nft
+            .additionalData(_newNftId);
         assertEq(price, _expectedPrice);
         assertEq(activeRequest, address(0));
         assertEq(openToBuyer, true);
-
     }
 
     function test_updateOpenToBuyerSaleStatus_RevertPriceNotAvailable() public {
@@ -272,152 +285,232 @@ contract WrappedNftTest is Test {
         vm.stopPrank();
     }
 
-function test_updateOpenToBuyerSaleStatus_RevertWaitForCurrentRequestToEnableSale() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+    function test_updateOpenToBuyerSaleStatus_RevertWaitForCurrentRequestToEnableSale()
+        public
+    {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-    // First complete the evaluation process to set the price
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    _nft.acceptProposedEvaluation(_newNftId);
+        // First complete the evaluation process to set the price
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        _nft.acceptProposedEvaluation(_newNftId);
 
-    // Now start a new evaluation request to create an active request
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Second evaluation context");
+        // Now start a new evaluation request to create an active request
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Second evaluation context");
 
-    // Verify active request is set and price exists
-    (, uint256 price,,, address activeRequest,) = _nft.additionalData(_newNftId); 
-    assertNotEq(activeRequest, address(0), "Active request should be set");
-    assertEq(price, _expectedPrice, "Price should be set from previous evaluation");
+        // Verify active request is set and price exists
+        (, uint256 price, , , address activeRequest, ) = _nft.additionalData(
+            _newNftId
+        );
+        assertNotEq(activeRequest, address(0), "Active request should be set");
+        assertEq(
+            price,
+            _expectedPrice,
+            "Price should be set from previous evaluation"
+        );
 
-    // This should revert because there's an active request
-    vm.expectRevert("Wait for current request in order to enable sale");
-    _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
-    
-    vm.stopPrank();
-}
+        // This should revert because there's an active request
+        vm.expectRevert("Wait for current request in order to enable sale");
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
 
-function test_updateOpenToBuyerSaleStatus_RevertWhen_StatusDidntChange() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+        vm.stopPrank();
+    }
 
-    // Complete evaluation process to set price and clear active request
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    _nft.acceptProposedEvaluation(_newNftId);
+    function test_updateOpenToBuyerSaleStatus_RevertWhen_StatusDidntChange()
+        public
+    {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-    // First, successfully set status to true
-    _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
-    
-    // Verify status is now true
-    (,,,, address activeRequest, bool openToBuyer) = _nft.additionalData(_newNftId);
-    assertEq(activeRequest, address(0), "Should have no active request");
-    assertEq(openToBuyer, true, "Status should be true");
+        // Complete evaluation process to set price and clear active request
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        _nft.acceptProposedEvaluation(_newNftId);
 
-    // Now try to set it to true again - this should revert
-    vm.expectRevert("Status didn't change");
-    _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
+        // First, successfully set status to true
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
 
-    vm.stopPrank();
-}
+        // Verify status is now true
+        (, , , , address activeRequest, bool openToBuyer) = _nft.additionalData(
+            _newNftId
+        );
+        assertEq(activeRequest, address(0), "Should have no active request");
+        assertEq(openToBuyer, true, "Status should be true");
 
-function test_updateOpenToBuyerSaleStatus_RevertWhen_StatusDidntChange_False() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+        // Now try to set it to true again - this should revert
+        vm.expectRevert("Status didn't change");
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
 
-    // Complete evaluation process to set price and clear active request
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    _nft.acceptProposedEvaluation(_newNftId);
+        vm.stopPrank();
+    }
 
-    // Verify initial status is false (default)
-    (,,,, address activeRequest, bool openToBuyer) = _nft.additionalData(_newNftId);
-    assertEq(activeRequest, address(0), "Should have no active request");
-    assertEq(openToBuyer, false, "Initial status should be false");
+    function test_updateOpenToBuyerSaleStatus_RevertWhen_StatusDidntChange_False()
+        public
+    {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-    // Try to set it to false again - this should revert
-    vm.expectRevert("Status didn't change");
-    _nft.updateOpenToBuyerSaleStatus(_newNftId, false);
+        // Complete evaluation process to set price and clear active request
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        _nft.acceptProposedEvaluation(_newNftId);
 
-    vm.stopPrank();
-}
-    
-function test_getPrice() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+        // Verify initial status is false (default)
+        (, , , , address activeRequest, bool openToBuyer) = _nft.additionalData(
+            _newNftId
+        );
+        assertEq(activeRequest, address(0), "Should have no active request");
+        assertEq(openToBuyer, false, "Initial status should be false");
 
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    _nft.acceptProposedEvaluation(_newNftId);
+        // Try to set it to false again - this should revert
+        vm.expectRevert("Status didn't change");
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, false);
 
-    (, uint256 price,,, address activeRequest,) = _nft.additionalData(_newNftId);
-    _nft.getPrice(_newNftId);
-    assertEq(price, _expectedPrice);
-    vm.stopPrank();
-}
+        vm.stopPrank();
+    }
 
-function test_getRequestInfo() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+    function test_getPrice() public {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    (,,,, address activeRequest,) = _nft.additionalData(_newNftId);
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        _nft.acceptProposedEvaluation(_newNftId);
 
-    WrappedNft.RequestInfo memory requestInfo = _nft.getRequestInfo(_newNftId);
-    
-    assertEq(requestInfo.request, activeRequest);
-    assertTrue(requestInfo.isResolved);
+        (, uint256 price, , , address activeRequest, ) = _nft.additionalData(
+            _newNftId
+        );
+        _nft.getPrice(_newNftId);
+        assertEq(price, _expectedPrice);
+        vm.stopPrank();
+    }
 
-}
+    function test_getRequestInfo() public {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-function test_getRequestInfo_Fails() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        (, , , , address activeRequest, ) = _nft.additionalData(_newNftId);
 
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
+        WrappedNft.RequestInfo memory requestInfo = _nft.getRequestInfo(
+            _newNftId
+        );
 
-    _nft.acceptProposedEvaluation(_newNftId);
-    vm.expectRevert();
-    _nft.getRequestInfo(_newNftId);
-    vm.stopPrank();
-}
+        assertEq(requestInfo.request, activeRequest);
+        assertTrue(requestInfo.isResolved);
+    }
 
-function test_buy() public {
-    vm.startPrank(_originNftOwner);
-    _originalNFT.approve(address(_nft), 1);
-    uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
-    vm.warp(block.timestamp + 86400 * 7 + 1);
-    _nft.evaluate(_newNftId, "Test evaluation context");
-    _nft.acceptProposedEvaluation(_newNftId);
-    _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
-    vm.stopPrank();
-   
+    function test_getRequestInfo_Fails() public {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        uint256 _newNftId = _nft.deposit(1, address(_originalNFT));
 
-   vm.startPrank(_buyer);
-   mockUSDC.approve(address(_nft), _expectedPrice);
-    
-    _nft.buy(_newNftId);
-    
-    vm.stopPrank();
-}
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
 
-    // function _setupNftForSale() internal returns (uint256 _newNftId) {
-    //     vm.startPrank(_originNftOwner);
-    //     _originalNFT.approve(address(_nft), 1);
-    //     _newNftId = _nft.deposit(1, address(_originalNFT));
-    //     vm.warp(block.timestamp + 86400 * 7 + 1);
-    //     _nft.evaluate(_newNftId, "Test evaluation context");
-    //     _nft.acceptProposedEvaluation(_newNftId);
-    //     _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
-    //     vm.stopPrank();
-    // }
-    
+        _nft.acceptProposedEvaluation(_newNftId);
+        vm.expectRevert();
+        _nft.getRequestInfo(_newNftId);
+        vm.stopPrank();
+    }
+
+    function test_buy_successful() public {
+        uint256 _newNftId = _setupNftForSale();
+
+        // Record initial balances
+        uint256 initialBuyerBalance = mockUSDC.balanceOf(_buyer);
+        uint256 initialOwnerBalance = mockUSDC.balanceOf(_originNftOwner);
+
+        vm.startPrank(_buyer);
+        mockUSDC.approve(address(_nft), _expectedPrice);
+
+        // Verify NFT is open for sale
+        (, , , , address activeRequest, bool openToBuyer) = _nft.additionalData(
+            _newNftId
+        );
+        assertTrue(openToBuyer, "NFT should be open for sale");
+        assertEq(activeRequest, address(0), "Should have no active request");
+
+        _nft.buy(_newNftId);
+
+        vm.stopPrank();
+
+        // Verify payment was transferred
+        assertEq(
+            mockUSDC.balanceOf(_buyer),
+            initialBuyerBalance - _expectedPrice,
+            "Buyer balance should decrease"
+        );
+        assertEq(
+            mockUSDC.balanceOf(_originNftOwner),
+            initialOwnerBalance + _expectedPrice,
+            "Owner balance should increase"
+        );
+
+        // Verify wrapped NFT was burned
+        vm.expectRevert(); // Should revert because NFT was burned
+        _nft.ownerOf(_newNftId);
+
+        // Verify original NFT was transferred to buyer
+        assertEq(
+            _originalNFT.ownerOf(1),
+            _buyer,
+            "Original NFT should be transferred to buyer"
+        );
+    }
+
+    function _setupNftForSale() internal returns (uint256 _newNftId) {
+        vm.startPrank(_originNftOwner);
+        _originalNFT.approve(address(_nft), 1);
+        _newNftId = _nft.deposit(1, address(_originalNFT));
+        vm.warp(block.timestamp + 86400 * 7 + 1);
+        _nft.evaluate(_newNftId, "Test evaluation context");
+        _nft.acceptProposedEvaluation(_newNftId);
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, true);
+        vm.stopPrank();
+    }
+
+        function test_buy_revert_not_open_for_sale() public {
+        uint256 _newNftId = _setupNftForSale();
+
+        // Set openToBuyer to false
+        vm.prank(_originNftOwner);
+        _nft.updateOpenToBuyerSaleStatus(_newNftId, false);
+
+        vm.startPrank(_buyer);
+        mockUSDC.approve(address(_nft), _expectedPrice);
+        vm.expectRevert("Not open for sale yet");
+        _nft.buy(_newNftId);
+        vm.stopPrank();
+    }
+
+        function test_buy_revert_insufficient_usdc_balance() public {
+        uint256 _newNftId = _setupNftForSale();
+
+        // Create a new buyer with insufficient balance
+        address poorBuyer = address(0xdead2);
+        mockUSDC.mint(poorBuyer, _expectedPrice - 1); // Not enough USDC
+
+        vm.startPrank(poorBuyer);
+        mockUSDC.approve(address(_nft), _expectedPrice);
+        vm.expectRevert("Insufficient Balance");
+        _nft.buy(_newNftId);
+        vm.stopPrank();
+    }
+
+        function test_buy_revert_non_existent_nft() public {
+        vm.startPrank(_buyer);
+        mockUSDC.approve(address(_nft), _expectedPrice);
+        vm.expectRevert();
+        _nft.buy(999); // Non-existent NFT ID
+        vm.stopPrank();
+    }
 }

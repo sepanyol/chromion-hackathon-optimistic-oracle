@@ -58,7 +58,6 @@ contract WrappedNft is
         address[] requests;
     }
 
-    
     struct RequestInfo {
         bool isResolved;
         address request;
@@ -73,10 +72,11 @@ contract WrappedNft is
         requestFactory = _requestFactory;
     }
 
-    function initialize() public initializer {
+    function initialize(address _mockUSDC) public initializer {
         __ERC721_init("Wrapped NFT", "WNFT");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
+        MockUSDC = IERC20(_mockUSDC);
     }
 
     function deposit(
@@ -182,7 +182,11 @@ contract WrappedNft is
             "Request is not resolved yet"
         );
 
-        additionalData[_wNftId].price = abi.decode(IBaseRequestContract(additionalData[_wNftId].activeRequest).answer(), (uint256));
+        additionalData[_wNftId].price = abi.decode(
+            IBaseRequestContract(additionalData[_wNftId].activeRequest)
+                .answer(),
+            (uint256)
+        );
 
         additionalData[_wNftId].lastEvaluationTime = block.timestamp;
         additionalData[_wNftId].activeRequest = address(0);
@@ -213,21 +217,23 @@ contract WrappedNft is
         _price = additionalData[_wNftId].price;
     }
 
-
     // TODO function to check whether the issued request on the oracle is resolved or not
     function getRequestInfo(
         uint256 _wNftId
     ) external view returns (RequestInfo memory _requestInfo) {
-        require(ownerOf(_wNftId) == msg.sender, "You arent the owner of the Nft");
+        require(
+            ownerOf(_wNftId) == msg.sender,
+            "You arent the owner of the Nft"
+        );
 
         address _request = additionalData[_wNftId].activeRequest;
-        
+
         if (_request != address(0)) {
             _requestInfo.request = _request;
             _requestInfo.isResolved =
                 IBaseRequestContract(_request).status() ==
                 RequestTypes.RequestStatus.Resolved;
-        }else {
+        } else {
             revert NoActiveRequest();
         }
 
@@ -237,31 +243,35 @@ contract WrappedNft is
     // TODO nonReentrant
     function buy(uint256 _wNftId) external {
         require(additionalData[_wNftId].openToBuyer, "Not open for sale yet");
-        require(IERC20(MockUSDC).balanceOf(msg.sender) >= additionalData[_wNftId].price, "Insufficient Balance");
-        address _nftOwner = ownerOf(_wNftId);
-
-        IERC20(MockUSDC).transferFrom(
-            msg.sender,
-            _nftOwner,
-            additionalData[_wNftId].price
+        require(address(MockUSDC) != address(0), "Payment token not set");
+        require(
+            MockUSDC.balanceOf(msg.sender) >= additionalData[_wNftId].price,
+            "Insufficient Balance"
         );
 
+        address _nftOwner = ownerOf(_wNftId);
+
+        // Store the data we need BEFORE deleting
+        address originNFT = additionalData[_wNftId].originNFT;
+        uint256 originId = additionalData[_wNftId].originId;
+        uint256 price = additionalData[_wNftId].price;
+
+        // Transfer payment
+        MockUSDC.transferFrom(msg.sender, _nftOwner, price);
+
+        // Burn the wrapped NFT and clean up data
         _burn(_wNftId);
         delete additionalData[_wNftId];
 
-        IERC721(additionalData[_wNftId].originNFT).transferFrom(
-            address(this),
-            msg.sender,
-            additionalData[_wNftId].originId
-        );
+        // Transfer the original NFT to buyer (using stored data)
+        IERC721(originNFT).transferFrom(address(this), msg.sender, originId);
 
-        // TODO emit NftBought(
-        //     wrappedNftId,
-        //     msg.sender,
-        //     nftId,
-        //     feedbacks[wrappedNftId].price
-        // );
+        // Emit event if you have it defined
+        // emit NftBought(msg.sender, _wNftId, originId, price);
     }
+
+    // Fixed buy function - the critical bug is that you delete additionalData
+    // before using it to transfer the original NFT
 
     // TODO 2-step confirmation
     // when someone wants to buy, the USDC has to be deposited
