@@ -19,6 +19,7 @@ contract WrappedNft is
 {
     uint256 public constant EVALUATION_REQUEST_COOLDOWN = 86400 * 7;
     address public immutable requestFactory;
+    IERC20 public usdc;
 
     error NoActiveRequest();
 
@@ -39,8 +40,6 @@ contract WrappedNft is
         string message,
         bool accepted
     );
-
-    event NftNowActiveForSale(uint256 wrappedNftId, uint256 _NftId);
     event NftBought(
         address indexed buyer,
         uint256 wrappedNftId,
@@ -48,10 +47,10 @@ contract WrappedNft is
         uint256 price
     );
 
-    event ProposedEvaluationAccepted(address indexed request, address indexed nftaddress, uint256 nftid, address indexed caller, uint256 price);
+    event ProposedEvaluationAccepted(address indexed request, uint256 nftid, address indexed caller, uint256 price);
     event EvaluatioNRequest(address indexed requestAddress, string _context, uint256 _wNftId);
-    event emit NftNowActiveForSale(uint256 wrappedNftId, uint256 _NftId) 
-    event emit NftNowInactiveForSale(uint256 wrappedNftId, uint256 _NftId) ;
+    event NftNowActiveForSale(uint256 wrappedNftId);
+    event NftNowInactiveForSale(uint256 wrappedNftId) ;
     
 
     struct AdditionalData {
@@ -69,7 +68,7 @@ contract WrappedNft is
         address request;
     }
 
-    IERC20 public MockUSDC;
+    
     uint256 private wNftId;
 
     mapping(uint256 => AdditionalData) public additionalData;
@@ -78,11 +77,11 @@ contract WrappedNft is
         requestFactory = _requestFactory;
     }
 
-    function initialize(address _mockUSDC) public initializer {
+    function initialize(address _usdc) public initializer {
         __ERC721_init("Wrapped NFT", "WNFT");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
-        MockUSDC = IERC20(_mockUSDC);
+        usdc = IERC20(_usdc);   
     }
 
     function deposit(
@@ -195,9 +194,10 @@ contract WrappedNft is
         );
 
         additionalData[_wNftId].lastEvaluationTime = block.timestamp;
+        address _requestId = additionalData[_wNftId].activeRequest;
         additionalData[_wNftId].activeRequest = address(0);
-
-        emit ProposedEvaluationAccepted(request, nftaddress, nftid, msg.sender, price);
+    
+        emit ProposedEvaluationAccepted(_requestId, _wNftId, msg.sender, additionalData[_wNftId].price);
     }
 
     function updateOpenToBuyerSaleStatus(
@@ -216,7 +216,11 @@ contract WrappedNft is
         );
         additionalData[_wNftId].openToBuyer = _status;
 
-        _status ? emit NftNowActiveForSale(wrappedNftId, _NftId) ?  emit NftNowInactiveForSale(wrappedNftId, _NftId) ;
+        if(_status) {
+            emit NftNowActiveForSale(_wNftId);
+        } else {
+            emit NftNowInactiveForSale(_wNftId) ;
+        }
     }
 
     function getPrice(uint256 _wNftId) external view returns (uint256 _price) {
@@ -246,8 +250,6 @@ contract WrappedNft is
     // TODO nonReentrant
     function buy(uint256 _wNftId) external {
         require(additionalData[_wNftId].openToBuyer, "Not open for sale yet");
-        require(address(MockUSDC) != address(0), "Payment token not set");
-
 
         address _nftOwner = ownerOf(_wNftId);
 
@@ -257,13 +259,13 @@ contract WrappedNft is
         uint256 price = additionalData[_wNftId].price;
 
         // Transfer payment
-        MockUSDC.transferFrom(msg.sender, _nftOwner, price);
+        usdc.transferFrom(msg.sender, _nftOwner, price);
 
         // Burn the wrapped NFT and clean up data
         _burn(_wNftId);
         delete additionalData[_wNftId];
 
-        // Transfer the original NFT to buyer (using stored data)
+        
         IERC721(originNFT).transferFrom(address(this), msg.sender, originId);
 
         
@@ -283,4 +285,3 @@ contract WrappedNft is
     ) internal override onlyOwner {}
 }
 
-//Error: Couldn't find forge binary. Performed lookup: ["forge","C:\\Users\\NWAJAGU\\.cargo\\bin\\forge","C:\\Users\\NWAJAGU\\.foundry\\bin\\forge"]
