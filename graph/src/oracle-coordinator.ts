@@ -255,6 +255,7 @@ export function handleReviewSubmitted(event: ReviewSubmitted): void {
 export function handleRequestResolved(event: RequestResolved): void {
   const _dashboard = getDashboard();
   const _request = getRequest(event.params.request);
+  const _requesterStats = getUserRequesterStats(_request.requester);
   const _proposal = getRequestProposal(_request.id);
   const _proposerStats = getUserProposerStats(_proposal.proposer);
   const oracleContract = OracleCoordinator.bind(event.address);
@@ -272,6 +273,10 @@ export function handleRequestResolved(event: RequestResolved): void {
   _request.status = requestContract.status();
   _request.answer = requestContract.answer();
 
+  // update requester stats
+  _requesterStats.requestsActive =
+    _requesterStats.requestsActive.minus(INT32_ONE);
+
   // reduce active proposals for proposer
   _proposerStats.proposalsActive =
     _proposerStats.proposalsActive.minus(INT32_ONE);
@@ -283,6 +288,12 @@ export function handleRequestResolved(event: RequestResolved): void {
     _dashboard.proposalsFinishedSuccessful =
       _dashboard.proposalsFinishedSuccessful.plus(INT32_ONE);
 
+    // requester success counted
+    _requesterStats.successful = _requesterStats.successful.plus(INT32_ONE);
+    _requesterStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _requesterStats.successful,
+      _requesterStats.requests
+    );
     // increas successful proposal for proposer
     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
   } else {
@@ -344,6 +355,7 @@ export function handleRequestResolved(event: RequestResolved): void {
 
   _request.save();
   _proposerStats.save();
+  _requesterStats.save();
   _dashboard.save();
 }
 
