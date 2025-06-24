@@ -18,7 +18,7 @@ contract SetupFixturesOracleChain is BaseScript {
         RequestTypes.RequestParams({
             requester: abi.encode(address(0)),
             answerType: RequestTypes.AnswerType.Bool,
-            challengeWindow: 86400,
+            challengeWindow: 600,
             rewardAmount: 5e6,
             question: "Question",
             context: "Context",
@@ -37,9 +37,11 @@ contract SetupFixturesOracleChain is BaseScript {
 
         usdc = IERC20(vm.envAddress("AVALANCHE_FUJI_UTILITY_TOKEN_ADDRESS"));
         oracle = IOracleCoordinator(
-            readAddress(block.chainid, "OracleCoordinator")
+            _readAddress(block.chainid, "OracleCoordinator")
         );
-        factory = IRequestFactory(readAddress(block.chainid, "RequestFactory"));
+        factory = IRequestFactory(
+            _readAddress(block.chainid, "RequestFactory")
+        );
 
         setUpFixtures_localfork();
     }
@@ -162,6 +164,7 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
+            false,
             abi.encode(false),
             abi.encode("because of yada yada yada")
         );
@@ -188,6 +191,7 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
+            false,
             abi.encode(false),
             abi.encode("because of yada yada yada")
         );
@@ -221,6 +225,7 @@ contract SetupFixturesOracleChain is BaseScript {
         vm.broadcast(vm.envUint("PRIVATE_KEY_CHALLENGER"));
         oracle.challengeAnswer(
             createdRequest,
+            false,
             abi.encode(false),
             abi.encode("because of yada yada yada")
         );

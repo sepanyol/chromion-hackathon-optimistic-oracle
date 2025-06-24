@@ -24,7 +24,7 @@ Return your evaluation in the following strict JSON format:
     "ambiguity": number,
     "time_reference": number
   },
-  "final_decision": "confident" | "moderate" | "uncertain"
+  "final_decision": 1 | 2 | 3     // 1 = confident, 2 = moderate, 3 = uncertain"
 }
 
 Your output must be valid JSON. Do not include any explanation or commentary.

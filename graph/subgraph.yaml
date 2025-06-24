@@ -8,9 +8,9 @@ dataSources:
     name: OracleCoordinator
     network: fuji
     source:
-      address: "0xCe12403260F74aFDE59477a6dAfC33bCcC205371"
+      address: "0xF15BB9041EEC4169c32C93E05415e7c718961e10"
       abi: OracleCoordinator
-      startBlock: 42036486
+      startBlock: 42266976
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -41,28 +41,35 @@ dataSources:
           handler: handleReviewSubmitted
         - event: RequestResolved(indexed address,uint8)
           handler: handleRequestResolved
-        - event: RewardDistributed(indexed address,indexed address,uint256)
+        - event: RewardDistributed(indexed address,indexed address,uint256,uint8)
           handler: handleRewardDistributed
         - event: BondRefunded(indexed address,indexed address,uint256)
           handler: handleBondRefunded
       file: ./src/oracle-coordinator.ts
-templates:
-  - kind: file/ipfs
-    name: RequestContextEvaluation
+  - kind: ethereum
+    name: RequestScoringRegistry
+    network: fuji
+    source:
+      address: "0xA70Fffa215348afBB607BB85DC9f9D43D2039c1a"
+      abi: RequestScoringRegistry
+      startBlock: 42266976
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
       language: wasm/assemblyscript
       entities:
         - Request
-        # - RequestScoringHeatmap
-        # - RequestScoringRatings
-        # - RequestScoring
+        - RequestScoringHeatmap
+        - RequestScoringRatings
+        - RequestScoring
       abis:
-        - name: RequestContract
-          file: ./abis/RequestContract.json
-      handler: handleEvaluateContext
-      file: ./src/request-contract.ts
+        - name: RequestScoringRegistry
+          file: ./abis/RequestScoringRegistry.json
+      eventHandlers:
+        - event: AddedScoring(indexed address,bytes16)
+          handler: handleAddedScoring
+      file: ./src/scoring-registry.ts
+templates:
   - name: RequestContract
     kind: ethereum/contract
     network: fuji

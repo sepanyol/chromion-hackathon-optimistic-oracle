@@ -176,7 +176,9 @@ contract OracleCoordinatorTest is Test {
 
         vm.mockCall(
             simRequest,
-            abi.encodeWithSelector(IOracleRelayer.chainIdToChainSelector.selector),
+            abi.encodeWithSelector(
+                IOracleRelayer.chainIdToChainSelector.selector
+            ),
             abi.encode(1337)
         );
 
@@ -313,7 +315,7 @@ contract OracleCoordinatorTest is Test {
         );
 
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, answer, reason);
+        coordinator.challengeAnswer(request,false, answer, reason);
 
         // assert challenge stored
         IOracleCoordinator.Challenge memory _challenge = coordinator
@@ -350,7 +352,7 @@ contract OracleCoordinatorTest is Test {
         vm.expectRevert("Challenge bond failed");
 
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, answer, reason);
+        coordinator.challengeAnswer(request, false,answer, reason);
     }
 
     function test_challengeAnswer_RevertIf_CallerIsRequester() public {
@@ -368,7 +370,7 @@ contract OracleCoordinatorTest is Test {
         usdc.approve(address(coordinator), type(uint256).max);
 
         vm.expectRevert("Challenger not allowed");
-        coordinator.challengeAnswer(request, answer, reason);
+        coordinator.challengeAnswer(request,false, answer, reason);
     }
 
     function test_challengeAnswer_RevertIf_StatusNotProposed() public {
@@ -388,7 +390,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger1, 200e6);
         vm.startPrank(challenger1);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, answer1, reason);
+        coordinator.challengeAnswer(request, false,answer1, reason);
 
         // challenger2 tries second challenge
         deal(address(usdc), challenger2, 200e6);
@@ -396,7 +398,7 @@ contract OracleCoordinatorTest is Test {
         usdc.approve(address(coordinator), type(uint256).max);
 
         vm.expectRevert("Not proposed");
-        coordinator.challengeAnswer(request, answer2, reason);
+        coordinator.challengeAnswer(request, false,answer2, reason);
     }
 
     function test_submitReview_succeedsWithValidInput() public {
@@ -416,7 +418,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
 
         // 3. Submit review
         deal(address(usdc), reviewer, 200e6);
@@ -458,7 +460,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
 
         // 3. First review
         deal(address(usdc), reviewer, 200e6);
@@ -486,7 +488,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
 
         deal(address(usdc), reviewer, 200e6);
         vm.startPrank(reviewer);
@@ -526,7 +528,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(request,false, bytes("challenge"), bytes("why"));
 
         vm.startPrank(proposer);
         vm.expectRevert("Reviewer is proposer");
@@ -547,7 +549,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(request,false, bytes("challenge"), bytes("why"));
 
         vm.startPrank(requester);
         vm.expectRevert("Reviewer is requester");
@@ -568,7 +570,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(request, false,bytes("challenge"), bytes("why"));
 
         vm.expectRevert("Reviewer is challenger");
         coordinator.submitReview(request, reviewReason, false);
@@ -600,10 +602,20 @@ contract OracleCoordinatorTest is Test {
         emit IOracleCoordinator.BondRefunded(request, proposer, 100e6);
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, proposer, 90e6);
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            proposer,
+            90e6,
+            IOracleCoordinator.RewardType.Proposer
+        );
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, platform, 10e6);
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            platform,
+            10e6,
+            IOracleCoordinator.RewardType.Platform
+        );
 
         vm.expectEmit(true, true, false, false);
         emit IOracleCoordinator.RequestResolved(
@@ -661,7 +673,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
 
         // Review in support of challenge
         deal(address(usdc), reviewer, 200e6);
@@ -676,10 +688,20 @@ contract OracleCoordinatorTest is Test {
 
         // Expect emissions
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, challenger, 160e6); // 80% of 200e6
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            challenger,
+            160e6,
+            IOracleCoordinator.RewardType.Challenger
+        ); // 80% of 200e6
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, platform, 20e6); // ~10%
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            platform,
+            20e6,
+            IOracleCoordinator.RewardType.Platform
+        ); // ~10%
 
         vm.expectEmit(true, true, false, false);
         emit IOracleCoordinator.RequestResolved(
@@ -732,7 +754,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
 
         // Step 3: reviewer disagrees with challenge
         deal(address(usdc), reviewer, 200e6);
@@ -755,10 +777,20 @@ contract OracleCoordinatorTest is Test {
         emit IOracleCoordinator.BondRefunded(request, proposer, 100e6);
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, proposer, 90e6);
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            proposer,
+            90e6,
+            IOracleCoordinator.RewardType.Proposer
+        );
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, platform, 10e6);
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            platform,
+            10e6,
+            IOracleCoordinator.RewardType.Platform
+        );
 
         vm.expectEmit(true, true, false, false);
         emit IOracleCoordinator.RequestResolved(
@@ -863,7 +895,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
 
         // Review in support of challenge
         deal(address(usdc), reviewer, 200e6);
@@ -911,7 +943,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
 
         // Step 3: reviewer disagrees with challenge
         deal(address(usdc), reviewer, 200e6);
@@ -963,7 +995,7 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
 
         // 3. Review (supports challenge)
         deal(address(usdc), reviewer, 200e6);
@@ -999,7 +1031,12 @@ contract OracleCoordinatorTest is Test {
         uint256 expected = coordinator.reviewerClaimAmount(request);
 
         vm.expectEmit(true, true, false, false);
-        emit IOracleCoordinator.RewardDistributed(request, reviewer, expected);
+        emit IOracleCoordinator.RewardDistributed(
+            request,
+            reviewer,
+            expected,
+            IOracleCoordinator.RewardType.Reviewer
+        );
 
         vm.prank(reviewer);
         coordinator.claimReward(request);
@@ -1077,7 +1114,7 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request, false, challengeAnswer, challengeReason);
 
         // 3. Review (supports challenge)
         deal(address(usdc), reviewer, 200e6);
@@ -1119,7 +1156,7 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
 
         // 3. Review (opposes challenge)
         deal(address(usdc), reviewer, 200e6);

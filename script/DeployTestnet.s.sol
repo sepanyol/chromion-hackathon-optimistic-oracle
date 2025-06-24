@@ -202,9 +202,15 @@ contract DeployTestnet is BaseScript {
             vm.stopBroadcast();
         }
 
-        console.log("TODO: Automate Upkeep Registration");
-        console.log("TODO: Purge Existing Upkeeps LINK");
-        console.log("-- until then, use SetupFinalizer.s.sol");
+        // console.log("TODO: Automate Upkeep Registration");
+        // console.log("TODO: Purge Existing Upkeeps LINK");
+        console.log("TODO: Add new Automation to CL");
+        console.log(
+            "TODO: Revoke FINALIZER_ROLE of old Automation address on Oracle"
+        );
+        console.log(
+            "TODO: Grant FINALIZER_ROLE to new Automation address on Oracle"
+        );
 
         // {
         //     // TODO move to SetupFinalizer Script
@@ -264,7 +270,7 @@ contract DeployTestnet is BaseScript {
         if (_shouldDeploy(_chainId, "OracleRelayer", _args, _code)) {
             // is there old relayer?
             _instance = OracleRelayer(
-                payable(readAddress(_chainId, "OracleRelayer"))
+                payable(_readAddress(_chainId, "OracleRelayer"))
             );
 
             if (address(_instance) != address(0))
@@ -272,13 +278,15 @@ contract DeployTestnet is BaseScript {
                     _instance.recoverAsset(_linkToken);
 
             _instance = new OracleRelayer(_linkToken, _router);
-            _writeDeploymentJson(
-                _chainId,
-                "OracleRelayer",
-                address(_instance),
-                _args,
-                _code
-            );
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "OracleRelayer",
+                    address(_instance),
+                    _args,
+                    _code
+                );
+            }
 
             // send link to new relayer
             vm.stopBroadcast();
@@ -296,7 +304,7 @@ contract DeployTestnet is BaseScript {
         }
 
         _instance = OracleRelayer(
-            payable(readAddress(_chainId, "OracleRelayer"))
+            payable(_readAddress(_chainId, "OracleRelayer"))
         );
     }
 
@@ -310,16 +318,18 @@ contract DeployTestnet is BaseScript {
         bytes memory _code = type(OracleCoordinator).creationCode;
         if (_shouldDeploy(_chainId, "OracleCoordinator", _args, _code)) {
             _instance = new OracleCoordinator(_platform, _relayer, _usdc);
-            _writeDeploymentJson(
-                _chainId,
-                "OracleCoordinator",
-                address(_instance),
-                _args,
-                _code
-            );
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "OracleCoordinator",
+                    address(_instance),
+                    _args,
+                    _code
+                );
+            }
         }
         _instance = OracleCoordinator(
-            readAddress(_chainId, "OracleCoordinator")
+            _readAddress(_chainId, "OracleCoordinator")
         );
     }
 
@@ -347,107 +357,30 @@ contract DeployTestnet is BaseScript {
                 _homeChainId,
                 _isOracleChain
             );
-            _writeDeploymentJson(
-                _chainId,
-                "RequestFactory",
-                address(_instance),
-                _args,
-                _code
-            );
-            _writeDeploymentJson(
-                _chainId,
-                "RequestContract",
-                _instance.implementation(),
-                abi.encode(
+            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+                _writeDeploymentJson(
+                    _chainId,
+                    "RequestFactory",
                     address(_instance),
-                    _usdc,
-                    _oracle,
-                    _homeFactory,
-                    _homeChainId,
-                    _isOracleChain
-                ),
-                type(RequestContract).creationCode
-            );
+                    _args,
+                    _code
+                );
+                _writeDeploymentJson(
+                    _chainId,
+                    "RequestContract",
+                    _instance.implementation(),
+                    abi.encode(
+                        address(_instance),
+                        _usdc,
+                        _oracle,
+                        _homeFactory,
+                        _homeChainId,
+                        _isOracleChain
+                    ),
+                    type(RequestContract).creationCode
+                );
+            }
         }
-        _instance = RequestFactory(readAddress(_chainId, "RequestFactory"));
-    }
-
-    function _shouldDeploy(
-        uint256 chainId,
-        string memory contractName,
-        bytes memory newArgs,
-        bytes memory creationCode
-    ) internal view returns (bool) {
-        string memory path = string.concat(
-            "deployments/",
-            vm.toString(chainId),
-            "/",
-            contractName,
-            ".json"
-        );
-
-        if (!vm.exists(path)) return true;
-
-        string memory json = vm.readFile(path);
-
-        bytes memory oldArgsHex = vm.parseJsonBytes(json, ".constructorArgs");
-        bytes memory oldCodeHash = abi.encodePacked(
-            vm.parseJsonBytes32(json, ".codeHash")
-        );
-
-        return
-            keccak256(oldArgsHex) != keccak256(newArgs) ||
-            keccak256(oldCodeHash) !=
-            keccak256(abi.encodePacked(keccak256(creationCode)));
-    }
-
-    function _writeDeploymentJson(
-        uint256 chainId,
-        string memory contractName,
-        address deployed,
-        bytes memory constructorArgs,
-        bytes memory creationCode
-    ) internal {
-        string memory _path = string.concat(
-            "deployments/",
-            vm.toString(chainId)
-        );
-
-        if (!vm.exists(_path)) vm.createDir(_path, true);
-
-        string memory outputJson = "output";
-
-        vm.serializeString(outputJson, "address", vm.toString(deployed));
-
-        vm.serializeBytes(outputJson, "constructorArgs", constructorArgs);
-
-        vm.serializeBytes(
-            outputJson,
-            "codeHash",
-            abi.encodePacked(keccak256(creationCode))
-        );
-
-        string memory finalJson = vm.serializeUint(
-            outputJson,
-            "chainId",
-            chainId
-        );
-
-        vm.writeFile(
-            string.concat(_path, "/", contractName, ".json"),
-            finalJson
-        );
-    }
-
-    function _toHex(bytes memory data) internal pure returns (string memory) {
-        bytes memory hexChars = "0123456789abcdef";
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = "0";
-        str[1] = "x";
-        for (uint256 i = 0; i < data.length; i++) {
-            str[2 + i * 2] = hexChars[uint8(data[i] >> 4)];
-            str[3 + i * 2] = hexChars[uint8(data[i] & 0x0f)];
-        }
-        return string(str);
+        _instance = RequestFactory(_readAddress(_chainId, "RequestFactory"));
     }
 }
