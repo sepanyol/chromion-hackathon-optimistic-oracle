@@ -3,11 +3,8 @@ import {
   BigDecimal,
   BigInt,
   Bytes,
-  crypto,
-  ethereum,
   log,
 } from "@graphprotocol/graph-ts";
-
 import {
   AnswerProposed,
   BondRefunded,
@@ -20,7 +17,6 @@ import {
 } from "../generated/OracleCoordinator/OracleCoordinator";
 import { RequestContract } from "../generated/templates/RequestContract/RequestContract";
 import {
-  ActivityType,
   createActivity,
   getChallengeReview,
   getDashboard,
@@ -38,8 +34,6 @@ import {
   getUserReviewerStats,
   INT32_ONE,
 } from "./helpers";
-import { createMockedFunction } from "matchstick-as";
-import { RecentActivity, User } from "../generated/schema";
 
 export function handleRequestRegistered(event: RequestRegistered): void {
   const _request = getRequest(event.params.request);
@@ -128,7 +122,8 @@ export function handleAnswerProposed(event: AnswerProposed): void {
 
   // update proposer stats
   _proposerStats.proposals = _proposerStats.proposals.plus(INT32_ONE);
-  _proposerStats.proposalsActive = _proposerStats.proposals.plus(INT32_ONE);
+  _proposerStats.proposalsActive =
+    _proposerStats.proposalsActive.plus(INT32_ONE);
 
   // update dashboard
   _dashboard.proposals = _dashboard.proposals.plus(INT32_ONE);
@@ -292,8 +287,9 @@ export function handleRequestResolved(event: RequestResolved): void {
     _requesterStats.successful = _requesterStats.successful.plus(INT32_ONE);
     _requesterStats.successRate = divBigIntAndCreateTwoDigitDecimal(
       _requesterStats.successful,
-      _requesterStats.requests
+      _requesterStats.requests.minus(_requesterStats.requestsActive) // only resolved requests
     );
+
     // increas successful proposal for proposer
     _proposerStats.successful = _proposerStats.successful.plus(INT32_ONE);
   } else {
@@ -326,25 +322,31 @@ export function handleRequestResolved(event: RequestResolved): void {
     }
 
     // recalc success rate of challenger
-    _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-      _challengerStats.successful,
-      _challengerStats.challenges
-    );
+    if (_challengerStats.successful.gt(BigInt.zero())) {
+      _challengerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+        _challengerStats.successful,
+        _challengerStats.challenges.minus(_challengerStats.challengesActive)
+      );
+    }
 
     _challengerStats.save();
   }
 
   // recalc proposal success rate
-  _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
-    _dashboard.proposalsFinishedSuccessful,
-    _dashboard.proposalsFinished
-  );
+  if (_dashboard.proposalsFinishedSuccessful.gt(BigInt.zero())) {
+    _dashboard.proposalSuccessRate = divBigIntAndCreateTwoDigitDecimal(
+      _dashboard.proposalsFinishedSuccessful,
+      _dashboard.proposalsFinished
+    );
+  }
 
   // recalc success rate for proposer
-  _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
-    _proposerStats.successful,
-    _proposerStats.proposals
-  );
+  if (_proposerStats.successful.gt(BigInt.zero())) {
+    _proposerStats.successRate = divBigIntAndCreateTwoDigitDecimal(
+      _proposerStats.successful,
+      _proposerStats.proposals.minus(_proposerStats.proposalsActive)
+    );
+  }
 
   // add recent activity
   const _activity = createActivity(_request.id, event);
@@ -391,7 +393,7 @@ export function handleRewardDistributed(event: RewardDistributed): void {
     _stats.reviewsActive = _stats.reviewsActive.minus(INT32_ONE);
     _stats.successRate = divBigIntAndCreateTwoDigitDecimal(
       _stats.successful,
-      _stats.reviews
+      _stats.reviews.minus(_stats.reviewsActive)
     );
     _stats.save();
   }
