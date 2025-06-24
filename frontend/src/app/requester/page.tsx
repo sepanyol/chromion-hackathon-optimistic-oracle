@@ -4,17 +4,12 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
 import RequesterQuickActions from "@/components/Requester/RequesterQuickActions";
-import MyQuestions from "@/components/Requester/MyQuestions";
+import MyRequests from "@/components/Requester/MyRequests";
 import RequestModal from "@/components/request/RequestModal";
 import { TrendingUp, CheckCircle, Clock, Plus } from "lucide-react";
-
-export interface StatData {
-  title: string;
-  value: string;
-  change: string;
-  changeType: "positive" | "negative";
-  icon: React.ReactNode;
-}
+import { useAccount } from "wagmi";
+import { StatData } from "@/types/StatsCards";
+import { useUserRequester } from "@/hooks/useUserRequester";
 
 interface Question {
   id: string;
@@ -27,6 +22,10 @@ interface Question {
 }
 
 const RequesterPage: React.FC = () => {
+  const { address, chainId, isConnected } = useAccount();
+
+  const requester = useUserRequester(address!);
+
   const [stats, setStats] = useState<StatData[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,30 +38,6 @@ const RequesterPage: React.FC = () => {
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setStats([
-        {
-          title: "Questions Submitted",
-          value: "24",
-          change: "+12% from last month",
-          changeType: "positive",
-          icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
-        },
-        {
-          title: "Success Rate",
-          value: "96.5%",
-          change: "+2.1% from last month",
-          changeType: "positive",
-          icon: <CheckCircle className="w-6 h-6 text-green-600" />,
-        },
-        {
-          title: "Avg Resolution Time",
-          value: "2.4h",
-          change: "-15min from last month",
-          changeType: "positive",
-          icon: <Clock className="w-6 h-6 text-orange-600" />,
-        },
-      ]);
 
       setQuestions([
         {
@@ -137,6 +112,61 @@ const RequesterPage: React.FC = () => {
     setShowRequestModal(false);
   };
 
+  useEffect(() => {
+    if (!requester.isSuccess) return;
+    if (!requester.data) {
+      // TODO control screem when user is not existing
+      return;
+    }
+
+    setStats([
+      {
+        title: "Requests created",
+        value: requester.data.stats.requests,
+        change: null,
+        changeType: null,
+        icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
+      },
+      {
+        title: "Requests active",
+        value: requester.data.stats.requestsActive,
+        change: null,
+        changeType: null,
+        icon: <TrendingUp className="w-6 h-6 text-blue-600" />,
+      },
+      {
+        title: "Success Rate",
+        value: requester.data.stats.successRate,
+        change: null,
+        changeType: null,
+        icon: <CheckCircle className="w-6 h-6 text-green-600" />,
+      },
+      {
+        title: "Avg Resolution Time",
+        value: `24h`, //`${requester.data.stats.requestAvgResolution}h`,
+        change: null,
+        changeType: null,
+        icon: <Clock className="w-6 h-6 text-orange-600" />,
+      },
+    ]);
+  }, [requester.data, requester.isSuccess]);
+
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar showNavigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-8">
+            <div className="flex gap-2 items-center justify-center h-32 bg-white rounded-lg shadow-sm border border-gray-200">
+              <span>Please</span> <appkit-connect-button />{" "}
+              <span>wallet in order to see this section</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -155,7 +185,7 @@ const RequesterPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
               <StatCard key={index} {...stat} />
             ))}
@@ -169,7 +199,7 @@ const RequesterPage: React.FC = () => {
           /> */}
 
           {/* My Questions */}
-          <MyQuestions questions={questions} />
+          <MyRequests questions={questions} />
         </div>
       </div>
 

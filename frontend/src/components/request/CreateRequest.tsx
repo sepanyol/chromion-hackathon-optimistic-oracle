@@ -1,8 +1,11 @@
 import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
 import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
 import RequestModal from "./RequestModal";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export const CreateRequest = () => {
+  const router = useRouter();
   const { state, dispatch } = useCreateRequestContext();
 
   const createRequest = useCreateRequest({
@@ -13,6 +16,12 @@ export const CreateRequest = () => {
     dispatch({ type: ActionTypes.EnableSubmitting });
     createRequest.initiate();
   };
+
+  useEffect(() => {
+    if (createRequest.execute.execution.isSuccess)
+      dispatch({ type: ActionTypes.Reset });
+    router.refresh();
+  }, [createRequest.execute.execution.isSuccess]);
 
   if (!state.isModalOpen) return <></>;
 

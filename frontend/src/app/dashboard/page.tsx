@@ -7,11 +7,7 @@ import Navbar from "@/components/Navbar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import QuickActions from "@/components/QuickActions";
 import { CreateRequest } from "@/components/request/CreateRequest";
-import CreateRequestProvider, {
-  ActionTypes,
-  useCreateRequestContext,
-} from "@/components/request/CreateRequestProvider";
-import RequestModal from "@/components/request/RequestModal";
+import CreateRequestProvider from "@/components/request/CreateRequestProvider";
 import RequestsTable from "@/components/RequestsTable";
 import StatCard from "@/components/StatCard";
 import { useActiveRequests } from "@/hooks/useActiveRequests";
@@ -25,8 +21,7 @@ import { timeAgo } from "@/utils/time-ago";
 import { lowerCase, upperFirst } from "lodash";
 import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Address, formatUnits } from "viem";
-import { useConnectors } from "wagmi";
+import { formatUnits } from "viem";
 
 export interface CrossChainNetwork {
   network: string;
@@ -39,14 +34,9 @@ const Dashboard: React.FC = () => {
   const [requests, setRequests] = useState<ActiveRequest[]>([]);
   const [networks, setNetworks] = useState<CrossChainNetwork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState<
     "all" | "open" | "proposed" | "challenged"
   >("all");
-
-  // create request context
-  const createContext = useCreateRequestContext();
 
   // Simulate data loading
   useEffect(() => {
@@ -103,13 +93,11 @@ const Dashboard: React.FC = () => {
             minimumSignificantDigits: 2,
           }
         )}%`,
-
         change: null,
         changeType: null,
         icon: <CheckCircle className="w-6 h-6 text-green-600" />,
       },
     ]);
-    dashboard.data;
   }, [dashboard.data, dashboard.isSuccess]);
 
   // get most recent activity
@@ -175,17 +163,6 @@ const Dashboard: React.FC = () => {
     );
   }, [activeRequests.isSuccess, activeRequests.data]);
 
-  // Filter requests based on search and tab
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.request.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab =
-      selectedTab === "all" ||
-      request.statusLabel.toLowerCase() === selectedTab;
-    return matchesSearch && matchesTab;
-  });
-
   useEffect(() => {
     switch (selectedTab) {
       case "all":
@@ -205,10 +182,6 @@ const Dashboard: React.FC = () => {
 
   const handleChallenge = (requestId: string) => {
     // In real app, would make API call
-  };
-
-  const handleOnNewRequest = () => {
-    createContext.dispatch({ type: ActionTypes.OpenModal });
   };
 
   if (isLoading) {
@@ -262,15 +235,6 @@ const Dashboard: React.FC = () => {
                 </h2>
 
                 <div className="flex items-center space-x-4">
-                  {/* Search */}
-                  {/* <input
-                  type="text"
-                  placeholder="Search requests..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-3 py-2 border text-gray-700 placeholder:text-gray-400 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                /> */}
-
                   {/* Filter Tabs */}
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     {(["all", "open", "proposed", "challenged"] as const).map(
@@ -299,7 +263,7 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <RequestsTable
-                requests={filteredRequests}
+                requests={requests}
                 onPropose={handlePropose}
                 onChallenge={handleChallenge}
               />
