@@ -34,6 +34,8 @@ const metadata = {
 
 const solanaWeb3JsAdapter = new SolanaAdapter();
 
+export const defaultChain = avalancheFuji;
+
 // Create the modal
 const modal = createAppKit({
   adapters: [wagmiAdapter /*, solanaWeb3JsAdapter */],
@@ -54,7 +56,7 @@ const modal = createAppKit({
     // solanaTestnet,
     // solanaDevnet,
   ],
-  defaultNetwork: avalancheFuji,
+  defaultNetwork: defaultChain,
   metadata: metadata,
   allowUnsupportedChain: true,
   features: {

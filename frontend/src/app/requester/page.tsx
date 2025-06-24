@@ -24,7 +24,6 @@ import { FloatingCreateRequestAction } from "@/components/Requester/FloatingCrea
 const RequesterPage: React.FC = () => {
   const { address, chainId, isConnected } = useAccount();
   const createRequest = useContext(CreateRequestContext);
-
   const requester = useUserRequester(address!);
 
   const [stats, setStats] = useState<StatData[]>([]);

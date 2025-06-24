@@ -20,3 +20,23 @@ export interface MyRequestsType {
   timeAgo: string;
   chains: string[] | null;
 }
+
+export interface SolverRequestsType {
+  id: string;
+  title: string;
+  description: string;
+  chain: string;
+  reward: string;
+  bondRequired: string;
+  riskScore: 0 | 1 | 2 | 3;
+  createdAt: string;
+  category: string;
+}
+
+export interface SolverProposalsType {
+  id: string;
+  question: string;
+  status: string;
+  created: string;
+  reward: string;
+}
