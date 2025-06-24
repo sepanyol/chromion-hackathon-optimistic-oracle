@@ -17,6 +17,8 @@ export const fetchUserRequester = async (address: Address) =>
             status
             rewardAmount
             question
+            context
+            createdAt
           }
           stats {
             requestAvgResolution

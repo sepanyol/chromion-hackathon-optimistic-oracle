@@ -10,3 +10,13 @@ export interface ActiveRequest {
   timeLeft: string;
   requestedTime: string;
 }
+
+export interface MyRequestsType {
+  id: string;
+  question: string;
+  description: string;
+  status: ReadableRequestStatus;
+  reward: string;
+  timeAgo: string;
+  chains: string[] | null;
+}

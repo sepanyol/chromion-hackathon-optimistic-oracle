@@ -1,39 +1,31 @@
 // components/MyRequests.tsx
 "use client";
-import React, { useState } from "react";
+import { MyRequestsType } from "@/types/Requests";
+import { ReadableRequestStatus } from "@/utils/helpers";
 import {
+  AlertCircle,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  ExternalLink,
   Copy,
+  ExternalLink,
   MoreHorizontal,
 } from "lucide-react";
-
-interface Question {
-  id: string;
-  question: string;
-  description: string;
-  status: "Completed" | "Pending" | "Awaiting Review" | "Challenged";
-  reward: string;
-  timeAgo: string;
-  chains: string[];
-}
+import React, { useState } from "react";
 
 interface MyRequestsProps {
-  questions: Question[];
+  questions: MyRequestsType[];
 }
 
 const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: ReadableRequestStatus) => {
     switch (status) {
-      case "Completed":
+      case "Resolved":
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case "Pending":
+      case "Open":
         return <Clock className="w-5 h-5 text-orange-500" />;
-      case "Awaiting Review":
+      case "Proposed":
         return <Clock className="w-5 h-5 text-blue-500" />;
       case "Challenged":
         return <AlertCircle className="w-5 h-5 text-red-500" />;
@@ -42,13 +34,13 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ReadableRequestStatus) => {
     switch (status) {
-      case "Completed":
+      case "Resolved":
         return "bg-green-100 text-green-800 border-green-200";
-      case "Pending":
+      case "Open":
         return "bg-orange-100 text-orange-800 border-orange-200";
-      case "Awaiting Review":
+      case "Proposed":
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "Challenged":
         return "bg-red-100 text-red-800 border-red-200";
@@ -111,23 +103,22 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                     </div>
 
                     <p className="text-sm text-gray-700 mb-3">
-                      {question.description}
+                      {question.question}
                     </p>
 
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
                       <span>{question.timeAgo}</span>
                       <div className="flex items-center space-x-1">
-                        {question.chains.map((chain, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center"
-                          >
-                            {chain}
-                            {index < question.chains.length - 1 && (
-                              <span className="mx-1">→</span>
-                            )}
-                          </span>
-                        ))}
+                        {question.chains &&
+                          question.chains.map((chain, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center"
+                            >
+                              {index > 0 && <span className="mx-1">→</span>}
+                              {chain}
+                            </span>
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -138,13 +129,13 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                     <div className="text-sm font-semibold text-gray-900">
                       {question.reward}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {question.status === "Completed" ? "Earned" : "Reward"}
-                    </div>
+                    {/* <div className="text-xs text-gray-500">
+                      {question.status === "Resolved" ? "Given" : "Offered"}
+                    </div> */}
                   </div>
 
                   <div className="flex items-center space-x-1">
-                    <button
+                    {/* <button
                       onClick={(e) => {
                         e.stopPropagation();
                         copyQuestionId(question.id);
@@ -166,7 +157,7 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                       className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors duration-200 hover:bg-gray-100 rounded"
                     >
                       <MoreHorizontal className="w-4 h-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>
@@ -179,7 +170,10 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                       Full Question
                     </h5>
                     <p className="text-sm text-gray-700 mb-4">
-                      {question.question}
+                      Question: {question.question}
+                    </p>
+                    <p className="text-sm text-gray-700 mb-4">
+                      Context: {question.description}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -200,7 +194,7 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                           Networks:
                         </span>
                         <p className="text-gray-600">
-                          {question.chains.join(", ")}
+                          {question.chains && question.chains.join(", ")}
                         </p>
                       </div>
                     </div>
