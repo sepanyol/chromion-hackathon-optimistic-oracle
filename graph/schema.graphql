@@ -6,6 +6,10 @@ type Dashboard @entity(immutable: false) {
   proposalsFinished: BigInt!
   proposalsFinishedSuccessful: BigInt!
   proposalSuccessRate: BigDecimal!
+
+  challenges: BigInt!
+  challengeSuccessRate: BigDecimal!
+  challengesWon: BigInt!
 }
 
 type RequestScoringHeatmap @entity(immutable: true) {
