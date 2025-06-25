@@ -28,6 +28,7 @@ export const fetchUserProposer = async (address: Address) =>
               answer
               rewardAmount
               answerType
+              challengeWindow
               scoring {
                 score
                 final_decision

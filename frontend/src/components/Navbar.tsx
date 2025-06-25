@@ -29,20 +29,24 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
     {
       name: "Dashboard",
       href: "/dashboard",
-      active: pathname === "/dashboard",
+      active: pathname.startsWith("/dashboard"),
     },
     {
       name: "Requester",
       href: "/requester",
-      active: pathname === "/requester",
+      active: pathname.startsWith("/requester"),
     },
-    { name: "Solver", href: "/solver", active: pathname === "/solver" },
+    { name: "Solver", href: "/solver", active: pathname.startsWith("/solver") },
     {
       name: "Challenger",
       href: "/challenger",
-      active: pathname === "/challenger",
+      active: pathname.startsWith("/challenger"),
     },
-    { name: "Reviewer", href: "/reviewer", active: pathname === "/reviewer" },
+    {
+      name: "Reviewer",
+      href: "/reviewer",
+      active: pathname.startsWith("/reviewer"),
+    },
   ];
 
   const handleDisconnectWallet = () => {

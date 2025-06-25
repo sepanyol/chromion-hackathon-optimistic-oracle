@@ -1,4 +1,5 @@
 import { ReadableRequestStatus, RequestStatus } from "@/utils/helpers";
+import { Address } from "viem";
 
 export interface ActiveRequest {
   id: string;
@@ -38,5 +39,50 @@ export interface SolverProposalsType {
   question: string;
   status: string;
   created: string;
+  challengePeriod: string;
   reward: string;
 }
+export type FullScoringType = {
+  final_decision: number;
+  score: number;
+  heatmap: {
+    ambiguity: number;
+    clarity: number;
+    completeness: number;
+    logical_consistency: number;
+    source_trust: number;
+    time_reference: number;
+  };
+  ratings: {
+    ambiguity: number;
+    clarity: number;
+    completeness: number;
+    logical_consistency: number;
+    source_trust: number;
+    time_reference: number;
+  };
+};
+
+export type FullRequestType = {
+  id: Address;
+  answerType: 0 | 1;
+  challengeWindow: number;
+  context: string;
+  createdAt: number;
+  isCrossChain: boolean;
+  originAddress: string;
+  originChainId: string;
+  question: string;
+  rewardAmount: bigint;
+  status: RequestStatus;
+  truthMeaning: string;
+  scoring: FullScoringType;
+};
+
+export type FullRequestProposalType = {
+  proposal: {
+    createdAt: number;
+    answer: string;
+    isChallenged: boolean;
+  };
+} & FullRequestType;

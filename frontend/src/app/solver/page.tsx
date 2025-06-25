@@ -25,12 +25,9 @@ const SolverPage: React.FC = () => {
   const [stats, setStats] = useState<StatData[]>([]);
   const [requests, setRequests] = useState<SolverRequestsType[]>([]);
   const [proposals, setProposals] = useState<SolverProposalsType[]>([]);
-  const [filteredQuestions, setFilteredQuestions] = useState<
-    SolverRequestsType[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const { address, chainId, isConnected } = useAccount();
+  const { address } = useAccount();
+
   const proposer = useUserProposer(address!);
 
   useEffect(() => {
@@ -94,193 +91,40 @@ const SolverPage: React.FC = () => {
             id: proposal.request.id,
             created: timeAgo.format(Number(proposal.createdAt) * 1000),
             question: proposal.request.question,
+            challengePeriod: timeAgo.format(
+              (Number(proposal.createdAt) +
+                Number(proposal.request.challengeWindow)) *
+                1000
+            ),
             reward: `${formatUnits(BigInt(proposal.request.rewardAmount), 6)}`,
             status: getReadableRequestStatus(proposal.request.status),
           } as SolverProposalsType)
       );
       setProposals(newProposals);
+    }
 
-      if (proposer.data.requests) {
-        const newRequests = proposer.data.requests.map(
-          (request: any) =>
-            ({
-              id: request.id,
-              bondRequired: "100 USDC",
-              category: request.answerType === 0 ? "Yes/No" : "Valuation",
-              chain: request.isCrossChain ? "cross chain" : defaultChain.name,
-              createdAt: timeAgo.format(Number(request.createdAt) * 1000),
-              description: request.context,
-              reward: `${formatUnits(BigInt(request.rewardAmount), 6)} USDC`,
-              riskScore: request.scoring
-                ? Number(request.scoring.final_decision)
-                : 0,
-              title: request.question,
-            } as SolverRequestsType)
-        );
-        setRequests(newRequests);
-      }
+    if (proposer.data.requests) {
+      const newRequests = proposer.data.requests.map(
+        (request: any) =>
+          ({
+            id: request.id,
+            bondRequired: "100 USDC",
+            category: request.answerType === 0 ? "Yes/No" : "Valuation",
+            chain: request.isCrossChain ? "cross chain" : defaultChain.name,
+            createdAt: timeAgo.format(Number(request.createdAt) * 1000),
+            description: request.context,
+            reward: `${formatUnits(BigInt(request.rewardAmount), 6)} USDC`,
+            riskScore: request.scoring
+              ? Number(request.scoring.final_decision)
+              : 0,
+            title: request.question,
+          } as SolverRequestsType)
+      );
+      setRequests(newRequests);
     }
   }, [proposer.data, proposer.isSuccess]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      //     const questionsData: SolverRequestsType[] = [
-      //       // {
-      //       //   id: '1',
-      //       //   title: 'What is the current TVL of Uniswap V3?',
-      //       //   description: 'Technical analysis question requiring on-chain data verification and comparison with historical trends...',
-      //       //   chain: 'Ethereum',
-      //       //   timeRemaining: '2d 14h',
-      //       //   reward: '0.5 ETH',
-      //       //   bondRequired: '0.1 ETH',
-      //       //   riskScore: 'Low',
-      //       //   answersSubmitted: 3,
-      //       //   category: 'defi',
-      //       //   difficulty: 'Easy'
-      //       // },
-      //       // {
-      //       //   id: '2',
-      //       //   title: 'Analyze DeFi protocol risks for lending platforms',
-      //       //   description: 'Comprehensive risk assessment needed for major DeFi lending protocols including smart contract and market risks...',
-      //       //   chain: 'Base',
-      //       //   timeRemaining: '5d 6h',
-      //       //   reward: '1.2 ETH',
-      //       //   bondRequired: '0.2 ETH',
-      //       //   riskScore: 'Medium',
-      //       //   answersSubmitted: 1,
-      //       //   category: 'defi',
-      //       //   difficulty: 'Medium'
-      //       // },
-      //       // {
-      //       //   id: '3',
-      //       //   title: 'Weather forecast accuracy for NYC',
-      //       //   description: 'Verify weather prediction accuracy for specific date range in New York City using multiple sources...',
-      //       //   chain: 'Polygon',
-      //       //   timeRemaining: '1d 12h',
-      //       //   reward: '0.3 ETH',
-      //       //   bondRequired: '0.05 ETH',
-      //       //   riskScore: 'Low',
-      //       //   answersSubmitted: 7,
-      //       //   category: 'weather',
-      //       //   difficulty: 'Easy'
-      //       // },
-      //       // {
-      //       //   id: '4',
-      //       //   title: 'Sports betting market analysis',
-      //       //   description: 'Complex analysis of NBA playoff odds across multiple sportsbooks with historical data correlation...',
-      //       //   chain: 'Ethereum',
-      //       //   timeRemaining: '3d 8h',
-      //       //   reward: '0.8 ETH',
-      //       //   bondRequired: '0.15 ETH',
-      //       //   riskScore: 'High',
-      //       //   answersSubmitted: 2,
-      //       //   category: 'sports',
-      //       //   difficulty: 'Hard'
-      //       // }
-      //     ];
-
-      //     setRequests(questionsData);
-      //     setFilteredQuestions(questionsData);
-
-      //     setProposals([
-      //       // {
-      //       //   id: '1',
-      //       //   questionPreview: 'What is the current TVL...',
-      //       //   status: 'Pending',
-      //       //   submitted: '2 hours ago',
-      //       //   reward: '0.5 ETH'
-      //       // },
-      //       // {
-      //       //   id: '2',
-      //       //   questionPreview: 'Analyze DeFi protocol risks...',
-      //       //   status: 'Under Review',
-      //       //   submitted: '1 day ago',
-      //       //   reward: '1.2 ETH'
-      //       // },
-      //       // {
-      //       //   id: '3',
-      //       //   questionPreview: 'Market correlation analysis...',
-      //       //   status: 'Approved',
-      //       //   submitted: '3 days ago',
-      //       //   reward: '0.8 ETH'
-      //       // }
-      // ]);
-
-      setIsLoading(false);
-    };
-
-    loadData();
-  }, []);
-
-  const handleFiltersChange = (filters: any) => {
-    let filtered = [...requests];
-
-    // // Filter by reward range
-    // if (filters.rewardRange.min || filters.rewardRange.max) {
-    //   filtered = filtered.filter((q) => {
-    //     const reward = parseFloat(q.reward.replace(" ETH", ""));
-    //     const min = parseFloat(filters.rewardRange.min) || 0;
-    //     const max = parseFloat(filters.rewardRange.max) || 999;
-    //     return reward >= min && reward <= max;
-    //   });
-    // }
-
-    // // Filter by chain
-    // if (filters.chain !== "all") {
-    //   filtered = filtered.filter(
-    //     (q) => q.chain.toLowerCase() === filters.chain.toLowerCase()
-    //   );
-    // }
-
-    // // Filter by category
-    // if (filters.category !== "all") {
-    //   filtered = filtered.filter((q) => q.category === filters.category);
-    // }
-
-    // // Filter by difficulty
-    // if (filters.difficulty !== "all") {
-    //   filtered = filtered.filter(
-    //     (q) => q.difficulty.toLowerCase() === filters.difficulty.toLowerCase()
-    //   );
-    // }
-
-    setFilteredQuestions(filtered);
-  };
-
-  // const handleQuickAnswer = (questionId: string) => {
-  //   // In real app, would navigate to answer form or open modal
-  //   console.log("Quick answer for question:", questionId);
-
-  //   // Simulate adding to answers
-  //   const question = questions.find((q) => q.id === questionId);
-  //   if (question) {
-  //     const newAnswer: Answer = {
-  //       id: Date.now().toString(),
-  //       questionPreview: question.title.substring(0, 30) + "...",
-  //       status: "Pending",
-  //       submitted: "Just now",
-  //       reward: question.reward,
-  //     };
-  //     setProposals((prev) => [newAnswer, ...prev]);
-  //   }
-  // };
-
-  const handleViewDetails = (questionId: string) => {
-    // In real app, would navigate to question details page
-    console.log("View details for question:", questionId);
-  };
-
-  const handleViewAnswer = (answerId: string) => {
-    // In real app, would navigate to answer details page
-    console.log("View answer:", answerId);
-  };
-
-  if (isLoading) {
+  if (proposer.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar showNavigation />
@@ -304,21 +148,11 @@ const SolverPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Filters */}
-          {/* <SolverFilters onFiltersChange={handleFiltersChange} /> */}
-
           {/* Available Questions */}
-          <AvailableRequests
-            requests={requests}
-            onQuickAnswer={() => {}}
-            onViewDetails={() => {}}
-          />
+          <AvailableRequests requests={requests} />
 
           {/* My Recent Proposals */}
-          <MyRecentProposals
-            proposals={proposals}
-            onViewAnswer={handleViewAnswer}
-          />
+          <MyRecentProposals proposals={proposals} />
         </div>
       </div>
     </div>

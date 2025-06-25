@@ -14,6 +14,7 @@
     "@reown/appkit-adapter-solana": "^1.7.10",
     "@reown/appkit-adapter-wagmi": "^1.7.10",
     "@tanstack/react-query": "^5.81.0",
+    "clsx": "^2.1.1",
     "javascript-time-ago": "^2.5.11",
     "lodash": "^4.17.21",
     "lucide-react": "^0.515.0",

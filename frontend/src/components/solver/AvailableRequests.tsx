@@ -1,24 +1,15 @@
 // components/AvailableRequests.tsx
 "use client";
-import React, { useState } from "react";
-import { Clock, Shield, Users, ExternalLink, Zap } from "lucide-react";
 import { SolverRequestsType } from "@/types/Requests";
+import { Clock, Shield, Zap } from "lucide-react";
+import Link from "next/link";
+import React from "react";
 
 interface AvailableRequestsProps {
   requests: SolverRequestsType[];
-  onQuickAnswer: (requestId: string) => void;
-  onViewDetails: (requestId: string) => void;
 }
 
-const AvailableRequests: React.FC<AvailableRequestsProps> = ({
-  requests,
-  onQuickAnswer,
-  onViewDetails,
-}) => {
-  const [loadingQuickAnswer, setLoadingQuickAnswer] = useState<string | null>(
-    null
-  );
-
+const AvailableRequests: React.FC<AvailableRequestsProps> = ({ requests }) => {
   const getChainColor = (chain: string) => {
     const colors = {
       Ethereum: "bg-blue-100 text-blue-800 border-blue-200",
@@ -46,10 +37,11 @@ const AvailableRequests: React.FC<AvailableRequestsProps> = ({
   };
 
   const handleQuickAnswer = async (requestId: string) => {
-    setLoadingQuickAnswer(requestId);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    onQuickAnswer(requestId);
-    setLoadingQuickAnswer(null);
+    window.history.replaceState(null, "", `/solver/${requestId}`);
+    // setLoadingQuickAnswer(requestId);
+    // await new Promise((resolve) => setTimeout(resolve, 1500));
+    // onQuickAnswer(requestId);
+    // setLoadingQuickAnswer(null);
   };
 
   return (
@@ -140,20 +132,11 @@ const AvailableRequests: React.FC<AvailableRequestsProps> = ({
 
             {/* Actions */}
             <div className="flex space-x-3">
-              <button
-                onClick={() => handleQuickAnswer(request.id)}
-                disabled={loadingQuickAnswer === request.id}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {loadingQuickAnswer === request.id ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Submitting...</span>
-                  </>
-                ) : (
+              <Link href={`/solver/${request.id}`} className="w-full">
+                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
                   <span>Propose answer</span>
-                )}
-              </button>
+                </button>
+              </Link>
 
               {/* <button
                 onClick={() => onViewDetails(request.id)}

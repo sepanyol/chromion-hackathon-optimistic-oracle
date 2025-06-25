@@ -7,7 +7,7 @@ export const useUserProposer = (address: Address) =>
     queryKey: ["proposer", "stats", address],
     queryFn: async () => await fetchUserProposer(address),
     enabled: Boolean(address),
-    select: (result) =>
+    select: (result: any) =>
       result.data
         ? {
             user: result.data.userProposer,

@@ -9,6 +9,7 @@ import {
 const contractsByChainId: {
   [key: number]: { factory: Address; oracle?: Address; usdc: Address };
 } = {
+  // TODO extend
   [avalancheFuji.id]: {
     factory: "0x12B33F486a69b568651B51253077D1729fBe6a5d",
     oracle: "0xF15BB9041EEC4169c32C93E05415e7c718961e10",

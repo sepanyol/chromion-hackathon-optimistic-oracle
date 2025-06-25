@@ -9,6 +9,7 @@ import {
   Eye,
 } from "lucide-react";
 import { SolverProposalsType } from "@/types/Requests";
+import Link from "next/link";
 
 interface Answer {
   id: string;
@@ -20,13 +21,9 @@ interface Answer {
 
 interface MyRecentProposalsProps {
   proposals: SolverProposalsType[];
-  onViewAnswer: (answerId: string) => void;
 }
 
-const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({
-  proposals,
-  onViewAnswer,
-}) => {
+const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({ proposals }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Pending":
@@ -160,13 +157,12 @@ const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({
 
                   <td className="px-6 py-4">
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => onViewAnswer(proposal.id)}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span>View</span>
-                      </button>
+                      <Link href={`/solver/${proposal.id}`} className="w-full">
+                        <button className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1">
+                          <Eye className="w-3 h-3" />
+                          <span>View</span>
+                        </button>
+                      </Link>
                     </div>
                   </td>
                 </tr>
