@@ -31,7 +31,7 @@ export const RequestDetails = ({ request, children }: RequestDetailsProps) => {
         },
         {
           score: request.scoring.heatmap.ambiguity / 10,
-          label: "How ambiguous is the context? (100 = no ambiguity)",
+          label: "How ambiguous is the context? (10 = no ambiguity)",
         },
         {
           score: request.scoring.heatmap.time_reference / 10,

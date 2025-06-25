@@ -1,27 +1,28 @@
 "use client";
 
+import { Button } from "@/components/Button";
 import { Loader } from "@/components/Loader";
 import { RequestDetails } from "@/components/request-details/RequestDetails";
+import { useGetProposal } from "@/hooks/onchain/useGetProposal";
+import { useSubmitProposal } from "@/hooks/onchain/useSubmitProposal";
 import { useRequestForProposal } from "@/hooks/useRequestForProposal";
+import { useUserProposer } from "@/hooks/useUserProposer";
 import { getReadableRequestStatus } from "@/utils/helpers";
+import { timeAgo } from "@/utils/time-ago";
+import { isBoolean, isNumber } from "lodash";
+import { useCallback, useEffect, useState } from "react";
 import {
   Address,
   bytesToBool,
   formatUnits,
   hexToBool,
   pad,
+  stringToBytes,
   toBytes,
   toHex,
 } from "viem";
-import { SolverBool } from "./SolverBool";
-import { useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/Button";
-import { isBoolean, isNumber } from "lodash";
-import { useSubmitProposal } from "@/hooks/onchain/useSubmitProposal";
-import { useGetProposal } from "@/hooks/onchain/useGetProposal";
 import { useAccount } from "wagmi";
-import { timeAgo } from "@/utils/time-ago";
-import { useUserProposer } from "@/hooks/useUserProposer";
+import { SolverBool } from "./SolverBool";
 
 type SolverRequestDetailsProps = { requestId: Address };
 export const SolverRequestDetails = ({
@@ -72,7 +73,9 @@ export const SolverRequestDetails = ({
       case 0:
         const isBool = isBoolean(proposalValue);
         setProposalValueValid(isBool);
-        setProposalValueComputed(isBool ? toHex(proposalValue) : undefined);
+        setProposalValueComputed(
+          isBool ? toHex(proposalValue, { size: 32 }) : undefined
+        );
         break;
       case 1:
         setProposalValueValid(isNumber(proposalValue));
@@ -129,11 +132,10 @@ export const SolverRequestDetails = ({
                     {accountAddress && accountAddress == proposal.proposer
                       ? "Your proposed answer"
                       : "The proposed answer"}
-
                     {request.answerType === 0 && (
                       <SolverBool
                         disabled={true}
-                        value={bytesToBool(toBytes(proposal.answer))}
+                        value={hexToBool(proposal.answer, { size: 32 })}
                         onChange={() => {}}
                       />
                     )}
@@ -206,7 +208,7 @@ export const SolverRequestDetails = ({
                 h
               </span>
             </div>
-            {proposal && (
+            {proposal && proposal.timestamp > 0 && (
               <>
                 <div>
                   <span>Created:</span> <br />
