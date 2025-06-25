@@ -11,7 +11,6 @@ import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
@@ -136,6 +135,12 @@ contract OracleCoordinator is
         require(
             requestStore[_request].status() == RequestTypes.RequestStatus.Open,
             "Already proposed"
+        );
+
+        require(
+            keccak256(requestStore[_request].requester()) !=
+                keccak256(abi.encode(msg.sender)),
+            "Proposer not allowed"
         );
 
         _updateRequestStatus(_request, RequestTypes.RequestStatus.Proposed);
