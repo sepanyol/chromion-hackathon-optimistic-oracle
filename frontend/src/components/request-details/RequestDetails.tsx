@@ -10,32 +10,35 @@ type RequestDetailsProps = {
 } & PropsWithChildren;
 
 export const RequestDetails = ({ request, children }: RequestDetailsProps) => {
-  const assessment = [
-    {
-      score: request.scoring.heatmap.clarity / 10,
-      label: "Is the question and context clearly expressed?",
-    },
-    {
-      score: request.scoring.heatmap.logical_consistency / 10,
-      label: " Are all rules and conditions logically sound and consistent?",
-    },
-    {
-      score: request.scoring.heatmap.completeness / 10,
-      label: "Is all necessary information included to answer reliably?",
-    },
-    {
-      score: request.scoring.heatmap.source_trust / 10,
-      label: "How trustworthy and clearly defined is the source?",
-    },
-    {
-      score: request.scoring.heatmap.ambiguity / 10,
-      label: "How ambiguous is the context? (100 = no ambiguity)",
-    },
-    {
-      score: request.scoring.heatmap.time_reference / 10,
-      label: "Are timeframes, deadlines, or conditions well defined?",
-    },
-  ];
+  const assessment = request.scoring
+    ? [
+        {
+          score: request.scoring.heatmap.clarity / 10,
+          label: "Is the question and context clearly expressed?",
+        },
+        {
+          score: request.scoring.heatmap.logical_consistency / 10,
+          label:
+            " Are all rules and conditions logically sound and consistent?",
+        },
+        {
+          score: request.scoring.heatmap.completeness / 10,
+          label: "Is all necessary information included to answer reliably?",
+        },
+        {
+          score: request.scoring.heatmap.source_trust / 10,
+          label: "How trustworthy and clearly defined is the source?",
+        },
+        {
+          score: request.scoring.heatmap.ambiguity / 10,
+          label: "How ambiguous is the context? (100 = no ambiguity)",
+        },
+        {
+          score: request.scoring.heatmap.time_reference / 10,
+          label: "Are timeframes, deadlines, or conditions well defined?",
+        },
+      ]
+    : [];
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
