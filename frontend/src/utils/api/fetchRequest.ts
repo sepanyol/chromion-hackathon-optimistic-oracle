@@ -1,7 +1,10 @@
+import {
+  FullRequestChallengeType,
+  FullRequestProposalType,
+} from "@/types/Requests";
 import { gql } from "urql";
 import { Address } from "viem";
 import { querySubgraph } from "./urqlClient";
-import { FullRequestProposalType } from "@/types/Requests";
 
 const FetchRequestForProposal = gql`
   query ($id: Bytes) {
@@ -43,6 +46,9 @@ const FetchRequestForProposal = gql`
         answer
         isChallenged
       }
+      requester {
+        id
+      }
     }
   }
 `;
@@ -53,7 +59,12 @@ export const fetchRequestForProposal = async (address: Address) =>
   });
 
 export const fetchRequestForChallenge = async (address: Address) =>
-  querySubgraph(FetchRequestForProposal, { id: address });
+  querySubgraph<{ request: FullRequestChallengeType }>(
+    FetchRequestForProposal,
+    {
+      id: address,
+    }
+  );
 
 export const fetchRequestForReview = async (address: Address) =>
   querySubgraph(FetchRequestForProposal, { id: address });

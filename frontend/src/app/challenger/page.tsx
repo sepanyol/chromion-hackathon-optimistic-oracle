@@ -7,7 +7,7 @@ import ChallengerSubmissionPanel from "@/components/challenger/ChallengerSubmiss
 import MyActiveChallenges from "@/components/challenger/MyActiveChallenges";
 import { ShortAddress } from "@/components/utilities/ShortAddress";
 import { useUserChallenger } from "@/hooks/useUserChallenger";
-import { FullRequestChallengerType } from "@/types/Requests";
+import { FullRequestChallengeType } from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
 import { timeAgo } from "@/utils/time-ago";
 import {
@@ -52,7 +52,7 @@ interface Challenge {
 
 const ChallengerPage: React.FC = () => {
   const [stats, setStats] = useState<StatData[]>([]);
-  const [requests, setRequests] = useState<FullRequestChallengerType[]>([]);
+  const [requests, setRequests] = useState<FullRequestChallengeType[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,61 +144,6 @@ const ChallengerPage: React.FC = () => {
       //     icon: <DollarSign className="w-6 h-6 text-purple-600" />,
       //   },
       // ]);
-
-      const answersData: Answer[] = [
-        {
-          id: "1",
-          question:
-            "What is the latest Bitcoin price from multiple reliable sources with timestamp verification?",
-          answer:
-            "Bitcoin is currently trading at $43,250 based on CoinGecko data. This represents a 2.3% increase... [truncated]",
-          riskScore: 8.5,
-          riskLevel: "High Risk Score",
-          urgency: "URGENT",
-          timeRemaining: "22h remaining",
-          solverBond: "0.2 ETH",
-          solver: "0x1420...",
-          challengeWindow: "22h remaining",
-          potentialReward: "0.15 ETH",
-          chain: "Ethereum",
-          riskAssessment: {
-            score: 8.5,
-            factors: [
-              "Multiple reliable sources cited",
-              "Recent timestamp verification passed",
-              "Data consistent with market conditions",
-              "Methodology clearly explained",
-            ],
-          },
-        },
-        {
-          id: "2",
-          question:
-            "Analyze the current DeFi TVL trends across major protocols for Q4 2024",
-          answer:
-            "Based on DeFiLlama data, total DeFi TVL stands at... [truncated]",
-          riskScore: 6.2,
-          riskLevel: "Medium Risk Score",
-          urgency: "NORMAL",
-          timeRemaining: "3d 12h",
-          solverBond: "0.5 ETH",
-          solver: "0x8420...",
-          challengeWindow: "3d 12h",
-          potentialReward: "0.12 ETH",
-          chain: "Base",
-          riskAssessment: {
-            score: 6.2,
-            factors: [
-              "Multiple reliable sources cited",
-              "Recent timestamp verification passed",
-              "Data consistent with market conditions",
-              "Methodology clearly explained",
-            ],
-          },
-        },
-      ];
-
-      setAnswers(answersData);
 
       setChallenges([
         {

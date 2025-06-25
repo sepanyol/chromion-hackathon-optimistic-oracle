@@ -1,4 +1,4 @@
-import { FullRequestChallengerType } from "@/types/Requests";
+import { FullRequestChallengeType } from "@/types/Requests";
 import { fetchUserChallenger } from "@/utils/api/fetchUserChallenger";
 import { useQuery } from "@tanstack/react-query";
 import { Address } from "viem";
@@ -12,7 +12,7 @@ export const useUserChallenger = (address: Address) =>
       result.data
         ? {
             user: result.data.userChallenger,
-            requests: result.data.requests as FullRequestChallengerType[],
+            requests: result.data.requests as FullRequestChallengeType[],
             dashboard: result.data.dashboard,
           }
         : null,

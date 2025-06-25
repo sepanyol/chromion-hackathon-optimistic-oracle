@@ -24,6 +24,8 @@ import {
 import { useAccount } from "wagmi";
 import { SolverBool } from "./SolverBool";
 import { CheckCircle } from "lucide-react";
+import { isSameAddress } from "@/utils/addresses";
+import { ColoredTile } from "@/components/ColoredTile";
 
 type SolverRequestDetailsProps = { requestId: Address };
 export const SolverRequestDetails = ({
@@ -146,38 +148,47 @@ export const SolverRequestDetails = ({
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col w-full gap-2">
-                    <div className="text-xl block font-bold">
-                      Submit your proposal
-                    </div>
-                    <div>
-                      {/* YES/NO */}
-                      {request.answerType === 0 && (
-                        <SolverBool
-                          value={proposalValue}
-                          onChange={setProposalValue}
-                        />
-                      )}
-                      {/* VALLUATION */}
-                      {request.answerType === 1 && "VALLUATION"}
-                    </div>
-                  </div>
-                  <Button
-                    disabled={
-                      !proposalValueValid ||
-                      submitProposal.approval.execution.isPending ||
-                      submitProposal.execute.execution.isPending
-                    }
-                    onClick={handleSubmitProposal}
-                  >
-                    {submitProposal.approval.execution.isPending &&
-                      "Confirm approval in your wallet..."}
-                    {submitProposal.execute.execution.isPending &&
-                      "Confirm proposing answer in your wallet..."}
-                    {!submitProposal.approval.execution.isPending &&
-                      !submitProposal.execute.execution.isPending &&
-                      "Submit proposal"}
-                  </Button>
+                  {isSameAddress(request.requester.id, accountAddress) ? (
+                    <ColoredTile color="red">
+                      You're not allowed to propose an answer to your own
+                      request
+                    </ColoredTile>
+                  ) : (
+                    <>
+                      <div className="flex flex-col w-full gap-2">
+                        <div className="text-xl block font-bold">
+                          Submit your proposal
+                        </div>
+                        <div>
+                          {/* YES/NO */}
+                          {request.answerType === 0 && (
+                            <SolverBool
+                              value={proposalValue}
+                              onChange={setProposalValue}
+                            />
+                          )}
+                          {/* VALLUATION */}
+                          {request.answerType === 1 && "VALLUATION"}
+                        </div>
+                      </div>
+                      <Button
+                        disabled={
+                          !proposalValueValid ||
+                          submitProposal.approval.execution.isPending ||
+                          submitProposal.execute.execution.isPending
+                        }
+                        onClick={handleSubmitProposal}
+                      >
+                        {submitProposal.approval.execution.isPending &&
+                          "Confirm approval in your wallet..."}
+                        {submitProposal.execute.execution.isPending &&
+                          "Confirm proposing answer in your wallet..."}
+                        {!submitProposal.approval.execution.isPending &&
+                          !submitProposal.execute.execution.isPending &&
+                          "Submit proposal"}
+                      </Button>
+                    </>
+                  )}
                 </>
               ))}
           </div>

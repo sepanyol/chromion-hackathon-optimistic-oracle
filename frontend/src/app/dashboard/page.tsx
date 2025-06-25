@@ -215,6 +215,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Recent Activity */}
+              Add linking based on status and redirect to desired section
               <ActivityFeed activities={activities} />
 
               {/* Requests Section */}

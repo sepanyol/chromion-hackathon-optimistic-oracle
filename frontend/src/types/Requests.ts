@@ -77,6 +77,9 @@ export type FullRequestType = {
   status: RequestStatus;
   truthMeaning: string;
   scoring: FullScoringType;
+  requester: {
+    id: Address;
+  };
 };
 
 export type FullRequestProposalType = {
@@ -87,7 +90,7 @@ export type FullRequestProposalType = {
   };
 } & FullRequestType;
 
-export type FullRequestChallengerType = {
+export type FullRequestChallengeType = {
   proposal: {
     proposer: {
       id: Address;

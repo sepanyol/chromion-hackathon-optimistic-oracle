@@ -2,7 +2,7 @@ import { ChallengerRequestDetails } from "@/components/challenger/details/Challe
 import Navbar from "@/components/Navbar";
 import { Address } from "viem";
 
-const ProposeAnswerPage: React.FC<{
+const ChallengeRequestPage: React.FC<{
   params: Promise<{ requestId: Address }>;
 }> = async ({ params }) => {
   const { requestId } = await params;
@@ -16,4 +16,4 @@ const ProposeAnswerPage: React.FC<{
   );
 };
 
-export default ProposeAnswerPage;
+export default ChallengeRequestPage;
