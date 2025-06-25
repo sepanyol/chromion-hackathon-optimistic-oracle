@@ -86,3 +86,14 @@ export type FullRequestProposalType = {
     isChallenged: boolean;
   };
 } & FullRequestType;
+
+export type FullRequestChallengerType = {
+  proposal: {
+    proposer: {
+      id: Address;
+    };
+    createdAt: number;
+    answer: string;
+    isChallenged: boolean;
+  };
+} & FullRequestType;

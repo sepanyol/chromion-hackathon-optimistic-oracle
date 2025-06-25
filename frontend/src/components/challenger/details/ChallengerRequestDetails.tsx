@@ -22,13 +22,13 @@ import {
   toHex,
 } from "viem";
 import { useAccount } from "wagmi";
-import { SolverBool } from "./SolverBool";
+// import { SolverBool } from "./SolverBool";
 import { CheckCircle } from "lucide-react";
 
-type SolverRequestDetailsProps = { requestId: Address };
-export const SolverRequestDetails = ({
+type ChallengerRequestDetailsProps = { requestId: Address };
+export const ChallengerRequestDetails = ({
   requestId,
-}: SolverRequestDetailsProps) => {
+}: ChallengerRequestDetailsProps) => {
   const [proposalValue, setProposalValue] = useState<any>(null);
   const [proposalValueComputed, setProposalValueComputed] = useState<string>();
   const [proposalValueValid, setProposalValueValid] = useState(false);
@@ -135,13 +135,13 @@ export const SolverRequestDetails = ({
                       : "The proposed answer"}
                   </div>
                   <div className="text-xl block font-bold">
-                    {request.answerType === 0 && (
-                      <SolverBool
-                        disabled={true}
-                        value={hexToBool(proposal.answer, { size: 32 })}
-                        onChange={() => {}}
-                      />
-                    )}
+                    {/* {request.answerType === 0 && (
+                      // <SolverBool
+                      //   disabled={true}
+                      //   value={hexToBool(proposal.answer, { size: 32 })}
+                      //   onChange={() => {}}
+                      // />
+                    )} */}
                   </div>
                 </div>
               ) : (
@@ -152,12 +152,12 @@ export const SolverRequestDetails = ({
                     </div>
                     <div>
                       {/* YES/NO */}
-                      {request.answerType === 0 && (
+                      {/* {request.answerType === 0 && (
                         <SolverBool
                           value={proposalValue}
                           onChange={setProposalValue}
                         />
-                      )}
+                      )} */}
                       {/* VALLUATION */}
                       {request.answerType === 1 && "VALLUATION"}
                     </div>

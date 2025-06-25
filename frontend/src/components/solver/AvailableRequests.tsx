@@ -46,12 +46,6 @@ const AvailableRequests: React.FC<AvailableRequestsProps> = ({ requests }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Available Requests ({requests.length})
-        </h3>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {requests.map((request) => (
           <div

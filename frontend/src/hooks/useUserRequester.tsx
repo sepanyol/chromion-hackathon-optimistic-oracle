@@ -7,7 +7,7 @@ export const useUserRequester = (address: Address) =>
     queryKey: ["requester", "stats", address],
     queryFn: async () => await fetchUserRequester(address),
     enabled: Boolean(address),
-    select: (result) =>
+    select: (result: any) =>
       result.data && result.data.userRequester
         ? result.data.userRequester
         : null,

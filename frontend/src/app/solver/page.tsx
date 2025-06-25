@@ -1,6 +1,7 @@
 // app/solver/page.tsx
 "use client";
 import Navbar from "@/components/Navbar";
+import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import StatCard from "@/components/StatCard";
 import AvailableRequests from "@/components/solver/AvailableRequests";
 import MyRecentProposals from "@/components/solver/MyRecentProposals";
@@ -138,6 +139,9 @@ const SolverPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
+
+      {/* Network Status Bar */}
+      <NetworkStatusBar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
