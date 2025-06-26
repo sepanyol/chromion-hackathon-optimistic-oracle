@@ -33,7 +33,7 @@ const ReviewerPage: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
 
-      // Simulate API call
+  
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setStats([
@@ -122,10 +122,10 @@ const ReviewerPage: React.FC = () => {
   }, []);
 
   const handleSubmitReview = (decision: 'support' | 'reject', comments?: string) => {
-    // In real app, would make API call
+    
     console.log('Review submitted:', { decision, comments });
     
-    // Add to recent reviews
+ 
     if (currentReview) {
       const newReview: RecentReview = {
         id: currentReview.id,

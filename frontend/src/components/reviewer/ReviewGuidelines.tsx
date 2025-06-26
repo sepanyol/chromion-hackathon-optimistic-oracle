@@ -1,4 +1,4 @@
-// components/ReviewGuidelines.tsx
+
 'use client';
 import React from 'react';
 import { CheckCircle, BookOpen } from 'lucide-react';
