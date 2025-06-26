@@ -10,7 +10,9 @@ export const NoRequestsYet = () => {
       <div className="text-gray-400 mb-4">
         <Clock className="w-12 h-12 mx-auto" />
       </div>
-      <p className="text-gray-500 text-lg mb-4">No requests create just yet</p>
+      <p className="text-gray-500 text-lg mb-4">
+        We can't find any requests just yet
+      </p>
       <p className="flex justify-center">
         <div>
           <Button
@@ -19,7 +21,7 @@ export const NoRequestsYet = () => {
             }}
           >
             <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
-            <span>Create New Request</span>
+            <span>Create Request</span>
           </Button>
         </div>
       </p>
