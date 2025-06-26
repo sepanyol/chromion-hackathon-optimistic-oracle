@@ -33,7 +33,7 @@ export const ChallengerRequestDetails = ({
   const [enableSubmit, setEnableSubmit] = useState(false);
 
   const { address: accountAddress } = useAccount();
-  const error = null;
+
   const {
     data: request,
     isLoading,
@@ -70,6 +70,7 @@ export const ChallengerRequestDetails = ({
 
   const handleSubmitChallenge = useCallback(() => {
     if (!request) return;
+
     submitChallenge.initiate();
   }, [
     request,
@@ -79,6 +80,7 @@ export const ChallengerRequestDetails = ({
 
   useEffect(() => {
     if (submitChallenge.execute.execution.isSuccess) {
+      console.log("SUCCESSFUL");
       refetch();
       refetchChallenge();
     }
@@ -105,152 +107,155 @@ export const ChallengerRequestDetails = ({
 
   return (
     <div className="grid grid-cols-4 gap-8">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 group border-l-4 border-l-blue-200! col-span-4 md:col-span-3">
-        {isLoading ? (
-          <div className="flex flex-row justify-center items-center h-full">
-            <Loader size={48} />
-          </div>
-        ) : request ? (
-          <div className="flex flex-col gap-4 col-span-3">
-            {/* HEADLINE */}
-            <div className="flex flex-row w-full justify-between">
-              <div className="text-xl block font-bold">
-                Answer wait to get challenged
-                <span className="text-sm block text-gray-400">
-                  Request ID: {request?.id}
-                </span>
-              </div>
-              <div>
-                <span className="bg-blue-200 px-4 py-2 rounded-full text-blue-600 font-bold">
-                  {challenge && challenge.timestamp > 0
-                    ? getReadableRequestStatus(3)
-                    : getReadableRequestStatusForOpposition(2)}
-                </span>
-              </div>
+      <div className="col-span-4 md:col-span-3">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 group border-l-4 border-l-blue-200! ">
+          {isLoading ? (
+            <div className="flex flex-row justify-center items-center h-full">
+              <Loader size={48} />
             </div>
-
-            <hr className="border-0 border-t border-t-gray-300" />
-
-            {/* REQUEST DETAILS */}
-            <RequestDetails request={request} />
-
-            <hr className="border-0 border-t border-t-gray-300" />
-
-            {/* Current proposed answer */}
-            <div className="flex flex-col w-full gap-2">
-              <div className="text-xl block font-bold">Proposed answer</div>
-              <div className="text-xl block font-bold">
-                {request.answerType === 0 && (
-                  <SolverBool
-                    disabled={true}
-                    value={hexToBool(request.proposal.answer as Address, {
-                      size: 32,
-                    })}
-                    onChange={() => {}}
-                  />
-                )}
-                {request.answerType === 1 && "VALUATION"}
-              </div>
-            </div>
-
-            <hr className="border-0 border-t border-t-gray-300" />
-
-            {/* ACTIONS */}
-            {isLoadingChallenge && <span>Load challenge</span>}
-            {!isLoadingChallenge &&
-              (challenge && challenge.timestamp > 0 ? (
-                <div className="flex flex-col w-full gap-2">
-                  <div className="text-xl block font-bold">
-                    {accountAddress && accountAddress == challenge.challenger
-                      ? "Your challenging answer"
-                      : "The challenging answer"}
-                  </div>
-                  <div className="text-xl block font-bold">
-                    {request.answerType === 0 && (
-                      <SolverBool
-                        disabled={true}
-                        value={hexToBool(challenge.answer as Address, {
-                          size: 32,
-                        })}
-                        onChange={() => {}}
-                      />
-                    )}
-                    {request.answerType === 1 && "VALUATION"}
-                  </div>
-                  <div className="text-xl block font-bold">
-                    Challenge Reason
-                  </div>
-                  <ColoredTile>
-                    {hexToString(challenge.reason as Address)}
-                  </ColoredTile>
+          ) : request ? (
+            <div className="flex flex-col gap-4 col-span-3">
+              {/* HEADLINE */}
+              <div className="flex flex-row w-full justify-between">
+                <div className="text-xl block font-bold">
+                  Answer wait to get challenged
+                  <span className="text-sm block text-gray-400">
+                    Request ID: {request?.id}
+                  </span>
                 </div>
-              ) : (
-                <>
-                  {isSameAddress(request.requester.id, accountAddress) ? (
-                    <ColoredTile color="red">
-                      You're not allowed to challenge a proposed answer for your
-                      own request
-                    </ColoredTile>
-                  ) : (
-                    <>
-                      <div className="flex flex-col w-full gap-2">
-                        <div className="text-xl block font-bold">
-                          Challenge the proposed answer
-                        </div>
-                        <div>
-                          {/* YES/NO */}
-                          {request.answerType === 0 && (
-                            <SolverBool
-                              disabled={true}
-                              value={challengeValue}
-                              onChange={() => {}}
-                            />
-                          )}
-                          {/* VALLUATION */}
-                          {request.answerType === 1 && "VALUATION"}
-                        </div>
-                        <div className="text-xl block font-bold">
-                          Challenge Reason
-                        </div>
-                        <textarea
-                          value={reason}
-                          onChange={(e) => setReason(e.currentTarget.value)}
-                          placeholder="e.g., the proposed answer is simply not true, if you look at..."
-                          rows={3}
-                          className={`w-full px-3 py-2 border placeholder:text-gray-400 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                            error
-                              ? "border-red-300 focus:ring-red-500"
-                              : "border-gray-300"
-                          }`}
-                        />
-                        {error && (
-                          <p className="text-red-600 text-sm mt-1">{error}</p>
-                        )}
-                      </div>
-                      <Button
-                        disabled={
-                          !enableSubmit ||
-                          submitChallenge.approval.execution.isPending ||
-                          submitChallenge.execute.execution.isPending
-                        }
-                        onClick={handleSubmitChallenge}
-                      >
-                        {submitChallenge.approval.execution.isPending &&
-                          "Confirm approval in your wallet..."}
-                        {submitChallenge.execute.execution.isPending &&
-                          "Confirm proposing answer in your wallet..."}
-                        {!submitChallenge.approval.execution.isPending &&
-                          !submitChallenge.execute.execution.isPending &&
-                          "Submit challenge"}
-                      </Button>
-                    </>
+                <div>
+                  <span className="bg-blue-200 px-4 py-2 rounded-full text-blue-600 font-bold">
+                    {challenge && challenge.timestamp > 0
+                      ? getReadableRequestStatus(3)
+                      : getReadableRequestStatusForOpposition(2)}
+                  </span>
+                </div>
+              </div>
+
+              <hr className="border-0 border-t border-t-gray-300" />
+
+              {/* REQUEST DETAILS */}
+              <RequestDetails request={request} />
+
+              <hr className="border-0 border-t border-t-gray-300" />
+
+              {/* Current proposed answer */}
+              <div className="flex flex-col w-full gap-2">
+                <div className="text-xl block font-bold">Proposed answer</div>
+                <div className="text-xl block font-bold">
+                  {request.answerType === 0 && (
+                    <SolverBool
+                      disabled={true}
+                      value={hexToBool(request.proposal.answer as Address, {
+                        size: 32,
+                      })}
+                      onChange={() => {}}
+                    />
                   )}
-                </>
-              ))}
-          </div>
-        ) : (
-          "invalid request"
-        )}
+                  {request.answerType === 1 && "VALUATION"}
+                </div>
+              </div>
+
+              <hr className="border-0 border-t border-t-gray-300" />
+
+              {/* ACTIONS */}
+              {isLoadingChallenge && <span>Load challenge</span>}
+              {!isLoadingChallenge &&
+                (challenge && challenge.timestamp > 0 ? (
+                  <div className="flex flex-col w-full gap-2">
+                    <div className="text-xl block font-bold">
+                      {accountAddress && accountAddress == challenge.challenger
+                        ? "Your challenging answer"
+                        : "The challenging answer"}
+                    </div>
+                    <div className="text-xl block font-bold">
+                      {request.answerType === 0 && (
+                        <SolverBool
+                          disabled={true}
+                          value={hexToBool(challenge.answer as Address, {
+                            size: 32,
+                          })}
+                          onChange={() => {}}
+                        />
+                      )}
+                      {request.answerType === 1 && "VALUATION"}
+                    </div>
+                    <div className="text-xl block font-bold">
+                      Challenge Reason
+                    </div>
+                    <ColoredTile>
+                      {hexToString(challenge.reason as Address)}
+                    </ColoredTile>
+                  </div>
+                ) : (
+                  <>
+                    {isSameAddress(request.requester.id, accountAddress) ? (
+                      <ColoredTile color="red">
+                        You're not allowed to challenge a proposed answer for
+                        your own request
+                      </ColoredTile>
+                    ) : request.proposal &&
+                      isSameAddress(
+                        request.proposal.proposer.id,
+                        accountAddress
+                      ) ? (
+                      <ColoredTile color="red">
+                        You're not allowed to challenge your own answer
+                      </ColoredTile>
+                    ) : (
+                      <>
+                        <div className="flex flex-col w-full gap-2">
+                          <div className="text-xl block font-bold">
+                            Challenge the proposed answer
+                          </div>
+                          <div>
+                            {/* YES/NO */}
+                            {request.answerType === 0 && (
+                              <SolverBool
+                                disabled={true}
+                                value={challengeValue}
+                                onChange={() => {}}
+                              />
+                            )}
+                            {/* VALLUATION */}
+                            {request.answerType === 1 && "VALUATION"}
+                          </div>
+                          <div className="text-xl block font-bold">
+                            Challenge Reason
+                          </div>
+                          <textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.currentTarget.value)}
+                            placeholder="e.g., the proposed answer is not true, if you look at..."
+                            rows={3}
+                            className="w-full px-3 py-2 border placeholder:text-gray-400 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 border-gray-300"
+                          />
+                        </div>
+                        <Button
+                          disabled={
+                            !enableSubmit ||
+                            submitChallenge.approval.execution.isPending ||
+                            submitChallenge.execute.execution.isPending
+                          }
+                          onClick={handleSubmitChallenge}
+                        >
+                          {submitChallenge.approval.execution.isPending &&
+                            "Confirm approval in your wallet..."}
+                          {submitChallenge.execute.execution.isPending &&
+                            "Confirm proposing answer in your wallet..."}
+                          {!submitChallenge.approval.execution.isPending &&
+                            !submitChallenge.execute.execution.isPending &&
+                            "Submit challenge"}
+                        </Button>
+                      </>
+                    )}
+                  </>
+                ))}
+            </div>
+          ) : (
+            "invalid request"
+          )}
+        </div>
       </div>
 
       {/* GUIDELINES */}
@@ -259,13 +264,14 @@ export const ChallengerRequestDetails = ({
           <div className="bg-white border border-gray-200 rounded-lg p-6 group flex flex-col gap-2">
             <div className="text-lg font-bold">Additional Information</div>
             <div>
-              <span>Reward:</span> <br />
+              <span>Reward (+ Proposer Bond):</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(request.rewardAmount), 6)} USDC
+                {formatUnits(BigInt(request.rewardAmount) + BigInt(1e8), 6)}{" "}
+                USDC
               </span>
             </div>
             <div>
-              <span>Bond:</span> <br />
+              <span>Bonding:</span> <br />
               <span className="font-bold">100 USDC</span>
             </div>
             <div>
@@ -287,12 +293,11 @@ export const ChallengerRequestDetails = ({
                   </span>
                 </div>
                 <div>
-                  <span>Resolves unchallenged:</span> <br />
+                  <span>Challenge ends:</span> <br />
                   <span className="font-bold">
+                    {/* TODO implement proper challenge end date. Get general oracle data on start and use it, or store on request or in challenge */}
                     {timeAgo.format(
-                      (Number(challenge.timestamp) +
-                        Number(request.challengeWindow)) *
-                        1000
+                      (Number(challenge.timestamp) + 86400) * 1000
                     )}
                   </span>
                 </div>

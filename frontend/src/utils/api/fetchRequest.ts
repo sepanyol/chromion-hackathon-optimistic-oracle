@@ -45,6 +45,9 @@ const FetchRequestForProposal = gql`
         createdAt
         answer
         isChallenged
+        proposer {
+          id
+        }
       }
       requester {
         id

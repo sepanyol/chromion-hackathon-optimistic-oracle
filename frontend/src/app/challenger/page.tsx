@@ -94,7 +94,7 @@ const ChallengerPage: React.FC = () => {
         title: "Challenge Earnings",
         value: `${
           challenger.data.user
-            ? parseUnits(challenger.data.user.stats.earningsInUSD, 6)
+            ? formatUnits(BigInt(challenger.data.user.stats.earningsInUSD), 6)
             : "0"
         } USDC`,
         change: null, // '$4,320 USD equivalent',

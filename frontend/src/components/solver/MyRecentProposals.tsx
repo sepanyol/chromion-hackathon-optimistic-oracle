@@ -30,7 +30,7 @@ const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({ proposals }) => {
         return <Clock className="w-4 h-4 text-orange-500" />;
       case "Under Review":
         return <AlertCircle className="w-4 h-4 text-blue-500" />;
-      case "Approved":
+      case "Resolved":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case "Rejected":
         return <AlertCircle className="w-4 h-4 text-red-500" />;
@@ -47,7 +47,7 @@ const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({ proposals }) => {
         return "bg-orange-100 text-orange-800 border-orange-200";
       case "Under Review":
         return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Approved":
+      case "Resolved":
         return "bg-green-100 text-green-800 border-green-200";
       case "Rejected":
         return "bg-red-100 text-red-800 border-red-200";
@@ -60,7 +60,7 @@ const MyRecentProposals: React.FC<MyRecentProposalsProps> = ({ proposals }) => {
 
   const getRewardColor = (status: string) => {
     switch (status) {
-      case "Approved":
+      case "Resolved":
         return "text-green-600 font-semibold";
       case "Pending":
       case "Under Review":

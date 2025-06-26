@@ -95,106 +95,106 @@ export const SolverRequestDetails = ({
 
   return (
     <div className="grid grid-cols-4 gap-8">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 group border-l-4 border-l-blue-200! col-span-4 md:col-span-3">
-        {isLoading ? (
-          <div className="flex flex-row justify-center items-center h-full">
-            <Loader size={48} />
-          </div>
-        ) : request ? (
-          <div className="flex flex-col gap-4 col-span-3">
-            {/* HEADLINE */}
-            <div className="flex flex-row w-full justify-between">
-              <div className="text-xl block font-bold">
-                Request is waiting for proposal
-                <span className="text-sm block text-gray-400">
-                  Request ID: {request?.id}
-                </span>
-              </div>
-              <div>
-                <span className="bg-blue-200 px-4 py-2 rounded-full text-blue-600 font-bold">
-                  {getReadableRequestStatus(
-                    proposal && proposal.timestamp > 0 ? 2 : request.status
-                  )}
-                </span>
-              </div>
+      <div className="col-span-4 md:col-span-3">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 group border-l-4 border-l-blue-200!">
+          {isLoading ? (
+            <div className="flex flex-row justify-center items-center h-full">
+              <Loader size={48} />
             </div>
-
-            <hr className="border-0 border-t border-t-gray-300" />
-
-            {/* REQUEST DETAILS */}
-            <RequestDetails request={request} />
-
-            <hr className="border-0 border-t border-t-gray-300" />
-
-            {/* ACTIONS */}
-            {isLoadingProposal && <span>Load proposal</span>}
-            {!isLoadingProposal &&
-              (proposal && proposal.timestamp > 0 ? (
-                <div className="flex flex-col w-full gap-2">
-                  <div className="text-xl block font-bold">
-                    {accountAddress && accountAddress == proposal.proposer
-                      ? "Your proposed answer"
-                      : "The proposed answer"}
-                  </div>
-                  <div className="text-xl block font-bold">
-                    {request.answerType === 0 && (
-                      <SolverBool
-                        disabled={true}
-                        value={hexToBool(proposal.answer, { size: 32 })}
-                        onChange={() => {}}
-                      />
-                    )}
-                  </div>
+          ) : request ? (
+            <div className="flex flex-col gap-4 col-span-3">
+              {/* HEADLINE */}
+              <div className="flex flex-row w-full justify-between">
+                <div className="text-xl block font-bold">
+                  Request is waiting for proposal
+                  <span className="text-sm block text-gray-400">
+                    Request ID: {request?.id}
+                  </span>
                 </div>
-              ) : (
-                <>
-                  {isSameAddress(request.requester.id, accountAddress) ? (
-                    <ColoredTile color="red">
-                      You're not allowed to propose an answer to your own
-                      request
-                    </ColoredTile>
-                  ) : (
-                    <>
-                      <div className="flex flex-col w-full gap-2">
-                        <div className="text-xl block font-bold">
-                          Submit your proposal
+                <div>
+                  <span className="bg-blue-200 px-4 py-2 rounded-full text-blue-600 font-bold">
+                    {getReadableRequestStatus(request.status)}
+                  </span>
+                </div>
+              </div>
+
+              <hr className="border-0 border-t border-t-gray-300" />
+
+              {/* REQUEST DETAILS */}
+              <RequestDetails request={request} />
+
+              <hr className="border-0 border-t border-t-gray-300" />
+
+              {/* ACTIONS */}
+              {isLoadingProposal && <span>Load proposal</span>}
+              {!isLoadingProposal &&
+                (proposal && proposal.timestamp > 0 ? (
+                  <div className="flex flex-col w-full gap-2">
+                    <div className="text-xl block font-bold">
+                      {accountAddress && accountAddress == proposal.proposer
+                        ? "Your proposed answer"
+                        : "The proposed answer"}
+                    </div>
+                    <div className="text-xl block font-bold">
+                      {request.answerType === 0 && (
+                        <SolverBool
+                          disabled={true}
+                          value={hexToBool(proposal.answer, { size: 32 })}
+                          onChange={() => {}}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {isSameAddress(request.requester.id, accountAddress) ? (
+                      <ColoredTile color="red">
+                        You're not allowed to propose an answer to your own
+                        request
+                      </ColoredTile>
+                    ) : (
+                      <>
+                        <div className="flex flex-col w-full gap-2">
+                          <div className="text-xl block font-bold">
+                            Submit your proposal
+                          </div>
+                          <div>
+                            {/* YES/NO */}
+                            {request.answerType === 0 && (
+                              <SolverBool
+                                value={proposalValue}
+                                onChange={setProposalValue}
+                              />
+                            )}
+                            {/* VALLUATION */}
+                            {request.answerType === 1 && "VALLUATION"}
+                          </div>
                         </div>
-                        <div>
-                          {/* YES/NO */}
-                          {request.answerType === 0 && (
-                            <SolverBool
-                              value={proposalValue}
-                              onChange={setProposalValue}
-                            />
-                          )}
-                          {/* VALLUATION */}
-                          {request.answerType === 1 && "VALLUATION"}
-                        </div>
-                      </div>
-                      <Button
-                        disabled={
-                          !proposalValueValid ||
-                          submitProposal.approval.execution.isPending ||
-                          submitProposal.execute.execution.isPending
-                        }
-                        onClick={handleSubmitProposal}
-                      >
-                        {submitProposal.approval.execution.isPending &&
-                          "Confirm approval in your wallet..."}
-                        {submitProposal.execute.execution.isPending &&
-                          "Confirm proposing answer in your wallet..."}
-                        {!submitProposal.approval.execution.isPending &&
-                          !submitProposal.execute.execution.isPending &&
-                          "Submit proposal"}
-                      </Button>
-                    </>
-                  )}
-                </>
-              ))}
-          </div>
-        ) : (
-          "invalid request"
-        )}
+                        <Button
+                          disabled={
+                            !proposalValueValid ||
+                            submitProposal.approval.execution.isPending ||
+                            submitProposal.execute.execution.isPending
+                          }
+                          onClick={handleSubmitProposal}
+                        >
+                          {submitProposal.approval.execution.isPending &&
+                            "Confirm approval in your wallet..."}
+                          {submitProposal.execute.execution.isPending &&
+                            "Confirm proposing answer in your wallet..."}
+                          {!submitProposal.approval.execution.isPending &&
+                            !submitProposal.execute.execution.isPending &&
+                            "Submit proposal"}
+                        </Button>
+                      </>
+                    )}
+                  </>
+                ))}
+            </div>
+          ) : (
+            "invalid request"
+          )}
+        </div>
       </div>
 
       {/* GUIDELINES */}
@@ -265,7 +265,7 @@ export const SolverRequestDetails = ({
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-6 group flex flex-col gap-2 ">
           <div className="text-lg font-bold">Proposer Stats</div>
-          {proposer && (
+          {proposer && proposer.user && (
             <table className="table-auto w-full">
               <tbody>
                 <tr>
