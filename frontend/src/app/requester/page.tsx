@@ -1,25 +1,23 @@
 // app/requester/page.tsx
 "use client";
-import React, { useState, useEffect, useContext } from "react";
 import Navbar from "@/components/Navbar";
-import StatCard from "@/components/StatCard";
-import RequesterQuickActions from "@/components/Requester/RequesterQuickActions";
+import { FloatingCreateRequestAction } from "@/components/Requester/FloatingCreateRequestAction";
 import MyRequests from "@/components/Requester/MyRequests";
-import RequestModal from "@/components/request/RequestModal";
-import { TrendingUp, CheckCircle, Clock, Plus } from "lucide-react";
-import { useAccount } from "wagmi";
-import { StatData } from "@/types/StatsCards";
-import { useUserRequester } from "@/hooks/useUserRequester";
+import StatCard from "@/components/StatCard";
+import { CreateRequest } from "@/components/request/CreateRequest";
 import CreateRequestProvider, {
-  ActionTypes,
   CreateRequestContext,
 } from "@/components/request/CreateRequestProvider";
-import { CreateRequest } from "@/components/request/CreateRequest";
+import { NoRequestsYet } from "@/components/request/NoRequestsYet";
+import { useUserRequester } from "@/hooks/useUserRequester";
 import { MyRequestsType } from "@/types/Requests";
-import { formatEther, formatUnits } from "viem";
+import { StatData } from "@/types/StatsCards";
 import { getReadableRequestStatus, RequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { FloatingCreateRequestAction } from "@/components/Requester/FloatingCreateRequestAction";
+import { CheckCircle, Clock, TrendingUp } from "lucide-react";
+import React, { useContext, useEffect, useState } from "react";
+import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
 
 const RequesterPage: React.FC = () => {
   const { address, chainId, isConnected } = useAccount();
@@ -44,10 +42,6 @@ const RequesterPage: React.FC = () => {
 
     loadData();
   }, []);
-
-  const handleNewQuestion = () => {
-    createRequest.dispatch({ type: ActionTypes.OpenModal });
-  };
 
   const handleUseTemplate = () => {
     setShowTemplateModal(true);
@@ -160,7 +154,7 @@ const RequesterPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {!requester.data ? (
-            <span>TODO no requests for you for now. Create one</span>
+            <NoRequestsYet />
           ) : (
             <div className="space-y-8">
               {/* Stats Grid */}
@@ -185,14 +179,6 @@ const RequesterPage: React.FC = () => {
 
         {/* Floating Action Button */}
         <FloatingCreateRequestAction />
-
-        {/* Request Modal */}
-        {/* {showRequestModal && (
-        <RequestModal
-          onSubmit={handleNewRequest}
-          onClose={() => setShowRequestModal(false)}
-        />
-      )} */}
 
         {/* Template Modal */}
         {/* {showTemplateModal && (
