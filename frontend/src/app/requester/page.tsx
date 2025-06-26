@@ -169,10 +169,15 @@ const RequesterPage: React.FC = () => {
               onUseTemplate={handleUseTemplate}
               onViewAnalytics={handleViewAnalytics}
             /> */}
-              TODO Add Links to the desired section<br />
-              Created &gt; Solver Details<br />
-              Proposed &gt; Challenge Details<br />
-              Challenged &gt; Review Details<br />
+              TODO Add Links to the desired section <br />
+              TODO Show all requests, if wallet not connected? Maybe???
+              <br />
+              Created &gt; Solver Details
+              <br />
+              Proposed &gt; Challenge Details
+              <br />
+              Challenged &gt; Review Details
+              <br />
               {/* My Questions */}
               <MyRequests questions={questions} />
             </div>

@@ -8,12 +8,15 @@ import { ShortAddress } from "../utilities/ShortAddress";
 import { ReviewBar } from "./ReviewBar";
 import { Button } from "../Button";
 import Link from "next/link";
+import { useAccount } from "wagmi";
+import { isSameAddress } from "@/utils/addresses";
 
 type AvailableReviewsProps = {
   reviews: AvailableReviewsType[];
 };
 
 export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
+  const { address: accountAddress } = useAccount();
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -67,7 +70,7 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                   </div>
                   <div className="grid grid-cols-4 gap-4 md:gap-2">
                     <div className="flex flex-col col-span-2 md:col-span-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-500">
                         answered by:
                       </span>
                       <ShortAddress
@@ -76,7 +79,7 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                       />
                     </div>
                     <div className="flex flex-col col-span-2 md:col-span-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-500">
                         challenged by:
                       </span>
                       <ShortAddress
@@ -86,7 +89,7 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                     </div>
 
                     <div className="flex flex-col col-span-4 md:col-span-2">
-                      <span className="text-xs text-gray-500 mb-2">
+                      <span className="text-sm text-gray-500 mb-2">
                         Reviews
                       </span>
                       <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
@@ -105,9 +108,29 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                   </div>
 
                   <div className="flex justify-end">
-                    <Link href={`/reviewer/${review.id}`}>
-                      <Button>Review Challenge</Button>
-                    </Link>
+                    {accountAddress &&
+                    (isSameAddress(
+                      review.request.requester.id,
+                      accountAddress
+                    ) ||
+                      isSameAddress(review.challenger.id, accountAddress) ||
+                      isSameAddress(
+                        review.proposal.proposer.id,
+                        accountAddress
+                      )) ? (
+                      <span>
+                        <Button
+                          title="You're the requester, proposer or challenger. You can't review"
+                          disabled={true}
+                        >
+                          Review Challenge
+                        </Button>
+                      </span>
+                    ) : (
+                      <Link href={`/reviewer/${review.id}`}>
+                        <Button>Review Challenge</Button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

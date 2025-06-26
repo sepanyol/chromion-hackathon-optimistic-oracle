@@ -137,6 +137,7 @@ export type AvailableReviewsType = {
     | "rewardAmount"
     | "truthMeaning"
     | "scoring"
+    | "requester"
   >;
 };
 

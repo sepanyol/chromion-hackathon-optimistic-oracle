@@ -32,6 +32,9 @@ export const fetchAvailableReviews = async () =>
             final_decision
             score
           }
+          requester {
+            id
+          }
         }
       }
     }

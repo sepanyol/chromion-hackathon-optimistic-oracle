@@ -44,7 +44,7 @@ export const MyReviews = ({ reviews }: MyReviewsProps) => {
                   </p>
                   <div className="grid grid-cols-4 gap-4 md:gap-2">
                     <div className="flex flex-col col-span-2 md:col-span-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-500">
                         answered by:
                       </span>
                       <ShortAddress
@@ -53,7 +53,7 @@ export const MyReviews = ({ reviews }: MyReviewsProps) => {
                       />
                     </div>
                     <div className="flex flex-col col-span-2 md:col-span-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm text-gray-500">
                         challenged by:
                       </span>
                       <ShortAddress
@@ -62,7 +62,7 @@ export const MyReviews = ({ reviews }: MyReviewsProps) => {
                       />
                     </div>
                     <div className="flex flex-col col-span-4 md:col-span-2">
-                      <span className="text-xs text-gray-500 mb-2">
+                      <span className="text-sm text-gray-500 mb-2">
                         Reviews
                       </span>
                       <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
