@@ -82,6 +82,64 @@ export type FullRequestType = {
   };
 };
 
+export type FullChallengeType = {
+  id: Address;
+  answer: string;
+  createdAt: number;
+  reason: string;
+  votesFor: number;
+  votesAgainst: number;
+  challenger: {
+    id: Address;
+  };
+};
+
+export type FullProposalType = {
+  id: Address;
+  createdAt: number;
+  answer: string;
+  isChallenged: boolean;
+  proposer: {
+    id: Address;
+  };
+};
+
+export type MyReviewsType = {
+  id: Address;
+  createdAt: number;
+  reason: string;
+  supportsChallenge: boolean;
+  request: Pick<
+    FullRequestProposalType,
+    "question" | "createdAt" | "id" | "status"
+  >;
+  challenge: Omit<FullChallengeType, "id">;
+  proposal: Pick<FullProposalType, "proposer">;
+};
+
+export type AvailableReviewsType = {
+  answer: string;
+  createdAt: number;
+  id: Address;
+  reason: string;
+  votesAgainst: number;
+  votesFor: number;
+  challenger: {
+    id: Address;
+  };
+  proposal: Pick<FullProposalType, "answer" | "proposer">;
+  request: Pick<
+    FullRequestType,
+    | "answerType"
+    | "context"
+    | "createdAt"
+    | "question"
+    | "rewardAmount"
+    | "truthMeaning"
+    | "scoring"
+  >;
+};
+
 export type FullRequestProposalType = {
   proposal: {
     createdAt: number;
@@ -100,3 +158,16 @@ export type FullRequestChallengeType = {
     isChallenged: boolean;
   };
 } & FullRequestType;
+
+export type FullRequestReviewType = {
+  challenge: {
+    challenger: {
+      id: Address;
+    };
+    createdAt: number;
+    answer: string;
+    reason: string;
+    votesAgainst: number;
+    votesFor: number;
+  };
+} & FullRequestChallengeType;

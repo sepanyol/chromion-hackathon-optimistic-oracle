@@ -28,8 +28,10 @@ export const ShortAddress = ({
     <button
       type="button"
       onClick={copyUserAddress}
-      className={`cursor-pointer gap-2 text-xs text-blue-400 flex items-center space-x-1  py-1 rounded ${
-        canCopy ? "text-blue-400 hover:text-blue-600" : "text-gray-500"
+      className={` gap-2 text-xs text-blue-400 flex items-center space-x-1  py-1 rounded ${
+        canCopy
+          ? "cursor-pointer text-blue-400 hover:text-blue-600"
+          : "text-gray-500"
       }`}
     >
       <span className="font-mono">{`${address.slice(0, 6)}...${address.slice(

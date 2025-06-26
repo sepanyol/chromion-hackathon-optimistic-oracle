@@ -163,14 +163,16 @@ const RequesterPage: React.FC = () => {
                   <StatCard key={index} {...stat} />
                 ))}
               </div>
-
               {/* Quick Actions */}
               {/* <RequesterQuickActions
               onNewQuestion={handleNewQuestion}
               onUseTemplate={handleUseTemplate}
               onViewAnalytics={handleViewAnalytics}
             /> */}
-
+              TODO Add Links to the desired section<br />
+              Created &gt; Solver Details<br />
+              Proposed &gt; Challenge Details<br />
+              Challenged &gt; Review Details<br />
               {/* My Questions */}
               <MyRequests questions={questions} />
             </div>

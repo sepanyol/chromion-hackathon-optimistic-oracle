@@ -149,11 +149,9 @@ const AvailableRequests: React.FC<AvailableRequestsProps> = ({ requests }) => {
           <div className="text-gray-400 mb-4">
             <Clock className="w-12 h-12 mx-auto" />
           </div>
-          <p className="text-gray-500 text-lg">
-            No requests match your filters
-          </p>
+          <p className="text-gray-500 text-lg">No new requests available</p>
           <p className="text-gray-400 text-sm">
-            Try adjusting your search criteria
+            Come back later to propose mor answers
           </p>
         </div>
       )}
