@@ -473,6 +473,12 @@ contract OracleCoordinatorTest is Test {
             .getChallenge(request);
         assertEq(_challenge.reviews.length, 1, "Expected one review recorded");
         assertEq(_challenge.reviews[0].reviewer, reviewer, "Reviewer mismatch");
+
+        IOracleCoordinator.Review memory _review = coordinator.getReviewerVotes(
+            request,
+            reviewer
+        );
+        assertTrue(_review.supportsChallenge, "Should support the challenge");
     }
 
     function test_submitReview_RevertIf_AlreadyReviewed() public {
