@@ -33,12 +33,12 @@ jobs:
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        run: | 
-          vercel build \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --env NEXT_PUBLIC_APPKIT_PROJECT_ID=${{vars.NEXT_PUBLIC_APPKIT_PROJECT_ID}} \
-            --env NEXT_PUBLIC_GAS_API=${{vars.NEXT_PUBLIC_GAS_API}} \
-            --env NEXT_PUBLIC_SUBGRAPH_API=${{vars.NEXT_PUBLIC_SUBGRAPH_API}}
+        run: |
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_APPKIT_PROJECT_ID: ${{vars.NEXT_PUBLIC_APPKIT_PROJECT_ID}}
+          NEXT_PUBLIC_GAS_API: ${{vars.NEXT_PUBLIC_GAS_API}}
+          NEXT_PUBLIC_SUBGRAPH_API: ${{vars.NEXT_PUBLIC_SUBGRAPH_API}}
 
       # Deploy
       - name: Deploy Project Artifacts to Vercel
