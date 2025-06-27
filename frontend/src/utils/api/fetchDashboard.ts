@@ -1,8 +1,9 @@
+import { DashboardType } from "@/types/Dashboard";
 import { gql } from "urql";
 import { querySubgraph } from "./urqlClient";
 
 export const fetchDashboard = async () =>
-  querySubgraph(gql`
+  querySubgraph<{ dashboards: DashboardType[] }>(gql`
     query {
       dashboards(first: 1) {
         id

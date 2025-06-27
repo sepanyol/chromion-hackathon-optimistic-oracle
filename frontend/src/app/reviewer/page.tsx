@@ -73,7 +73,7 @@ const ReviewerPage: React.FC = () => {
     } else setMyReviews([]);
 
     setIsLoading(false);
-  }, [reviewer.isSuccess]);
+  }, [reviewer.isSuccess, reviewer.data]);
 
   if (isLoading) {
     return (

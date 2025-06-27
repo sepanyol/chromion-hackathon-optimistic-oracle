@@ -1,0 +1,53 @@
+name: Deploy to Vercel
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+on:
+  push:
+    branches:
+      - main # change if needed
+    paths:
+      - "frontend/**"
+
+jobs:
+  deploy:
+    defaults:
+      run:
+        working-directory: ./frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22" # or whatever version your app needs
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Pull Vercel Environment Information
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: | 
+          vercel build \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --env NEXT_PUBLIC_APPKIT_PROJECT_ID=${{vars.NEXT_PUBLIC_APPKIT_PROJECT_ID}} \
+            --env NEXT_PUBLIC_GAS_API=${{vars.NEXT_PUBLIC_GAS_API}} \
+            --env NEXT_PUBLIC_SUBGRAPH_API=${{vars.NEXT_PUBLIC_SUBGRAPH_API}}
+
+      # Deploy
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} | tee deploy.log
+
+      # Set preview url
+      - id: seturl
+        name: Set preview url
+        run: echo "url=$(tail -1 deploy.log)">> $GITHUB_OUTPUT
+
+      - name: Output preview url
+        run: echo "${{ steps.seturl.outputs.url }}"

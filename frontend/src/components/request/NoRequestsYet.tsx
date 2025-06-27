@@ -11,7 +11,7 @@ export const NoRequestsYet = () => {
         <Clock className="w-12 h-12 mx-auto" />
       </div>
       <p className="text-gray-500 text-lg mb-4">
-        We can't find any requests just yet
+        We can&apos;t find any requests just yet
       </p>
       <p className="flex justify-center">
         <div>

@@ -48,12 +48,18 @@ export const ReviewChallengeDetails = ({
   const handleSubmitReview = useCallback(() => {
     if (
       !request ||
+      !submitReview ||
       !submitReview.execute.isEnabled ||
       !submitReview.execute.isReady
     )
       return;
     submitReview.initiate();
-  }, [request, submitReview.execute.isEnabled, submitReview.execute.isReady]);
+  }, [
+    submitReview,
+    request,
+    submitReview.execute.isEnabled,
+    submitReview.execute.isReady,
+  ]);
 
   useEffect(() => {
     if (!submitReview.execute.execution.isSuccess) return;

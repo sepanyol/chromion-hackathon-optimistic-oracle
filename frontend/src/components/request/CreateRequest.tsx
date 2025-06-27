@@ -18,10 +18,13 @@ export const CreateRequest = () => {
   };
 
   useEffect(() => {
+    if (!router || !dispatch) return;
+
     if (createRequest.execute.execution.isSuccess)
       dispatch({ type: ActionTypes.Reset });
+
     router.refresh();
-  }, [createRequest.execute.execution.isSuccess]);
+  }, [router, dispatch, createRequest.execute.execution.isSuccess]);
 
   if (!state.isModalOpen) return <></>;
 

@@ -127,6 +127,12 @@ export type MyReviewsType = {
   proposal: Pick<FullProposalType, "proposer">;
 };
 
+export type DashboardRequestType = {
+  scoring: Pick<FullScoringType, "final_decision">;
+  proposal: Pick<FullProposalType, "id" | "createdAt">;
+  challenge: Pick<FullChallengeType, "id" | "createdAt">;
+} & Omit<FullRequestType, "context" | "truthMeaning">;
+
 export type AvailableReviewsType = {
   answer: string;
   createdAt: number;

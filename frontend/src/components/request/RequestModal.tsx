@@ -80,7 +80,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
   };
 
   useEffect(() => {
-    onUpdate(formData);
+    onUpdate && onUpdate(formData);
   }, [formData]);
 
   const handleOnClose = () => {

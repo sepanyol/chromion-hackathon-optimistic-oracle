@@ -66,14 +66,16 @@ export const ChallengerRequestDetails = ({
   // );
 
   const handleSubmitChallenge = useCallback(() => {
-    if (!request) return;
+    if (
+      !request ||
+      !submitChallenge ||
+      !submitChallenge.execute.isEnabled ||
+      !submitChallenge.execute.isReady
+    )
+      return;
 
     submitChallenge.initiate();
-  }, [
-    request,
-    submitChallenge.execute.isEnabled,
-    submitChallenge.execute.isReady,
-  ]);
+  }, [request, submitChallenge]);
 
   useEffect(() => {
     if (submitChallenge.execute.execution.isSuccess) {
@@ -81,7 +83,7 @@ export const ChallengerRequestDetails = ({
       refetch();
       refetchChallenge();
     }
-  }, [submitChallenge.execute.execution.isSuccess]);
+  }, [refetch, refetchChallenge, submitChallenge.execute.execution.isSuccess]);
 
   useEffect(() => {
     if (!request || !challenge) return;
@@ -188,8 +190,8 @@ export const ChallengerRequestDetails = ({
                   <>
                     {isSameAddress(request.requester.id, accountAddress) ? (
                       <ColoredTile color="red">
-                        You're not allowed to challenge a proposed answer for
-                        your own request
+                        You&apos;re not allowed to challenge a proposed answer
+                        for your own request
                       </ColoredTile>
                     ) : request.proposal &&
                       isSameAddress(
@@ -197,7 +199,7 @@ export const ChallengerRequestDetails = ({
                         accountAddress
                       ) ? (
                       <ColoredTile color="red">
-                        You're not allowed to challenge your own answer
+                        You&apos;re not allowed to challenge your own answer
                       </ColoredTile>
                     ) : (
                       <>

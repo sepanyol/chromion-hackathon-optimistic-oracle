@@ -14,33 +14,32 @@ import {
   AlertTriangle,
   CheckCircle,
   DollarSign,
-  Proportions,
   Shield,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { Address, formatUnits, hexToBool, parseUnits, trim } from "viem";
+import { Address, formatUnits, hexToBool, trim } from "viem";
 import { useAccount } from "wagmi";
 
-interface Answer {
-  id: string;
-  question: string;
-  answer: string;
-  riskScore: number;
-  riskLevel: "High Risk Score" | "Medium Risk Score" | "Low Risk Score";
-  urgency: "URGENT" | "NORMAL";
-  timeRemaining: string;
-  solverBond: string;
-  solver: string;
-  challengeWindow: string;
-  potentialReward: string;
-  chain: string;
-  riskAssessment: {
-    score: number;
-    factors: string[];
-  };
-}
+// interface Answer {
+//   id: string;
+//   question: string;
+//   answer: string;
+//   riskScore: number;
+//   riskLevel: "High Risk Score" | "Medium Risk Score" | "Low Risk Score";
+//   urgency: "URGENT" | "NORMAL";
+//   timeRemaining: string;
+//   solverBond: string;
+//   solver: string;
+//   challengeWindow: string;
+//   potentialReward: string;
+//   chain: string;
+//   riskAssessment: {
+//     score: number;
+//     factors: string[];
+//   };
+// }
 
 interface Challenge {
   id: string;
@@ -53,7 +52,7 @@ interface Challenge {
 const ChallengerPage: React.FC = () => {
   const [stats, setStats] = useState<StatData[]>([]);
   const [requests, setRequests] = useState<FullRequestChallengeType[]>([]);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  // const [answers, setAnswers] = useState<Answer[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -193,18 +192,18 @@ const ChallengerPage: React.FC = () => {
     }
   };
 
-  const getRiskLabel = (final_decision: number) => {
-    switch (final_decision) {
-      case 3:
-        return "bg-red-100 text-red-800 border-red-200";
-      case 2:
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case 1:
-        return "bg-green-100 text-green-800 border-green-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  // const getRiskLabel = (final_decision: number) => {
+  //   switch (final_decision) {
+  //     case 3:
+  //       return "bg-red-100 text-red-800 border-red-200";
+  //     case 2:
+  //       return "bg-orange-100 text-orange-800 border-orange-200";
+  //     case 1:
+  //       return "bg-green-100 text-green-800 border-green-200";
+  //     default:
+  //       return "bg-gray-100 text-gray-800 border-gray-200";
+  //   }
+  // };
 
   const getRiskIcon = (final_decision: number) => {
     if (final_decision === 1) return <CheckCircle className="w-4 h-4" />;

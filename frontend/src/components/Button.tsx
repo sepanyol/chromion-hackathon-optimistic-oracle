@@ -1,9 +1,10 @@
 import clsx from "clsx";
 import React, { forwardRef, PropsWithChildren } from "react";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
-
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, _) => {
+export const Button = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>((props, _) => {
   return (
     <button
       {...props}
