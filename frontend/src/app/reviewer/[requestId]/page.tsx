@@ -10,8 +10,8 @@ const ReviewChallengePage: React.FC<{
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
-      <BackLinkBar href="/reviewer" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <BackLinkBar href="/reviewer" label="Back to Overview" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <ReviewChallengeDetails requestId={requestId} />
       </div>
     </div>

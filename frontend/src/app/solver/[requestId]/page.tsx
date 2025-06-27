@@ -10,7 +10,7 @@ const ProposeAnswerPage: React.FC<{
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
-      <BackLinkBar href="/solver" />
+      <BackLinkBar href="/solver" label="Back to Overview" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SolverRequestDetails requestId={requestId} />
       </div>

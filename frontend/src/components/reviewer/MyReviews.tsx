@@ -37,11 +37,11 @@ export const MyReviews = ({ reviews }: MyReviewsProps) => {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 flex flex-col gap-2">
-                  <p className="flex gap-1 text-gray-900 items-center">
+                  <div className="flex gap-1 text-gray-900 items-center">
                     <RequestStatusBadge status={review.request.status} />
                     <span className="font-bold">Q:</span>
                     <span>{review.request.question}</span>
-                  </p>
+                  </div>
                   <div className="grid grid-cols-4 gap-4 md:gap-2">
                     <div className="flex flex-col col-span-2 md:col-span-1">
                       <span className="text-sm text-gray-500">

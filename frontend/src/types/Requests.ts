@@ -104,6 +104,16 @@ export type FullProposalType = {
   };
 };
 
+export type FullReviewType = {
+  id: Address;
+  createdAt: number;
+  reason: string;
+  supportsChallenge: boolean;
+  reviewer: {
+    id: Address;
+  };
+};
+
 export type MyReviewsType = {
   id: Address;
   createdAt: number;
@@ -171,4 +181,5 @@ export type FullRequestReviewType = {
     votesAgainst: number;
     votesFor: number;
   };
+  reviews: FullReviewType[];
 } & FullRequestChallengeType;

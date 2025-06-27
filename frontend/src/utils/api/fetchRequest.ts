@@ -110,6 +110,13 @@ const FetchRequestForReview = gql`
           id
         }
       }
+      reviews {
+        createdAt
+        supportsChallenge
+        reviewer {
+          id
+        }
+      }
       requester {
         id
       }

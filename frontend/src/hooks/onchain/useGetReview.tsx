@@ -5,33 +5,26 @@ import { useReadContract } from "wagmi";
 import abi from "../../abis/coordinator.json";
 
 type UseGetReviewReturnType = {
-  challenger: Address;
+  reviewer: Address;
   timestamp: bigint;
-  answer: string;
   reason: string;
-  votesFor: bigint;
-  votesAgainst: bigint;
-  reviews: {
-    reviewer: Address;
-    timestamp: bigint;
-    reason: string;
-    supportsChallenge: boolean;
-  }[];
+  supportsChallenge: boolean;
 };
 
 type UseGetProposalProps = {
-  requestId: Address;
+  requestId: Address | null;
+  reviewer: Address | null;
 };
 
-export const useGetReview = ({ requestId }: UseGetProposalProps) => {
+export const useGetReview = ({ requestId, reviewer }: UseGetProposalProps) => {
   return useReadContract({
     address: getOracleByChainId(defaultChain.id)!,
     chainId: defaultChain.id,
     abi: abi as Abi,
-    functionName: "getChallenge",
-    args: [requestId],
+    functionName: "getReviewerVotes",
+    args: [requestId, reviewer],
     query: {
-      enabled: isHex(requestId),
+      enabled: isHex(requestId) && isHex(reviewer),
       select: (data) => data as UseGetReviewReturnType,
     },
   });

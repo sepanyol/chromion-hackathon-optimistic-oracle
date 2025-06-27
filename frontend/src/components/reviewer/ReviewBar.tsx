@@ -12,7 +12,7 @@ export const ReviewBar = ({
   proposalVotes,
   votedForChallenger,
 }: ReviewBarType) => {
-  const total = challengeVotes + proposalVotes;
+  const total = Number(challengeVotes) + Number(proposalVotes);
   const shareLeft = challengeVotes / total;
   return (
     <div className="flex flex-col gap-1">
@@ -33,9 +33,9 @@ export const ReviewBar = ({
             <span className="text-gray-600 flex-1">Challenger</span>
             <span className="text-gray-600">Proposer</span>
           </div>
-          <div className="bg-blue-100 h-6 flex rounded-lg overflow-auto relative">
+          <div className="bg-blue-200 h-6 flex rounded-lg overflow-auto relative">
             <div
-              className="h-6 bg-blue-300"
+              className="h-6 bg-purple-200 border-r border-r-black/30"
               style={{ width: `calc(100% * ${shareLeft})` }}
             ></div>
             <div className="inset-0 absolute flex text-sm items-center px-2">
