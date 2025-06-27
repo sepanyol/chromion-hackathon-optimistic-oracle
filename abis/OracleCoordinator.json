@@ -435,6 +435,52 @@
   },
   {
     "type": "function",
+    "name": "getReviewerVotes",
+    "inputs": [
+      {
+        "name": "_request",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_reviewer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "_review",
+        "type": "tuple",
+        "internalType": "struct IOracleCoordinator.Review",
+        "components": [
+          {
+            "name": "reviewer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "reason",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "supportsChallenge",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getReviews",
     "inputs": [
       {
