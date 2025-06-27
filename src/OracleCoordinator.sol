@@ -486,6 +486,23 @@ contract OracleCoordinator is
     // }
 
     /// @inheritdoc IOracleCoordinator
+    function getReviewerVotes(
+        address _request,
+        address _reviewer
+    ) external view returns (Review memory _review) {
+        uint256 _length = proposalStore[_request].challenge.reviews.length;
+        for (uint256 i = 0; i < _length; ) {
+            if (
+                proposalStore[_request].challenge.reviews[i].reviewer ==
+                _reviewer
+            ) return proposalStore[_request].challenge.reviews[i];
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    /// @inheritdoc IOracleCoordinator
     function getReviewTally(
         address _request
     ) external view returns (uint256 _for, uint256 _against) {
