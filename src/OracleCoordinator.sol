@@ -478,6 +478,13 @@ contract OracleCoordinator is
         _reviews = proposalStore[_request].challenge.reviews;
     }
 
+    // /// @inheritdoc IOracleCoordinator
+    // function getReview(
+    //     address _request, address _reviewer
+    // ) external view returns (Review[] memory _reviews) {
+    //     _reviews = proposalStore[_request].challenge.reviews;
+    // }
+
     /// @inheritdoc IOracleCoordinator
     function getReviewTally(
         address _request

@@ -8,20 +8,17 @@ import {
   getReadableRequestStatusForOpposition,
 } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { isBoolean, isNumber } from "lodash";
 import { useCallback, useEffect, useState } from "react";
 import { Address, formatUnits, hexToBool, hexToString, toHex } from "viem";
 import { useAccount } from "wagmi";
 // import { SolverBool } from "./SolverBool";
-import { CheckCircle } from "lucide-react";
-import { useRequestForChallenge } from "@/hooks/useRequestForChallenge";
-import { useSubmitChallenge } from "@/hooks/onchain/useSubmitChallenge";
-import { useGetChallenge } from "@/hooks/onchain/useGetChallenge";
-import { useUserChallenger } from "@/hooks/useUserChallenger";
-import { SolverBool } from "@/components/solver/details/SolverBool";
-import { ChallengeReason } from "./ChallengeReason";
-import { isSameAddress } from "@/utils/addresses";
 import { ColoredTile } from "@/components/ColoredTile";
+import { SolverBool } from "@/components/solver/details/SolverBool";
+import { useGetChallenge } from "@/hooks/onchain/useGetChallenge";
+import { useSubmitChallenge } from "@/hooks/onchain/useSubmitChallenge";
+import { useRequestForChallenge } from "@/hooks/useRequestForChallenge";
+import { isSameAddress } from "@/utils/addresses";
+import { CheckCircle } from "lucide-react";
 
 type ChallengerRequestDetailsProps = { requestId: Address };
 export const ChallengerRequestDetails = ({
