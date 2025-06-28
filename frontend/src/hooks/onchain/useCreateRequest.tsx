@@ -4,6 +4,12 @@ import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { Address, pad, toHex } from "viem";
 import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
+export type CreateNFTRequestParams = {
+  context: string;
+  originId: bigint;
+  originNFT: Address;
+};
+
 export type CreateRequestParams = {
   requester: Address; // bytes
   originAddress: Address; // bytes
@@ -40,6 +46,12 @@ export const generateCreateRequestParams = (
 type useCreateRequestProps = {
   params: CreateRequestParams | null;
   onEventMatch?: (event: any) => void;
+};
+
+export type InputNFTCreateRequestParams = {
+  originId: bigint;
+  originNFT: Address;
+  context: string;
 };
 
 export const useCreateRequest = ({

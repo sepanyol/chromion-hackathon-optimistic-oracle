@@ -1,10 +1,10 @@
-"use client";
 import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { TransactionExecutionError } from "viem";
 import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
+import NFTRequestModal from "./NFTRequestModal";
 import RequestModal from "./RequestModal";
 
 export const CreateRequest = () => {
@@ -56,7 +56,27 @@ export const CreateRequest = () => {
 
   if (!state.isModalOpen) return <></>;
 
-  return (
+  return state.isCreateTokenWrapperEnabled ? (
+    <NFTRequestModal
+      isSubmitting={state.isSubmitting}
+      isSubmitDisabled={!state.isSubmitEnabled}
+      onUpdate={(data: any) => {
+        dispatch({
+          type: ActionTypes.UpdateNFTCreateParams,
+          payload: {
+            context: data.details,
+            originId: data.tokenId,
+            originNFT: data.tokenAddress,
+          },
+        });
+      }}
+      onSubmit={handleOnSubmit}
+      onClose={() => {
+        dispatch({ type: ActionTypes.CloseModal });
+        dispatch({ type: ActionTypes.Reset });
+      }}
+    />
+  ) : (
     <RequestModal
       isSubmitting={state.isSubmitting}
       isSubmitDisabled={!state.isSubmitEnabled}

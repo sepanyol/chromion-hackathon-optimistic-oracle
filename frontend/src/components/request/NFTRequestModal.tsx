@@ -2,15 +2,13 @@
 "use client";
 import { Info, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
-import { RequestChallengePeriod, ValidPeriods } from "./RequestChallengePeriod";
+import { useCreateRequestContext } from "./CreateRequestProvider";
+import { ValidPeriods } from "./RequestChallengePeriod";
 import { RequestContext } from "./RequestContext";
-import { RequestDescription } from "./RequestDescription";
-import { RequestReward } from "./RequestReward";
-import { RequestTruthMeaning } from "./RequestTruthMeaning";
-import { RequestType } from "./RequestType";
+import { RequestTokenAddress } from "./RequestTokenAddress";
+import { RequestTokenId } from "./RequestTokenId";
 
-interface RequestModalProps {
+interface NFTRequestModalProps {
   isSubmitting: boolean;
   isSubmitDisabled: boolean;
   onUpdate: (data: any) => void;
@@ -19,18 +17,12 @@ interface RequestModalProps {
 }
 
 type FormData = {
-  description: string;
-  type: "Bool" | "Value";
-  reward: string;
-  deadline: string;
-  period: ValidPeriods;
   details: string;
-  truthMeaning: string;
   tokenAddress: string;
   tokenId: string;
 };
 
-const RequestModal: React.FC<RequestModalProps> = ({
+const NFTRequestModal: React.FC<NFTRequestModalProps> = ({
   onUpdate,
   onSubmit,
   onClose,
@@ -38,49 +30,27 @@ const RequestModal: React.FC<RequestModalProps> = ({
   isSubmitDisabled,
 }) => {
   const initialFormData: FormData = {
-    description: "",
-    type: "Bool",
-    reward: "",
-    deadline: "",
-    period: 86400,
     details: "",
-    truthMeaning: "",
     tokenAddress: "",
     tokenId: "",
   };
   const createContext = useCreateRequestContext();
   const [formData, setFormData] = useState<FormData>(initialFormData);
-
   const [errors, setErrors] = useState<any>({});
 
   const validateForm = () => {
     const newErrors: any = {};
 
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
-    }
-
     if (!formData.details.trim()) {
-      newErrors.details = "This is required";
+      newErrors.details = "Context is required";
     }
 
-    createContext.dispatch({
-      type:
-        formData.type == "Value"
-          ? ActionTypes.EnableCreateTokenWrapper
-          : ActionTypes.DisableCreateTokenWrapper,
-    });
-
-    if (formData.type == "Value" && !formData.tokenAddress.trim()) {
+    if (!formData.tokenAddress.trim()) {
       newErrors.tokenAddress = "Token address is required";
     }
 
-    // if (formData.type == "Value" && !formData.tokenId.trim()) {
-    //   newErrors.tokenId = "Token ID is required";
-    // }
-
-    if (!formData.reward || parseInt(formData.reward) <= 0) {
-      newErrors.reward = "Valid reward amount is required";
+    if (!formData.tokenId.trim()) {
+      newErrors.tokenId = "Token ID is required";
     }
 
     setErrors(newErrors);
@@ -131,40 +101,30 @@ const RequestModal: React.FC<RequestModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="relative space-y-4">
-            <RequestType
-              onChange={(value) => handleInputChange("type", value)}
-              value={formData.type}
+            <RequestTokenAddress
+              tokenName={createContext.state.tokenName || ""}
+              tokenSymbol={createContext.state.tokenSymbol || ""}
+              onChange={(value) => handleInputChange("tokenAddress", value)}
+              error={errors.tokenAddress}
+              value={formData.tokenAddress}
             />
 
-            <RequestDescription
-              onChange={(value) => handleInputChange("description", value)}
-              error={errors.description}
-              value={formData.description}
+            <RequestTokenId
+              onChange={(value) => handleInputChange("tokenId", value)}
+              disabled={!formData.tokenAddress}
+              error={
+                errors.tokenId ||
+                (createContext.state.errorNotOwner
+                  ? "You're not the owner of this token id"
+                  : "")
+              }
+              value={formData.tokenId}
             />
-
-            {/* Reward and Deadline */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RequestReward
-                onChange={(value) => handleInputChange("reward", value)}
-                error={errors.reward}
-                value={formData.reward}
-              />
-
-              <RequestChallengePeriod
-                onChange={(value) => handleInputChange("period", value)}
-                value={formData.period}
-              />
-            </div>
 
             <RequestContext
               onChange={(value) => handleInputChange("details", value)}
               error={errors.details}
               value={formData.details}
-            />
-
-            <RequestTruthMeaning
-              onChange={(value) => handleInputChange("truthMeaning", value)}
-              value={formData.truthMeaning}
             />
 
             {/* Info Box */}
@@ -176,10 +136,16 @@ const RequestModal: React.FC<RequestModalProps> = ({
                     How it works:
                   </p>
                   <ul className="text-blue-700 space-y-1 text-xs">
-                    <li>• Your request will be posted to the oracle network</li>
-                    <li>• Data providers can submit proposals with evidence</li>
-                    <li>• Community can challenge incorrect submissions</li>
-                    <li>• Rewards are distributed to honest participants</li>
+                    <li>
+                      Step 1: Your NFT will be wrapped into an NFT that is
+                      capable to interact directly with the oracle
+                    </li>
+                    <li>
+                      Step 2: After your NFT is being wrapped, a request to the
+                      oracle is issued, in order to estimate your NFT
+                    </li>
+                    <li>Step 3: The oracle will then provide an outcaome</li>
+                    <li>Step 4: You can use this outcame as a price tag</li>
                   </ul>
                 </div>
               </div>
@@ -220,4 +186,4 @@ const RequestModal: React.FC<RequestModalProps> = ({
   );
 };
 
-export default RequestModal;
+export default NFTRequestModal;

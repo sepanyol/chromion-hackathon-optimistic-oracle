@@ -1,19 +1,27 @@
 import {
+  CreateNFTRequestParams,
   CreateRequestParams,
   generateCreateRequestParams,
   InputCreateRequestParams,
+  InputNFTCreateRequestParams,
 } from "@/hooks/onchain/useCreateRequest";
 import { ActionMap, createContext } from "@/utils/context";
 import { isEmpty } from "lodash";
 import { PropsWithChildren, useContext, useReducer } from "react";
-import { isHex } from "viem";
+import { isAddress } from "viem";
 
 export type CreateRequestType = {
   isModalOpen: boolean;
   isModalLoading: boolean;
   isSubmitting: boolean;
   isSubmitEnabled: boolean;
+  isCreateTokenWrapperEnabled: boolean;
   params: CreateRequestParams | null;
+
+  nftParams: CreateNFTRequestParams | null;
+  tokenName: string | null;
+  tokenSymbol: string | null;
+  errorNotOwner: boolean;
 };
 
 const initialState: CreateRequestType = {
@@ -21,7 +29,13 @@ const initialState: CreateRequestType = {
   isModalLoading: false,
   isSubmitting: false,
   isSubmitEnabled: false,
+  isCreateTokenWrapperEnabled: false,
   params: null,
+
+  nftParams: null,
+  tokenName: null,
+  tokenSymbol: null,
+  errorNotOwner: false,
 };
 
 export enum ActionTypes {
@@ -38,6 +52,15 @@ export enum ActionTypes {
 
   UpdateCreateParams = "UPDATE_CREATE_PARAMS",
 
+  UpdateNFTCreateParams = "UPDATE_NFT_CREATE_PARAMS",
+
+  EnableCreateTokenWrapper = "ENABLE_CREATE_TOKEN_WRAPPER",
+  DisableCreateTokenWrapper = "DISABLE_CREATE_TOKEN_WRAPPER",
+
+  UpdateLoadedNFTTokenInfo = "UPDATE_LOADED_NFT_TOKEN_INFO",
+  ShowErrorNotOwner = "SHOW_ERROR_NOT_OWNER",
+  HideErrorNotOwner = "HIDE_ERROR_NOT_OWNER",
+
   Reset = "RESET",
 }
 
@@ -52,6 +75,17 @@ type CreateRequestActionPayloads = {
   [ActionTypes.DisableSubmitting]: undefined;
 
   [ActionTypes.UpdateCreateParams]: InputCreateRequestParams;
+  [ActionTypes.UpdateNFTCreateParams]: InputNFTCreateRequestParams;
+
+  [ActionTypes.EnableCreateTokenWrapper]: undefined;
+  [ActionTypes.DisableCreateTokenWrapper]: undefined;
+
+  [ActionTypes.UpdateLoadedNFTTokenInfo]: {
+    name: string | null;
+    symbol: string | null;
+  };
+  [ActionTypes.ShowErrorNotOwner]: undefined;
+  [ActionTypes.HideErrorNotOwner]: undefined;
 
   [ActionTypes.Reset]: undefined;
 };
@@ -79,6 +113,11 @@ const reducer = (
     case ActionTypes.DisableSubmitting:
       return { ...state, isSubmitting: false };
 
+    case ActionTypes.EnableCreateTokenWrapper:
+      return { ...state, isCreateTokenWrapperEnabled: true };
+    case ActionTypes.DisableCreateTokenWrapper:
+      return { ...state, isCreateTokenWrapperEnabled: false };
+
     case ActionTypes.UpdateCreateParams:
       const params = generateCreateRequestParams(action.payload);
       const isSubmitEnabled =
@@ -87,8 +126,42 @@ const reducer = (
         [0, 1].includes(params.answerType) &&
         params.rewardAmount > BigInt(0) &&
         params.challengeWindow > 0;
-        
+
       return { ...state, params, isSubmitEnabled };
+
+    case ActionTypes.UpdateNFTCreateParams: {
+      const { context, originId, originNFT } = action.payload;
+
+      return {
+        ...state,
+        nftParams: { context, originId, originNFT },
+        isSubmitEnabled:
+          !!context.trim() &&
+          originId > BigInt(0) &&
+          isAddress(originNFT, { strict: false }),
+      };
+    }
+
+    case ActionTypes.UpdateLoadedNFTTokenInfo: {
+      return {
+        ...state,
+        tokenName: action.payload.name,
+        tokenSymbol: action.payload.symbol,
+      };
+    }
+
+    case ActionTypes.ShowErrorNotOwner: {
+      return {
+        ...state,
+        errorNotOwner: true,
+      };
+    }
+    case ActionTypes.HideErrorNotOwner: {
+      return {
+        ...state,
+        errorNotOwner: false,
+      };
+    }
 
     case ActionTypes.Reset:
       return { ...initialState };
