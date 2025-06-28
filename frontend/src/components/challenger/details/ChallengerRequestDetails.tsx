@@ -20,13 +20,13 @@ import {
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 // import { SolverBool } from "./SolverBool";
 import { ColoredTile } from "@/components/ColoredTile";
+import { RequestContext } from "@/components/RequestProvider";
 import { SolverBool } from "@/components/solver/details/SolverBool";
 import { useGetChallenge } from "@/hooks/onchain/useGetChallenge";
 import { useSubmitChallenge } from "@/hooks/onchain/useSubmitChallenge";
 import { useRequestForChallenge } from "@/hooks/useRequestForChallenge";
 import { isSameAddress } from "@/utils/addresses";
 import { CheckCircle } from "lucide-react";
-import { RequestContext } from "@/components/RequestProvider";
 import { toast } from "react-toastify";
 
 export const ChallengerRequestDetails = () => {

@@ -32,6 +32,11 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
       active: pathname.startsWith("/dashboard"),
     },
     {
+      name: "Valuation",
+      href: "/rwa",
+      active: pathname.startsWith("/rwa"),
+    },
+    {
       name: "Requester",
       href: "/requester",
       active: pathname.startsWith("/requester"),

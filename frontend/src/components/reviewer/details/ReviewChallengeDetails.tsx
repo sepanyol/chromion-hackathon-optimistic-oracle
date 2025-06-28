@@ -4,38 +4,46 @@ import { Button } from "@/components/Button";
 import { ColoredTile } from "@/components/ColoredTile";
 import { Loader } from "@/components/Loader";
 import { RequestDetails } from "@/components/request-details/RequestDetails";
+import { RequestContext } from "@/components/RequestProvider";
 import { SolverBool } from "@/components/solver/details/SolverBool";
 import { useGetReview } from "@/hooks/onchain/useGetReview";
 import { useSubmitReview } from "@/hooks/onchain/useSubmitReview";
 import { useRequestForReview } from "@/hooks/useRequestForReview";
+import { isSameAddress } from "@/utils/addresses";
 import { timeAgo } from "@/utils/time-ago";
 import { isBoolean } from "lodash";
 import { CheckCircle } from "lucide-react";
-import { Fragment, useCallback, useEffect, useState } from "react";
-import { Address, formatUnits, hexToBool, hexToString, toHex } from "viem";
-import { useAccount } from "wagmi";
-import { ReviewSelector } from "./ReviewSelector";
-import { isSameAddress } from "@/utils/addresses";
+import { Fragment, useCallback, useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  Address,
+  formatUnits,
+  hexToBool,
+  hexToString,
+  toHex,
+  WaitForTransactionReceiptErrorType,
+} from "viem";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { ReviewBar } from "../ReviewBar";
+import { ReviewSelector } from "./ReviewSelector";
 
-type ReviewChallengeDetailsProps = { requestId: Address };
-export const ReviewChallengeDetails = ({
-  requestId,
-}: ReviewChallengeDetailsProps) => {
+export const ReviewChallengeDetails = () => {
   const [supportChallenge, setSupportChallenge] = useState<boolean | null>(
     null
   );
+  const { requestId } = useContext(RequestContext);
   const [reason, setReason] = useState<string>();
   const [reasonBytes, setReasonBytes] = useState<string>();
   const [enableSubmit, setEnableSubmit] = useState(false);
   const [isReviewed, setIsReviewed] = useState(false);
+  const [txHash, setTxHash] = useState<Address | undefined>();
 
   const { address: accountAddress } = useAccount();
 
   const { data: request, isLoading, refetch } = useRequestForReview(requestId);
 
   const userReview = useGetReview({
-    requestId: request?.id!,
+    requestId: requestId,
     reviewer: accountAddress!,
   });
 
@@ -63,9 +71,7 @@ export const ReviewChallengeDetails = ({
 
   useEffect(() => {
     if (!submitReview.execute.execution.isSuccess) return;
-    refetch();
-    userReview.refetch();
-    // refetchChallenge();
+    setTxHash(submitReview.execute.hash);
   }, [submitReview.execute.execution.isSuccess, userReview]);
 
   useEffect(() => {
@@ -80,6 +86,29 @@ export const ReviewChallengeDetails = ({
     if (userReview.isLoading || !userReview.isSuccess) return;
     setIsReviewed(userReview.data.timestamp > 0);
   }, [userReview.isSuccess, userReview.isLoading]);
+
+  const {
+    data: dataTx,
+    isLoading: isLoadingTx,
+    isSuccess: isSuccessTx,
+    error: errorTx,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+    query: { enabled: !!txHash },
+  });
+
+  useEffect(() => {
+    if (!isSuccessTx || isLoadingTx) return;
+
+    if (errorTx)
+      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
+
+    if (dataTx) {
+      refetch();
+      userReview.refetch();
+      toast.success("Successfully put your vote");
+    }
+  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
 
   if (isLoading) return <Loader size={48} />;
 
@@ -219,6 +248,7 @@ export const ReviewChallengeDetails = ({
                     <Button
                       disabled={
                         !enableSubmit ||
+                        isLoadingTx ||
                         submitReview.approval.execution.isPending ||
                         submitReview.execute.execution.isPending
                       }
@@ -228,7 +258,9 @@ export const ReviewChallengeDetails = ({
                         "Confirm approval in your wallet..."}
                       {submitReview.execute.execution.isPending &&
                         "Confirm review in your wallet..."}
-                      {!submitReview.approval.execution.isPending &&
+                      {isLoadingTx && "Finishing transaction..."}
+                      {!isLoadingTx &&
+                        !submitReview.approval.execution.isPending &&
                         !submitReview.execute.execution.isPending &&
                         "Submit review"}
                     </Button>
