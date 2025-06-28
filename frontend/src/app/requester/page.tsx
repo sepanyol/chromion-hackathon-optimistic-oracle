@@ -12,10 +12,13 @@ import { NoRequestsYet } from "@/components/request/NoRequestsYet";
 import { useUserRequester } from "@/hooks/useUserRequester";
 import { MyRequestsType } from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
+import { defaultChain } from "@/utils/appkit/context";
+import { getChainById } from "@/utils/chains";
 import { getReadableRequestStatus, RequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
 import { CheckCircle, Clock, TrendingUp } from "lucide-react";
 import React, { useContext, useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 
@@ -109,7 +112,7 @@ const RequesterPage: React.FC = () => {
       requester.data.requests.map(
         (request: any): MyRequestsType => ({
           id: request.id,
-          chains: null,
+          chains: [getChainById(defaultChain.id).name].filter((a) => a),
           description: request.context,
           reward: `${formatUnits(BigInt(request.rewardAmount), 6)} USDC`,
           question: request.question,
@@ -169,15 +172,6 @@ const RequesterPage: React.FC = () => {
               onUseTemplate={handleUseTemplate}
               onViewAnalytics={handleViewAnalytics}
             /> */}
-              TODO Add Links to the desired section <br />
-              TODO Show all requests, if wallet not connected? Maybe???
-              <br />
-              Created &gt; Solver Details
-              <br />
-              Proposed &gt; Challenge Details
-              <br />
-              Challenged &gt; Review Details
-              <br />
               {/* My Questions */}
               <MyRequests questions={questions} />
             </div>
@@ -193,6 +187,7 @@ const RequesterPage: React.FC = () => {
         )} */}
         <CreateRequest />
       </div>
+      <ToastContainer />
     </CreateRequestProvider>
   );
 };

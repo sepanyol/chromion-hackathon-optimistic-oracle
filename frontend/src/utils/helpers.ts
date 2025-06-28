@@ -1,3 +1,7 @@
+import { AvailableReviewsType } from "@/types/Requests";
+import { Address } from "viem";
+import { isSameAddress } from "./addresses";
+
 export enum RequestStatus {
   Pending,
   Open,
@@ -61,3 +65,14 @@ export const getReadableRequestStatusForOpposition = (
       return "Failed";
   }
 };
+
+export const isInvolvedInRequest = (
+  requester?: Address,
+  proposer?: Address,
+  challenger?: Address,
+  account?: Address
+) =>
+  account &&
+  ((requester && isSameAddress(requester, account)) ||
+    (proposer && isSameAddress(proposer, account)) ||
+    (challenger && isSameAddress(challenger, account)));

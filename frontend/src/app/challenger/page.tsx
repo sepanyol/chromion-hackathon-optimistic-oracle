@@ -1,5 +1,6 @@
 // app/challenger/page.tsx
 "use client";
+import { Button } from "@/components/Button";
 import Navbar from "@/components/Navbar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import StatCard from "@/components/StatCard";
@@ -7,8 +8,12 @@ import ChallengerSubmissionPanel from "@/components/challenger/ChallengerSubmiss
 import MyActiveChallenges from "@/components/challenger/MyActiveChallenges";
 import { ShortAddress } from "@/components/utilities/ShortAddress";
 import { useUserChallenger } from "@/hooks/useUserChallenger";
-import { FullRequestChallengeType } from "@/types/Requests";
+import {
+  AvailableReviewsType,
+  FullRequestChallengeType,
+} from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
+import { isInvolvedInRequest } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
 import {
   AlertTriangle,
@@ -19,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
 import { Address, formatUnits, hexToBool, trim } from "viem";
 import { useAccount } from "wagmi";
 
@@ -246,7 +252,7 @@ const ChallengerPage: React.FC = () => {
               {requests.map((request) => (
                 <div
                   key={request.id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-300"
+                  className="bg-white border border-gray-200 rounded-lg p-6 shadow"
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -300,7 +306,9 @@ const ChallengerPage: React.FC = () => {
                         <span className="font-medium">A:</span>{" "}
                         {request.answerType === 0 && (
                           <span>
-                            {trim(request.proposal.answer as Address) != "0x10"
+                            {["0x01", "0x00"].includes(
+                              trim(request.proposal.answer as Address)
+                            )
                               ? hexToBool(request.proposal.answer as Address, {
                                   size: 32,
                                 })
@@ -346,9 +354,18 @@ const ChallengerPage: React.FC = () => {
                   {/* Actions */}
                   <div className="flex space-x-3 justify-end">
                     <Link href={`/challenger/${request.id}`}>
-                      <button className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors cursor-pointer">
-                        Challenge Answer
-                      </button>
+                      <Button className="from-red-600! to-red-600! text-white! hover:from-red-700! hover:to-red-700!">
+                        {isInvolvedInRequest(
+                          request.requester.id,
+                          request.proposal.proposer.id,
+                          (request as any).challenge &&
+                            (request as any).challenge.challenger.id,
+                          address
+                        )
+                          ? "View"
+                          : "Challenge"}{" "}
+                        Answer
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -365,6 +382,7 @@ const ChallengerPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

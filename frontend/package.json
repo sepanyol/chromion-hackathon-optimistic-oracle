@@ -21,6 +21,8 @@
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-toastify": "^11.0.5",
+    "react-tooltip": "^5.29.1",
     "urql": "^4.2.2",
     "viem": "^2.31.4",
     "wagmi": "^2.15.6"
@@ -32,6 +34,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-toastify": "^4.0.2",
+    "@types/react-tooltip": "^3.11.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",

@@ -1,3 +1,4 @@
+"use client";
 import { omit } from "lodash";
 import { useCallback, useEffect, useState } from "react";
 import { Address, zeroAddress } from "viem";
@@ -27,9 +28,6 @@ export const useExecuteFunctionWithTokenTransfer = (
     transferAmount,
   } = props;
 
-  // states
-  const [hasAllowance, setHasAllowance] = useState(false);
-
   ///
   /// ERC20 Allowance
   ///
@@ -39,6 +37,13 @@ export const useExecuteFunctionWithTokenTransfer = (
     owner: account || zeroAddress,
     spender: address,
   });
+
+  // checks if sufficient allowance is given based on the transfer amount
+  const hasAllowance = Boolean(
+    transferAmount > BigInt(0) &&
+      allowanceProps.data &&
+      allowanceProps.data >= transferAmount
+  );
 
   ///
   /// ERC20 Approval Process for the Token
@@ -77,17 +82,6 @@ export const useExecuteFunctionWithTokenTransfer = (
     approvalProps.reset();
     execProps.reset();
   };
-
-  // checks if sufficient allowance is given based on the transfer amount
-  useEffect(() => {
-    setHasAllowance(
-      Boolean(
-        transferAmount > BigInt(0) &&
-          allowanceProps.data &&
-          allowanceProps.data >= transferAmount
-      )
-    );
-  }, [allowanceProps.data, transferAmount]);
 
   // initiate execution after an initiated approval went through upfront
   useEffect(() => {
@@ -130,7 +124,7 @@ export const useExecuteFunctionWithTokenTransfer = (
       )
     ) {
       // reset
-      approvalProps.reset();
+      // approvalProps.reset();
       execProps.write && execProps.write();
     }
   }, [
@@ -151,6 +145,7 @@ export const useExecuteFunctionWithTokenTransfer = (
       execProps.execution.isSuccess
     ) {
       reset();
+      // approvalProps.reset();
       allowanceProps.refetch();
     }
   }, [

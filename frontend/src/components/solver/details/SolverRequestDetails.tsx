@@ -1,68 +1,93 @@
 "use client";
-
 import { Button } from "@/components/Button";
+import { ColoredTile } from "@/components/ColoredTile";
 import { Loader } from "@/components/Loader";
 import { RequestDetails } from "@/components/request-details/RequestDetails";
+import { useRequestContext } from "@/components/RequestProvider";
 import { useGetProposal } from "@/hooks/onchain/useGetProposal";
 import { useSubmitProposal } from "@/hooks/onchain/useSubmitProposal";
 import { useRequestForProposal } from "@/hooks/useRequestForProposal";
 import { useUserProposer } from "@/hooks/useUserProposer";
+import { isSameAddress } from "@/utils/addresses";
 import { getReadableRequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { isBoolean, isNumber } from "lodash";
+import { isBoolean, isNumber, isUndefined } from "lodash";
+import { CheckCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import {
   Address,
-  bytesToBool,
   formatUnits,
   hexToBool,
-  pad,
-  stringToBytes,
-  toBytes,
   toHex,
+  TransactionExecutionError,
+  WaitForTransactionReceiptErrorType,
 } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { SolverBool } from "./SolverBool";
-import { CheckCircle } from "lucide-react";
-import { isSameAddress } from "@/utils/addresses";
-import { ColoredTile } from "@/components/ColoredTile";
 
-type SolverRequestDetailsProps = { requestId: Address };
-export const SolverRequestDetails = ({
-  requestId,
-}: SolverRequestDetailsProps) => {
+export const SolverRequestDetails = () => {
+  const { requestId } = useRequestContext();
+  const { address: accountAddress } = useAccount();
+
   const [proposalValue, setProposalValue] = useState<any>(null);
   const [proposalValueComputed, setProposalValueComputed] = useState<string>();
   const [proposalValueValid, setProposalValueValid] = useState(false);
+  const [txHash, setTxHash] = useState<Address | undefined>();
 
-  const { address: accountAddress } = useAccount();
+  const {
+    data: proposal,
+    isLoading: isLoadingProposal,
+    isFetching: isFetchingProposal,
+    refetch: refetchProposal,
+  } = useGetProposal({
+    requestId: requestId,
+  });
+
+  const { data: proposer } = useUserProposer(
+    proposal ? proposal.proposer : accountAddress!
+  );
 
   const {
     data: request,
     isLoading,
+    isFetching,
     refetch,
   } = useRequestForProposal(requestId);
 
   const submitProposal = useSubmitProposal({
     answer: proposalValueComputed,
-    request: request?.id!,
+    request: requestId,
   });
 
-  const {
-    data: proposal,
-    isLoading: isLoadingProposal,
-    refetch: refetchProposal,
-  } = useGetProposal({
-    requestId: request?.id!,
-  });
-
-  // either current user stats if not proposed or proposer stats
-  const { data: proposer } = useUserProposer(
-    proposal && proposal.timestamp > 0 ? proposal.proposer : accountAddress!
-  );
+  useEffect(() => {
+    if (request && !isUndefined(proposalValue)) {
+      switch (request.answerType) {
+        case 0:
+          const _isBool = isBoolean(proposalValue);
+          setProposalValueValid(_isBool);
+          setProposalValueComputed(
+            _isBool ? toHex(proposalValue, { size: 32 }) : undefined
+          );
+          break;
+        case 1:
+          setProposalValueValid(isNumber(proposalValue));
+          break;
+      }
+    }
+    return () => {
+      setProposalValueComputed(undefined);
+      setProposalValueValid(false);
+    };
+  }, [proposalValue]);
 
   const handleSubmitProposal = useCallback(() => {
-    if (!request) return;
+    if (
+      !request ||
+      !submitProposal.execute.isEnabled ||
+      !submitProposal.execute.isReady
+    )
+      return;
     submitProposal.initiate();
   }, [
     request,
@@ -71,33 +96,58 @@ export const SolverRequestDetails = ({
   ]);
 
   useEffect(() => {
-    if (!request) return;
-    switch (request.answerType) {
-      case 0:
-        const isBool = isBoolean(proposalValue);
-        setProposalValueValid(isBool);
-        setProposalValueComputed(
-          isBool ? toHex(proposalValue, { size: 32 }) : undefined
-        );
-        break;
-      case 1:
-        setProposalValueValid(isNumber(proposalValue));
-        break;
-    }
-  }, [proposalValue, request]);
+    if (!submitProposal.execute.execution.isSuccess) return;
+    setTxHash(submitProposal.execute.hash);
+  }, [submitProposal.execute.execution.isSuccess]);
 
   useEffect(() => {
-    if (submitProposal.execute.execution.isSuccess) {
+    if (!submitProposal.approval.execution.error) return;
+    toast.error(
+      `Error: ${
+        (submitProposal.approval.execution.error as TransactionExecutionError)
+          .shortMessage
+      }`
+    );
+  }, [submitProposal.approval.execution.error]);
+
+  useEffect(() => {
+    if (!submitProposal.execute.execution.error) return;
+    toast.error(
+      `Error: ${
+        (submitProposal.execute.execution.error as TransactionExecutionError)
+          .shortMessage
+      }`
+    );
+  }, [submitProposal.execute.execution.error]);
+
+  const {
+    data: dataTx,
+    isLoading: isLoadingTx,
+    isSuccess: isSuccessTx,
+    error: errorTx,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+    query: { enabled: !!txHash },
+  });
+
+  useEffect(() => {
+    if (!isSuccessTx || isLoadingTx) return;
+
+    if (errorTx)
+      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
+
+    if (dataTx) {
       refetch();
       refetchProposal();
+      toast.success("Successfully proposed an answer");
     }
-  }, [submitProposal.execute.execution.isSuccess]);
+  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
 
   return (
     <div className="grid grid-cols-4 gap-8">
       <div className="col-span-4 md:col-span-3">
         <div className="bg-white border border-gray-200 rounded-lg p-6 group border-l-4 border-l-blue-200!">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <div className="flex flex-row justify-center items-center h-full">
               <Loader size={48} />
             </div>
@@ -113,7 +163,9 @@ export const SolverRequestDetails = ({
                 </div>
                 <div>
                   <span className="bg-blue-200 px-4 py-2 rounded-full text-blue-600 font-bold">
-                    {getReadableRequestStatus(request.status)}
+                    {getReadableRequestStatus(
+                      proposal && proposal.timestamp > 0 ? 2 : request.status
+                    )}
                   </span>
                 </div>
               </div>
@@ -126,8 +178,11 @@ export const SolverRequestDetails = ({
               <hr className="border-0 border-t border-t-gray-300" />
 
               {/* ACTIONS */}
-              {isLoadingProposal && <span>Load proposal</span>}
+              {(isLoadingProposal || isFetchingProposal) && (
+                <span>Load proposal</span>
+              )}
               {!isLoadingProposal &&
+                !isFetchingProposal &&
                 (proposal && proposal.timestamp > 0 ? (
                   <div className="flex flex-col w-full gap-2">
                     <div className="text-xl block font-bold">
@@ -173,16 +228,20 @@ export const SolverRequestDetails = ({
                         <Button
                           disabled={
                             !proposalValueValid ||
+                            isLoadingTx ||
                             submitProposal.approval.execution.isPending ||
                             submitProposal.execute.execution.isPending
                           }
                           onClick={handleSubmitProposal}
+                          className="flex gap-2"
                         >
                           {submitProposal.approval.execution.isPending &&
                             "Confirm approval in your wallet..."}
                           {submitProposal.execute.execution.isPending &&
                             "Confirm proposing answer in your wallet..."}
-                          {!submitProposal.approval.execution.isPending &&
+                          {isLoadingTx && "Finishing transaction..."}
+                          {!isLoadingTx &&
+                            !submitProposal.approval.execution.isPending &&
                             !submitProposal.execute.execution.isPending &&
                             "Submit proposal"}
                         </Button>

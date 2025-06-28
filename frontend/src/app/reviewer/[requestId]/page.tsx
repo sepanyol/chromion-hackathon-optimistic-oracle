@@ -1,6 +1,7 @@
 import { BackLinkBar } from "@/components/BackLinkBar";
 import Navbar from "@/components/Navbar";
 import { ReviewChallengeDetails } from "@/components/reviewer/details/ReviewChallengeDetails";
+import { ToastContainer } from "react-toastify";
 import { Address } from "viem";
 
 const ReviewChallengePage: React.FC<{
@@ -14,6 +15,7 @@ const ReviewChallengePage: React.FC<{
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <ReviewChallengeDetails requestId={requestId} />
       </div>
+      <ToastContainer />
     </div>
   );
 };

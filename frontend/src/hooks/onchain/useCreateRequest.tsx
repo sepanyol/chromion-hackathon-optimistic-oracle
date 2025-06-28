@@ -1,7 +1,7 @@
 import abi from "@/abis/factory.json";
 import { getFactoryByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { Address, pad, toBytes, toHex } from "viem";
+import { Address, pad, toHex } from "viem";
 import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
 export type CreateRequestParams = {
@@ -39,9 +39,13 @@ export const generateCreateRequestParams = (
 
 type useCreateRequestProps = {
   params: CreateRequestParams | null;
+  onEventMatch?: (event: any) => void;
 };
 
-export const useCreateRequest = ({ params }: useCreateRequestProps) => {
+export const useCreateRequest = ({
+  params,
+  onEventMatch,
+}: useCreateRequestProps) => {
   const { address } = useAppKitAccount();
   const { chainId } = useAppKitNetwork();
 
@@ -62,10 +66,11 @@ export const useCreateRequest = ({ params }: useCreateRequestProps) => {
       params &&
         params.requester &&
         params.question &&
+        params.context &&
         params.challengeWindow > 0 &&
-        params.truthMeaning &&
         params.rewardAmount > 0 &&
         (params.answerType === 0 || params.answerType === 1) // TODO make nice
     ),
+    ...(onEventMatch ? { onEventMatch } : {}),
   });
 };

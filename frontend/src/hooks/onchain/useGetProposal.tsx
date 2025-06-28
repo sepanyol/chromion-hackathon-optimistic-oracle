@@ -1,3 +1,4 @@
+"use client";
 import { defaultChain } from "@/utils/appkit/context";
 import { getOracleByChainId } from "@/utils/contracts";
 import { Abi, Address, isHex } from "viem";
@@ -11,7 +12,7 @@ type UseGetProposalReturnType = {
 };
 
 type UseGetProposalProps = {
-  requestId: Address;
+  requestId: Address | undefined;
 };
 
 export const useGetProposal = ({ requestId }: UseGetProposalProps) => {
@@ -21,8 +22,10 @@ export const useGetProposal = ({ requestId }: UseGetProposalProps) => {
     abi: abi as Abi,
     functionName: "getProposal",
     args: [requestId],
+    scopeKey: `getProposal-${requestId}`,
     query: {
-      enabled: isHex(requestId),
+      gcTime: 5000,
+      enabled: !!requestId && isHex(requestId),
       select: (data) => data as UseGetProposalReturnType,
     },
   });

@@ -1,6 +1,7 @@
 import { BackLinkBar } from "@/components/BackLinkBar";
 import { ChallengerRequestDetails } from "@/components/challenger/details/ChallengerRequestDetails";
 import Navbar from "@/components/Navbar";
+import { ToastContainer } from "react-toastify";
 import { Address } from "viem";
 
 const ChallengeRequestPage: React.FC<{
@@ -11,9 +12,10 @@ const ChallengeRequestPage: React.FC<{
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
       <BackLinkBar href="/challenger" label="Back to Overview" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <ChallengerRequestDetails requestId={requestId} />
       </div>
+      <ToastContainer />
     </div>
   );
 };

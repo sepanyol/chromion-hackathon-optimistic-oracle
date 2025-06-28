@@ -4,12 +4,15 @@ import {
   InputCreateRequestParams,
 } from "@/hooks/onchain/useCreateRequest";
 import { ActionMap, createContext } from "@/utils/context";
+import { isEmpty } from "lodash";
 import { PropsWithChildren, useContext, useReducer } from "react";
+import { isHex } from "viem";
 
 export type CreateRequestType = {
   isModalOpen: boolean;
   isModalLoading: boolean;
   isSubmitting: boolean;
+  isSubmitEnabled: boolean;
   params: CreateRequestParams | null;
 };
 
@@ -17,6 +20,7 @@ const initialState: CreateRequestType = {
   isModalOpen: false,
   isModalLoading: false,
   isSubmitting: false,
+  isSubmitEnabled: false,
   params: null,
 };
 
@@ -76,7 +80,15 @@ const reducer = (
       return { ...state, isSubmitting: false };
 
     case ActionTypes.UpdateCreateParams:
-      return { ...state, params: generateCreateRequestParams(action.payload) };
+      const params = generateCreateRequestParams(action.payload);
+      const isSubmitEnabled =
+        !isEmpty(params.question) &&
+        !isEmpty(params.context) &&
+        [0, 1].includes(params.answerType) &&
+        params.rewardAmount > BigInt(0) &&
+        params.challengeWindow > 0;
+        
+      return { ...state, params, isSubmitEnabled };
 
     case ActionTypes.Reset:
       return { ...initialState };

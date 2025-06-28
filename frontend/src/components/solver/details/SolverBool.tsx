@@ -50,14 +50,14 @@ export const SolverBool = ({
                   : `hover:border-gray-300 hover:bg-gray-50`
               }`
         }`}
-        onClick={() => onChange(false)}
+        onClick={() => !disabled && onChange(false)}
       >
         <input
           type="radio"
           checked={value === false}
           onChange={(event) => {
             event.preventDefault();
-            onChange(false);
+            !disabled && onChange(false);
           }}
           className="text-blue-600 size-6"
         />

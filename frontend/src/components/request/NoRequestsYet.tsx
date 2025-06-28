@@ -13,18 +13,16 @@ export const NoRequestsYet = () => {
       <p className="text-gray-500 text-lg mb-4">
         We can&apos;t find any requests just yet
       </p>
-      <p className="flex justify-center">
-        <div>
-          <Button
-            onClick={() => {
-              createRequest.dispatch({ type: ActionTypes.OpenModal });
-            }}
-          >
-            <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
-            <span>Create Request</span>
-          </Button>
-        </div>
-      </p>
+      <div className="flex justify-center">
+        <Button
+          onClick={() => {
+            createRequest.dispatch({ type: ActionTypes.OpenModal });
+          }}
+        >
+          <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
+          <span>Create Request</span>
+        </Button>
+      </div>
     </div>
   );
 };

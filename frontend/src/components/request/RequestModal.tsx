@@ -56,8 +56,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
       newErrors.description = "Description is required";
     }
 
-    if (!formData.truthMeaning.trim()) {
-      newErrors.truthMeaning = "This is required";
+    if (!formData.details.trim()) {
+      newErrors.details = "This is required";
     }
 
     if (!formData.reward || parseInt(formData.reward) <= 0) {
@@ -143,15 +143,15 @@ const RequestModal: React.FC<RequestModalProps> = ({
               />
             </div>
 
-            <RequestTruthMeaning
-              onChange={(value) => handleInputChange("truthMeaning", value)}
-              error={errors.truthMeaning}
-              value={formData.truthMeaning}
-            />
-
             <RequestContext
               onChange={(value) => handleInputChange("details", value)}
+              error={errors.details}
               value={formData.details}
+            />
+
+            <RequestTruthMeaning
+              onChange={(value) => handleInputChange("truthMeaning", value)}
+              value={formData.truthMeaning}
             />
 
             {/* Info Box */}

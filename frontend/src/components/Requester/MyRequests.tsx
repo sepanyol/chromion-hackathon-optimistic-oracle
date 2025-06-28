@@ -198,20 +198,19 @@ const MyRequests: React.FC<MyRequestsProps> = ({ questions }) => {
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex space-x-2 mt-4">
-                      <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                        View Details
-                      </button>
-                      {question.status === "Challenged" && (
-                        <button className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors duration-200">
-                          Respond to Challenge
-                        </button>
-                      )}
-                    </div>
                   </div>
                 </div>
               )}
+              {/* <div className="flex space-x-2">
+                <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                  View Details
+                </button>
+                {question.status === "Challenged" && (
+                  <button className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors duration-200">
+                    Respond to Challenge
+                  </button>
+                )}
+              </div> */}
             </div>
           ))
         )}

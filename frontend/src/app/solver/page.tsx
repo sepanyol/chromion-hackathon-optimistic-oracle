@@ -19,6 +19,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
 import { decodeAbiParameters, formatUnits } from "viem";
 import { useAccount } from "wagmi";
 
@@ -159,6 +160,7 @@ const SolverPage: React.FC = () => {
           <MyRecentProposals proposals={proposals} />
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

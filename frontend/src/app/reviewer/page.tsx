@@ -10,6 +10,7 @@ import { AvailableReviewsType, MyReviewsType } from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
 import { Check, Handshake, Scale, Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
 import { useAccount } from "wagmi";
 
 const ReviewerPage: React.FC = () => {
@@ -115,6 +116,7 @@ const ReviewerPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

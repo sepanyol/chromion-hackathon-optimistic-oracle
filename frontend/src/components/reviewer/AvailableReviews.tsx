@@ -10,6 +10,8 @@ import { Button } from "../Button";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { isSameAddress } from "@/utils/addresses";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { isInvolvedInRequest } from "@/utils/helpers";
 
 type AvailableReviewsProps = {
   reviews: AvailableReviewsType[];
@@ -17,6 +19,7 @@ type AvailableReviewsProps = {
 
 export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
   const { address: accountAddress } = useAccount();
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -108,29 +111,19 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                   </div>
 
                   <div className="flex justify-end">
-                    {accountAddress &&
-                    (isSameAddress(
-                      review.request.requester.id,
-                      accountAddress
-                    ) ||
-                      isSameAddress(review.challenger.id, accountAddress) ||
-                      isSameAddress(
-                        review.proposal.proposer.id,
-                        accountAddress
-                      )) ? (
-                      <span>
-                        <Button
-                          title="You're the requester, proposer or challenger. You can't review"
-                          disabled={true}
-                        >
-                          Review Challenge
-                        </Button>
-                      </span>
-                    ) : (
-                      <Link href={`/reviewer/${review.id}`}>
-                        <Button>Review Challenge</Button>
-                      </Link>
-                    )}
+                    <Link href={`/reviewer/${review.id}`}>
+                      <Button>
+                        {isInvolvedInRequest(
+                          review.request.requester.id,
+                          review.proposal.proposer.id,
+                          review.challenger.id,
+                          accountAddress
+                        )
+                          ? "View"
+                          : "Review"}{" "}
+                        Challenge
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>

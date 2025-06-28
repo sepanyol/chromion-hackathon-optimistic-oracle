@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { Abi, Address, decodeEventLog, Log } from "viem";
+"use client";
+import { useCallback, useMemo } from "react";
+import { Abi, Address, decodeEventLog, isHex } from "viem";
 import {
   useSimulateContract,
   useWaitForTransactionReceipt,
@@ -36,11 +37,9 @@ export const useExecuteFunction = ({
   onEventMatch,
   onError,
 }: useExecuteFunctionProps) => {
-  const [logs, setLogs] = useState<Log<any>[]>();
-
-  const enabled = Boolean(
-    address && chainId && abi && functionName && _enabled
-  );
+  const enabled = useMemo(() => {
+    return Boolean(address && chainId && abi && functionName && _enabled);
+  }, [address, chainId, abi, functionName, _enabled]);
 
   const simulate = useSimulateContract({
     address,
@@ -48,6 +47,7 @@ export const useExecuteFunction = ({
     abi,
     functionName,
     args,
+    scopeKey: `${functionName}-${address}-${args.join("-")}`,
     query: { enabled },
     ...(account ? { account } : {}),
     ...(value && value > BigInt(0) ? { value } : {}),
@@ -75,46 +75,37 @@ export const useExecuteFunction = ({
   }, [isSuccessSimulate, dataSimulate, writeContract]);
 
   const reset = useCallback(() => {
-    setLogs([]);
     resetWriteContract && resetWriteContract();
   }, [resetWriteContract]);
 
-  const waitForTransaction = useWaitForTransactionReceipt({ hash, chainId });
-  const { data: txData, error: txError } = waitForTransaction;
+  const { data: txData, error: txError } = useWaitForTransactionReceipt({
+    hash,
+    chainId,
+    query: { enabled: isHex(hash) },
+  });
 
-  const parseLogs = useCallback(
-    (logs: Log[] = []) =>
-      logs
-        .filter(() => eventNames && eventNames.length)
-        .filter((log) => isSameAddress(address, log.address))
-        .forEach((log) => {
-          const event = decodeEventLog({
-            abi,
-            data: log.data,
-            topics: log.topics,
-          }) as any;
-          onEvent && onEvent(event);
-          if (eventNames.indexOf(`${event.eventName}`) > -1)
-            onEventMatch && onEventMatch(event);
-        }),
-    [logs, eventNames]
-  );
+  if (txData && txData.logs) {
+    txData.logs
+      .filter(() => eventNames && eventNames.length)
+      .filter((log) => isSameAddress(address, log.address))
+      .forEach((log) => {
+        const event = decodeEventLog({
+          abi,
+          data: log.data,
+          topics: log.topics,
+        }) as any;
+        onEvent && onEvent(event);
+        if (eventNames.indexOf(`${event.eventName}`) > -1)
+          onEventMatch && onEventMatch(event);
+      });
+  }
 
-  useEffect(() => {
-    if (!txData && !txError) return;
-    if (txData) setLogs(txData.logs);
-    // just in case there is another error while executing
-    if (txError) console.log("[ERROR]", { reason: txError.message });
-  }, [txData, txError]);
+  if (txError) console.log("[ERROR]", { reason: txError.message });
 
-  useEffect(() => {
-    if (logs && logs.length > 0) parseLogs(logs);
-  }, [logs]);
-
-  useEffect(() => {
-    errorWrite && onError && onError(null, errorWrite);
-    errorSimulate && onError && onError(errorSimulate, null);
-  }, [errorWrite, errorSimulate]);
+  if (onError) {
+    if (errorWrite) onError(null, errorWrite);
+    if (errorSimulate) onError(errorSimulate, null);
+  }
 
   return {
     write,
@@ -124,6 +115,6 @@ export const useExecuteFunction = ({
     isEnabled: enabled,
     isReady: isSuccessSimulate,
     hash,
-    logs,
+    logs: txData ? txData.logs : null,
   };
 };

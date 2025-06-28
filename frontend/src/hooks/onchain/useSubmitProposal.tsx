@@ -1,13 +1,10 @@
+"use client";
 import abi from "@/abis/coordinator.json";
-import {
-  getFactoryByChainId,
-  getOracleByChainId,
-  getUSDCByChainId,
-} from "@/utils/contracts";
-import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { Address, pad, parseUnits, toBytes, toHex } from "viem";
-import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 import { defaultChain } from "@/utils/appkit/context";
+import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
+import { Address, isHex, parseUnits } from "viem";
+import { useAccount } from "wagmi";
+import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
 type useSubmitProposalProps = {
   request: Address;
@@ -18,7 +15,7 @@ export const useSubmitProposal = ({
   request,
   answer,
 }: useSubmitProposalProps) => {
-  const { address: account } = useAppKitAccount();
+  const { address: account } = useAccount();
   const address = getOracleByChainId(defaultChain.id)!;
   const chainId = defaultChain.id;
   return useExecuteFunctionWithTokenTransfer({
@@ -31,6 +28,6 @@ export const useSubmitProposal = ({
     eventNames: ["AnswerProposed"],
     transferToken: getUSDCByChainId(defaultChain.id),
     transferAmount: BigInt(parseUnits("100", 6)),
-    enabled: Boolean(request && answer),
+    enabled: Boolean(request && isHex(answer)),
   });
 };

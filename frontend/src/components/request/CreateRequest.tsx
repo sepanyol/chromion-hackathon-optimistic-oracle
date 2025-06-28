@@ -1,8 +1,11 @@
+"use client";
 import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
+import { TransactionExecutionError } from "viem";
 import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
 import RequestModal from "./RequestModal";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 export const CreateRequest = () => {
   const router = useRouter();
@@ -13,25 +16,50 @@ export const CreateRequest = () => {
   });
 
   const handleOnSubmit = () => {
+    if (!state.isSubmitEnabled) return;
     dispatch({ type: ActionTypes.EnableSubmitting });
     createRequest.initiate();
   };
 
   useEffect(() => {
-    if (!router || !dispatch) return;
-
-    if (createRequest.execute.execution.isSuccess)
+    if (!createRequest.execute.execution.isSuccess) return;
+    setTimeout(() => {
+      router.refresh();
       dispatch({ type: ActionTypes.Reset });
+    }, 6000);
+  }, [createRequest.execute.execution.isSuccess]);
 
-    router.refresh();
-  }, [router, dispatch, createRequest.execute.execution.isSuccess]);
+  useEffect(() => {
+    if (createRequest.approval.execution.error) {
+      dispatch({ type: ActionTypes.DisableSubmitting });
+      toast.error(
+        `Error: ${
+          (createRequest.approval.execution.error as TransactionExecutionError)
+            .shortMessage
+        }`
+      );
+    }
+
+    if (createRequest.execute.execution.error) {
+      dispatch({ type: ActionTypes.DisableSubmitting });
+      toast.error(
+        `Error: ${
+          (createRequest.execute.execution.error as TransactionExecutionError)
+            .shortMessage
+        }`
+      );
+    }
+  }, [
+    createRequest.approval.execution.error,
+    createRequest.approval.execution.error,
+  ]);
 
   if (!state.isModalOpen) return <></>;
 
   return (
     <RequestModal
       isSubmitting={state.isSubmitting}
-      isSubmitDisabled={!createRequest.execute.isReady}
+      isSubmitDisabled={!state.isSubmitEnabled}
       onUpdate={(data: any) => {
         dispatch({
           type: ActionTypes.UpdateCreateParams,
