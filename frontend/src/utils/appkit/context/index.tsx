@@ -1,6 +1,6 @@
 "use client";
 
-import { SolanaAdapter } from "@reown/appkit-adapter-solana";
+// import { SolanaAdapter } from "@reown/appkit-adapter-solana";
 import {
   arbitrum,
   arbitrumSepolia,
@@ -32,7 +32,7 @@ const metadata = {
   icons: ["https://assets.reown.com/reown-profile-pic.png"],
 };
 
-const solanaWeb3JsAdapter = new SolanaAdapter();
+
 
 // Create the modal
 const modal = createAppKit({
