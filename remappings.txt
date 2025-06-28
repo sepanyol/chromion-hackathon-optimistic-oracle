@@ -1,6 +1,10 @@
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
-@openzeppelin/=lib/openzeppelin-contracts/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 @chainlink/contracts/=lib/chainlink/contracts/
 @chainlink/contracts-ccip/=lib/chainlink-ccip/chains/evm/
 @chainlink/local/=node_modules/@chainlink/local/
+@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+
+
+
