@@ -48,11 +48,11 @@ contract SetupFixturesOracleChain is BaseScript {
 
     function setUpFixtures_localfork() public {
         fixtures_Prepare();
-        fixtures_Open();
-        fixtures_Proposed();
-        fixtures_Challenged();
-        fixtures_ChallengedReviewFor();
-        fixtures_ChallengedReviewAgainst();
+        // fixtures_Open();
+        // fixtures_Proposed();
+        // fixtures_Challenged();
+        // fixtures_ChallengedReviewFor();
+        // fixtures_ChallengedReviewAgainst();
     }
 
     function fixtures_Prepare() public {
@@ -66,8 +66,8 @@ contract SetupFixturesOracleChain is BaseScript {
         _accounts[6] = vm.envUint("PRIVATE_KEY_REVIEWER_5");
 
         // fund accounts
-        uint256 MIN_VALUE_FUNDS = 1e15;
-        uint256 MIN_VALUE_TOKENS = 1000e6;
+        uint256 MIN_VALUE_FUNDS = 1e16;
+        uint256 MIN_VALUE_TOKENS = 1e15;
         for (uint256 i = 0; i < _accounts.length; i++) {
             address _account = vm.addr(_accounts[i]);
 

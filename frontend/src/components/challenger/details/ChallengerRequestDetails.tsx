@@ -8,9 +8,16 @@ import {
   getReadableRequestStatusForOpposition,
 } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { useCallback, useEffect, useState } from "react";
-import { Address, formatUnits, hexToBool, hexToString, toHex } from "viem";
-import { useAccount } from "wagmi";
+import { useCallback, useContext, useEffect, useState } from "react";
+import {
+  Address,
+  formatUnits,
+  hexToBool,
+  hexToString,
+  toHex,
+  WaitForTransactionReceiptErrorType,
+} from "viem";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 // import { SolverBool } from "./SolverBool";
 import { ColoredTile } from "@/components/ColoredTile";
 import { SolverBool } from "@/components/solver/details/SolverBool";
@@ -19,15 +26,16 @@ import { useSubmitChallenge } from "@/hooks/onchain/useSubmitChallenge";
 import { useRequestForChallenge } from "@/hooks/useRequestForChallenge";
 import { isSameAddress } from "@/utils/addresses";
 import { CheckCircle } from "lucide-react";
+import { RequestContext } from "@/components/RequestProvider";
+import { toast } from "react-toastify";
 
-type ChallengerRequestDetailsProps = { requestId: Address };
-export const ChallengerRequestDetails = ({
-  requestId,
-}: ChallengerRequestDetailsProps) => {
+export const ChallengerRequestDetails = () => {
+  const { requestId } = useContext(RequestContext);
   const [challengeValue, setChallengeValue] = useState<any>(null);
   const [reason, setReason] = useState<string>();
   const [reasonBytes, setReasonBytes] = useState<string>();
   const [enableSubmit, setEnableSubmit] = useState(false);
+  const [txHash, setTxHash] = useState<Address | undefined>();
 
   const { address: accountAddress } = useAccount();
 
@@ -42,11 +50,11 @@ export const ChallengerRequestDetails = ({
     isLoading: isLoadingChallenge,
     refetch: refetchChallenge,
   } = useGetChallenge({
-    requestId: request?.id!,
+    requestId,
   });
 
   const submitChallenge = useSubmitChallenge({
-    request: request?.id!,
+    request: requestId,
     answer: request
       ? toHex(
           !hexToBool(request?.proposal.answer as Address, {
@@ -78,11 +86,8 @@ export const ChallengerRequestDetails = ({
   }, [request, submitChallenge]);
 
   useEffect(() => {
-    if (submitChallenge.execute.execution.isSuccess) {
-      console.log("SUCCESSFUL");
-      refetch();
-      refetchChallenge();
-    }
+    if (!submitChallenge.execute.execution.isSuccess) return;
+    setTxHash(submitChallenge.execute.hash);
   }, [refetch, refetchChallenge, submitChallenge.execute.execution.isSuccess]);
 
   useEffect(() => {
@@ -101,6 +106,29 @@ export const ChallengerRequestDetails = ({
     setReasonBytes(reason ? toHex(reason) : toHex(""));
     setEnableSubmit(Boolean(reason && reason.length > 0));
   }, [challenge, reason, request]);
+
+  const {
+    data: dataTx,
+    isLoading: isLoadingTx,
+    isSuccess: isSuccessTx,
+    error: errorTx,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+    query: { enabled: !!txHash },
+  });
+
+  useEffect(() => {
+    if (!isSuccessTx || isLoadingTx) return;
+
+    if (errorTx)
+      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
+
+    if (dataTx) {
+      refetch();
+      refetchChallenge();
+      toast.success("Successfully challenged answer");
+    }
+  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
 
   if (isLoading || isLoadingChallenge) return <Loader />;
 
@@ -233,6 +261,7 @@ export const ChallengerRequestDetails = ({
                         <Button
                           disabled={
                             !enableSubmit ||
+                            isLoadingTx ||
                             submitChallenge.approval.execution.isPending ||
                             submitChallenge.execute.execution.isPending
                           }
@@ -242,7 +271,9 @@ export const ChallengerRequestDetails = ({
                             "Confirm approval in your wallet..."}
                           {submitChallenge.execute.execution.isPending &&
                             "Confirm proposing answer in your wallet..."}
-                          {!submitChallenge.approval.execution.isPending &&
+                          {isLoadingTx && "Finishing transaction..."}
+                          {!isLoadingTx &&
+                            !submitChallenge.approval.execution.isPending &&
                             !submitChallenge.execute.execution.isPending &&
                             "Submit challenge"}
                         </Button>
