@@ -288,6 +288,32 @@ contract OracleCoordinatorTest is Test {
         assertEq(_answer, true, "should habe true answer");
     }
 
+    function test_proposeAnswer_succeedsWithNumberAnswer() public {
+        bytes memory answer = abi.encode(1234 * 1e6);
+
+        // allow USDC + fund proposer
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        // call propose
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, answer);
+
+        console.logBytes(
+            abi.encodeCall(coordinator.proposeAnswer, (request, answer))
+        );
+
+        // optional assertion: proposal state set
+        IOracleCoordinator.Proposal memory _proposal = coordinator.getProposal(
+            request
+        );
+
+        assertEq(_proposal.proposer, proposer, "Proposal proposer mismatch");
+        uint256 _answer = abi.decode(_proposal.answer, (uint256));
+        assertEq(_answer, 1234 * 1e6, "should habe 1234000000 answer");
+    }
+
     function test_proposeAnswer_RevertIf_AlreadyProposed() public {
         vm.mockCall(
             request,
