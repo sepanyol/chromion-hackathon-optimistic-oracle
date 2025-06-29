@@ -17,6 +17,7 @@ contract WrappedNft is
     OwnableUpgradeable,
     UUPSUpgradeable
 {
+    uint96 public constant REWARD = 10e6;
     uint256 public constant EVALUATION_REQUEST_COOLDOWN = 86400 * 7;
     address public immutable requestFactory;
     IERC20 public usdc;
@@ -157,6 +158,9 @@ contract WrappedNft is
             "Cooldown still active"
         );
 
+        // transfer reward to wrapped nft contract in order to send to factory
+        require(usdc.transferFrom(msg.sender, address(this), REWARD));
+
         address requestAddress = IRequestFactory(requestFactory).createRequest(
             RequestTypes.RequestParams({
                 requester: abi.encode(msg.sender),
@@ -164,7 +168,7 @@ contract WrappedNft is
                 originChainId: abi.encode(""),
                 answerType: RequestTypes.AnswerType.Value,
                 challengeWindow: 86400,
-                rewardAmount: 10e6,
+                rewardAmount: REWARD,
                 question: string.concat(
                     "What the value of the NFT (",
                     string(abi.encodePacked(address(this))),

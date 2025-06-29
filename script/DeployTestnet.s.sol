@@ -433,7 +433,7 @@ contract DeployTestnet is BaseScript {
                 // another time, update implemetation
                 UUPSUpgradeable(_proxy).upgradeToAndCall(
                     _implementation,
-                    abi.encodeCall(WrappedNft.initialize, (address(_usdc)))
+                    abi.encode() // no init necessary
                 );
             }
         }

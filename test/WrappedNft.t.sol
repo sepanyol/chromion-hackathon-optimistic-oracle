@@ -37,6 +37,7 @@ contract WrappedNftTest is Test {
     function setUp() public {
         mockUSDC = new MockUSDC();
         mockUSDC.mint(_buyer, _expectedPrice * 2);
+        mockUSDC.mint(_originNftOwner, _expectedPrice * 2);
 
         address _implementation = address(new WrappedNft(_factory));
         address _proxy = address(
@@ -46,6 +47,10 @@ contract WrappedNftTest is Test {
             )
         );
         _nft = WrappedNft(_proxy);
+
+        // mockUSDC.approve(_proxy, _nft.REWARD());
+        vm.prank(_originNftOwner);
+        mockUSDC.approve(_proxy, 1000e18);
 
         _originalNFT = new MyERC721();
         _originalNFT.mint(_originNftOwner, 1);
