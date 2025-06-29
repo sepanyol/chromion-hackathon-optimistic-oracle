@@ -169,7 +169,7 @@ contract WrappedNft is
                 originAddress: abi.encode(""),
                 originChainId: abi.encode(""),
                 answerType: RequestTypes.AnswerType.Value,
-                challengeWindow: 60*5,
+                challengeWindow: 60 * 5,
                 rewardAmount: REWARD,
                 question: string.concat(
                     "What the value of the NFT (",

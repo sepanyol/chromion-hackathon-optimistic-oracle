@@ -3,6 +3,9 @@ import { timeAgo } from "@/utils/time-ago";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useAccount } from "wagmi";
 import { ShortAddress } from "../utilities/ShortAddress";
+import { TokenStatus } from "./TokenStatus";
+import { ProposedPrice } from "./ProposedPrice";
+import { PriceTag } from "./PriceTag";
 
 export const MyTokens = () => {
   const { isConnected, address } = useAccount();
@@ -43,6 +46,12 @@ export const MyTokens = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Proposed Price
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price Tag
+                </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ">
                   Actions
                 </th>
@@ -62,7 +71,15 @@ export const MyTokens = () => {
                   <td className="px-6 py-4">
                     {timeAgo.format(Number(nft.blockTimestamp) * 1000)}
                   </td>
-                  <td className="px-6 py-4">STATUS</td>
+                  <td className="px-6 py-4">
+                    <ProposedPrice id={nft.wNft} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <PriceTag id={nft.wNft} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <TokenStatus id={nft.wNft} />
+                  </td>
                 </tr>
               ))}
             </tbody>
