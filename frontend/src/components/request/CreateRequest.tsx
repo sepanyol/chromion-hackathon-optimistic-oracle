@@ -72,8 +72,7 @@ export const CreateRequest = () => {
       }}
       onSubmit={handleOnSubmit}
       onClose={() => {
-        dispatch({ type: ActionTypes.CloseModal });
-        dispatch({ type: ActionTypes.Reset });
+        dispatch({ type: ActionTypes.ResetNFT });
       }}
     />
   ) : (
@@ -95,7 +94,6 @@ export const CreateRequest = () => {
       }}
       onSubmit={handleOnSubmit}
       onClose={() => {
-        dispatch({ type: ActionTypes.CloseModal });
         dispatch({ type: ActionTypes.Reset });
       }}
     />
