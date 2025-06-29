@@ -246,7 +246,7 @@ const ChallengerPage: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-8">
+          <div className="col-span-4 space-y-8">
             {/* Available Answers */}
             <div className="space-y-4">
               {requests.map((request) => (
@@ -373,13 +373,13 @@ const ChallengerPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar
           <div className="space-y-6">
             <MyActiveChallenges challenges={challenges} />
             <ChallengerSubmissionPanel
               onSubmitChallenge={handleSubmitChallenge}
             />
-          </div>
+          </div> */}
         </div>
       </div>
       <ToastContainer />

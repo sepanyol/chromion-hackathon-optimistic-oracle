@@ -10,34 +10,48 @@ import {
 import { timeAgo } from "@/utils/time-ago";
 import { useCallback, useContext, useEffect, useState } from "react";
 import {
+  Abi,
   Address,
   formatUnits,
+  hexToBigInt,
   hexToBool,
   hexToString,
+  isHex,
+  parseUnits,
   toHex,
-  WaitForTransactionReceiptErrorType,
 } from "viem";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 // import { SolverBool } from "./SolverBool";
+import oracleAbi from "@/abis/coordinator.json";
 import { ColoredTile } from "@/components/ColoredTile";
 import { RequestContext } from "@/components/RequestProvider";
 import { SolverBool } from "@/components/solver/details/SolverBool";
+import { SolverValue } from "@/components/solver/details/SolverValue";
+import { useExecuteFunction } from "@/hooks/onchain/useExecuteFunction";
 import { useGetChallenge } from "@/hooks/onchain/useGetChallenge";
-import { useSubmitChallenge } from "@/hooks/onchain/useSubmitChallenge";
+import { useTokenApproval } from "@/hooks/onchain/useTokenApproval";
 import { useRequestForChallenge } from "@/hooks/useRequestForChallenge";
 import { isSameAddress } from "@/utils/addresses";
+import { defaultChain } from "@/utils/appkit/context";
+import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 
 export const ChallengerRequestDetails = () => {
+  const tokenAddress = getUSDCByChainId(defaultChain.id);
+  const oracleAddress = getOracleByChainId(defaultChain.id);
+
   const { requestId } = useContext(RequestContext);
   const [challengeValue, setChallengeValue] = useState<any>(null);
+  const [challengeValueComputed, setChallengeValueComputed] =
+    useState<any>(null);
   const [reason, setReason] = useState<string>();
   const [reasonBytes, setReasonBytes] = useState<string>();
   const [enableSubmit, setEnableSubmit] = useState(false);
-  const [txHash, setTxHash] = useState<Address | undefined>();
+  const [txHashApproval, setTxHashApproval] = useState<Address | undefined>();
+  const [txHashPropose, setTxHashPropose] = useState<Address | undefined>();
 
-  const { address: accountAddress } = useAccount();
+  const { address: accountAddress, chainId } = useAccount();
 
   const {
     data: request,
@@ -53,82 +67,118 @@ export const ChallengerRequestDetails = () => {
     requestId,
   });
 
-  const submitChallenge = useSubmitChallenge({
-    request: requestId,
-    answer: request
-      ? toHex(
-          !hexToBool(request?.proposal.answer as Address, {
-            size: 32,
-          }),
-          { size: 32 }
-        )
-      : undefined,
-    reason: reasonBytes,
+  const approval = useTokenApproval({
+    address: tokenAddress,
+    spender: oracleAddress!,
+    amount: BigInt(100e6),
+    chainId: chainId!,
   });
 
-  // either current user stats if not proposed or proposer stats
-  // const { data: challenger } = useUserChallenger(
-  //   challenge && challenge.timestamp > 0
-  //     ? challenge.challenger
-  //     : accountAddress!
-  // );
+  const waitForApproval = useWaitForTransactionReceipt({
+    hash: txHashApproval,
+    query: { enabled: !!txHashApproval },
+  });
+
+  const execute = useExecuteFunction({
+    abi: oracleAbi as Abi,
+    address: oracleAddress!,
+    functionName: "challengeAnswer",
+    args: [requestId, true, challengeValueComputed, reasonBytes],
+    chainId: chainId!,
+    eventNames: ["ChallengeSubmitted"],
+    enabled:
+      isHex(requestId) && isHex(challengeValueComputed) && isHex(reasonBytes),
+  });
+
+  const waitForProposal = useWaitForTransactionReceipt({
+    hash: txHashPropose,
+    query: { enabled: !!txHashPropose },
+  });
 
   const handleSubmitChallenge = useCallback(() => {
-    if (
-      !request ||
-      !submitChallenge ||
-      !submitChallenge.execute.isEnabled ||
-      !submitChallenge.execute.isReady
-    )
+    if (!request || !approval.isReady || !approval.isEnabled) {
+      console.log("error handleSubmitChallenge");
+      return;
+    }
+    approval.write();
+  }, [request, approval.isReady, approval.isEnabled]);
+
+  useEffect(() => {
+    if (!approval.hash) return;
+    setTxHashApproval(approval.hash);
+  }, [approval.hash]);
+
+  useEffect(() => {
+    if (!execute.isEnabled || !execute.isReady || !waitForApproval.isSuccess)
       return;
 
-    submitChallenge.initiate();
-  }, [request, submitChallenge]);
-
-  useEffect(() => {
-    if (!submitChallenge.execute.execution.isSuccess) return;
-    setTxHash(submitChallenge.execute.hash);
-  }, [refetch, refetchChallenge, submitChallenge.execute.execution.isSuccess]);
-
-  useEffect(() => {
-    if (!request || !challenge) return;
-    switch (request.answerType) {
-      case 0:
-        setChallengeValue(
-          !hexToBool(request.proposal.answer as Address, {
-            size: 32,
-          })
-        );
-        break;
-      case 1:
-        break;
+    if (waitForApproval.isSuccess) {
+      setTxHashApproval(undefined);
+      console.log("lets go");
+      execute.write();
     }
+  }, [execute.isEnabled, execute.isReady, waitForApproval.isSuccess]);
+
+  useEffect(() => {
+    if (!execute.hash) return;
+    setTxHashPropose(execute.hash);
+  }, [execute.hash]);
+
+  useEffect(() => {
+    if (!waitForProposal.isSuccess) return;
+
+    setTxHashPropose(undefined);
+    refetch();
+    refetchChallenge();
+    toast.success("Successfully challenged answer");
+  }, [waitForProposal.isSuccess]);
+
+  useEffect(() => {
+    if (!request) return;
+    // set default, once request is loaded
+    if (request.answerType == 0) {
+      setChallengeValue(
+        !hexToBool(request.proposal.answer as Address, {
+          size: 32,
+        })
+      );
+    }
+  }, [request]);
+
+  useEffect(() => {
+    if (!request) return;
+
+    // when reason changes, check over all status
     setReasonBytes(reason ? toHex(reason) : toHex(""));
-    setEnableSubmit(Boolean(reason && reason.length > 0));
-  }, [challenge, reason, request]);
-
-  const {
-    data: dataTx,
-    isLoading: isLoadingTx,
-    isSuccess: isSuccessTx,
-    error: errorTx,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-    query: { enabled: !!txHash },
-  });
+    setEnableSubmit(
+      Boolean(
+        reason &&
+          reason.length > 0 &&
+          request.proposal.answer != challengeValueComputed
+      )
+    );
+  }, [request, reason, challengeValueComputed]);
 
   useEffect(() => {
-    if (!isSuccessTx || isLoadingTx) return;
+    if (!request) return;
 
-    if (errorTx)
-      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
-
-    if (dataTx) {
-      refetch();
-      refetchChallenge();
-      toast.success("Successfully challenged answer");
+    if (!challengeValue) {
+      setChallengeValueComputed(null);
+      return;
     }
-  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
+
+    if (request.answerType === 0) {
+      setChallengeValueComputed(toHex(challengeValue, { size: 32 }));
+    }
+
+    if (request.answerType === 1) {
+      setChallengeValueComputed(
+        toHex(parseUnits(challengeValue, 6), {
+          size: 32,
+        })
+      );
+    }
+  }, [request, challengeValue]);
 
   if (isLoading || isLoadingChallenge) return <Loader />;
 
@@ -179,7 +229,18 @@ export const ChallengerRequestDetails = () => {
                       onChange={() => {}}
                     />
                   )}
-                  {request.answerType === 1 && "VALUATION"}
+                  {request.answerType === 1 && (
+                    <SolverValue
+                      disabled={true}
+                      value={formatUnits(
+                        hexToBigInt(request.proposal.answer as Address, {
+                          size: 32,
+                        }),
+                        6
+                      )}
+                      onChange={() => {}}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -205,7 +266,18 @@ export const ChallengerRequestDetails = () => {
                           onChange={() => {}}
                         />
                       )}
-                      {request.answerType === 1 && "VALUATION"}
+                      {request.answerType === 1 && (
+                        <SolverValue
+                          disabled={true}
+                          value={formatUnits(
+                            hexToBigInt(challenge.answer as Address, {
+                              size: 32,
+                            }),
+                            6
+                          )}
+                          onChange={() => {}}
+                        />
+                      )}
                     </div>
                     <div className="text-xl block font-bold">
                       Challenge Reason
@@ -244,8 +316,18 @@ export const ChallengerRequestDetails = () => {
                                 onChange={() => {}}
                               />
                             )}
-                            {/* VALLUATION */}
-                            {request.answerType === 1 && "VALUATION"}
+                            {request.answerType === 1 && (
+                              <SolverValue
+                                error={
+                                  request.proposal.answer ==
+                                  challengeValueComputed
+                                    ? "Same value not allowed"
+                                    : ""
+                                }
+                                value={challengeValue}
+                                onChange={setChallengeValue}
+                              />
+                            )}
                           </div>
                           <div className="text-xl block font-bold">
                             Challenge Reason
@@ -261,20 +343,24 @@ export const ChallengerRequestDetails = () => {
                         <Button
                           disabled={
                             !enableSubmit ||
-                            isLoadingTx ||
-                            submitChallenge.approval.execution.isPending ||
-                            submitChallenge.execute.execution.isPending
+                            waitForApproval.isLoading ||
+                            waitForProposal.isLoading ||
+                            approval.execution.isPending ||
+                            execute.execution.isPending
                           }
                           onClick={handleSubmitChallenge}
                         >
-                          {submitChallenge.approval.execution.isPending &&
+                          {approval.execution.isPending &&
                             "Confirm approval in your wallet..."}
-                          {submitChallenge.execute.execution.isPending &&
-                            "Confirm proposing answer in your wallet..."}
-                          {isLoadingTx && "Finishing transaction..."}
-                          {!isLoadingTx &&
-                            !submitChallenge.approval.execution.isPending &&
-                            !submitChallenge.execute.execution.isPending &&
+                          {execute.execution.isPending &&
+                            "Confirm challenging proposal in your wallet..."}
+                          {(waitForApproval.isLoading ||
+                            waitForProposal.isLoading) &&
+                            "Finishing transaction..."}
+                          {!waitForApproval.isLoading &&
+                            !waitForProposal.isLoading &&
+                            !approval.execution.isPending &&
+                            !execute.execution.isPending &&
                             "Submit challenge"}
                         </Button>
                       </>

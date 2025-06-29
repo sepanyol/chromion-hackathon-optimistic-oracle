@@ -1,39 +1,48 @@
 "use client";
+import oracleAbi from "@/abis/coordinator.json";
 import { Button } from "@/components/Button";
 import { ColoredTile } from "@/components/ColoredTile";
 import { Loader } from "@/components/Loader";
 import { RequestDetails } from "@/components/request-details/RequestDetails";
 import { useRequestContext } from "@/components/RequestProvider";
+import { useExecuteFunction } from "@/hooks/onchain/useExecuteFunction";
 import { useGetProposal } from "@/hooks/onchain/useGetProposal";
-import { useSubmitProposal } from "@/hooks/onchain/useSubmitProposal";
+import { useTokenApproval } from "@/hooks/onchain/useTokenApproval";
 import { useRequestForProposal } from "@/hooks/useRequestForProposal";
 import { useUserProposer } from "@/hooks/useUserProposer";
 import { isSameAddress } from "@/utils/addresses";
+import { defaultChain } from "@/utils/appkit/context";
+import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { getReadableRequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { isBoolean, isNumber, isUndefined } from "lodash";
+import { isBoolean, isUndefined } from "lodash";
 import { CheckCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
+  Abi,
   Address,
   formatUnits,
+  hexToBigInt,
   hexToBool,
+  isHex,
+  parseUnits,
   toHex,
   TransactionExecutionError,
-  WaitForTransactionReceiptErrorType,
 } from "viem";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { SolverBool } from "./SolverBool";
+import { SolverValue } from "./SolverValue";
 
 export const SolverRequestDetails = () => {
   const { requestId } = useRequestContext();
-  const { address: accountAddress } = useAccount();
+  const { address: accountAddress, chainId } = useAccount();
 
   const [proposalValue, setProposalValue] = useState<any>(null);
   const [proposalValueComputed, setProposalValueComputed] = useState<string>();
   const [proposalValueValid, setProposalValueValid] = useState(false);
-  const [txHash, setTxHash] = useState<Address | undefined>();
+  const [txHashApproval, setTxHashApproval] = useState<Address | undefined>();
+  const [txHashPropose, setTxHashPropose] = useState<Address | undefined>();
 
   const {
     data: proposal,
@@ -55,9 +64,34 @@ export const SolverRequestDetails = () => {
     refetch,
   } = useRequestForProposal(requestId);
 
-  const submitProposal = useSubmitProposal({
-    answer: proposalValueComputed,
-    request: requestId,
+  const tokenAddress = getUSDCByChainId(defaultChain.id);
+  const oracleAddress = getOracleByChainId(defaultChain.id);
+
+  const approval = useTokenApproval({
+    address: tokenAddress,
+    spender: oracleAddress!,
+    amount: BigInt(parseUnits("100", 6)),
+    chainId: chainId!,
+  });
+
+  const waitForApproval = useWaitForTransactionReceipt({
+    hash: txHashApproval,
+    query: { enabled: !!txHashApproval },
+  });
+
+  const execute = useExecuteFunction({
+    abi: oracleAbi as Abi,
+    address: oracleAddress!,
+    functionName: "proposeAnswer",
+    args: [requestId, proposalValueComputed],
+    chainId: chainId!,
+    eventNames: ["AnswerProposed"],
+    enabled: isHex(requestId) && isHex(proposalValueComputed),
+  });
+
+  const waitForProposal = useWaitForTransactionReceipt({
+    hash: txHashPropose,
+    query: { enabled: !!txHashPropose },
   });
 
   useEffect(() => {
@@ -71,7 +105,16 @@ export const SolverRequestDetails = () => {
           );
           break;
         case 1:
-          setProposalValueValid(isNumber(proposalValue));
+          const _isNumber =
+            proposalValue &&
+            !!proposalValue.trim() &&
+            isFinite(Number(proposalValue.trim()));
+          setProposalValueValid(_isNumber);
+          setProposalValueComputed(
+            _isNumber
+              ? toHex(parseUnits(proposalValue.trim(), 6), { size: 32 })
+              : undefined
+          );
           break;
       }
     }
@@ -82,66 +125,61 @@ export const SolverRequestDetails = () => {
   }, [proposalValue]);
 
   const handleSubmitProposal = useCallback(() => {
-    if (
-      !request ||
-      !submitProposal.execute.isEnabled ||
-      !submitProposal.execute.isReady
-    )
+    if (!request || !approval.isReady || !approval.isEnabled) {
+      console.log("error handleSubmitProposal");
       return;
-    submitProposal.initiate();
-  }, [
-    request,
-    submitProposal.execute.isEnabled,
-    submitProposal.execute.isReady,
-  ]);
-
-  useEffect(() => {
-    if (!submitProposal.execute.execution.isSuccess) return;
-    setTxHash(submitProposal.execute.hash);
-  }, [submitProposal.execute.execution.isSuccess]);
-
-  useEffect(() => {
-    if (!submitProposal.approval.execution.error) return;
-    toast.error(
-      `Error: ${
-        (submitProposal.approval.execution.error as TransactionExecutionError)
-          .shortMessage
-      }`
-    );
-  }, [submitProposal.approval.execution.error]);
-
-  useEffect(() => {
-    if (!submitProposal.execute.execution.error) return;
-    toast.error(
-      `Error: ${
-        (submitProposal.execute.execution.error as TransactionExecutionError)
-          .shortMessage
-      }`
-    );
-  }, [submitProposal.execute.execution.error]);
-
-  const {
-    data: dataTx,
-    isLoading: isLoadingTx,
-    isSuccess: isSuccessTx,
-    error: errorTx,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-    query: { enabled: !!txHash },
-  });
-
-  useEffect(() => {
-    if (!isSuccessTx || isLoadingTx) return;
-
-    if (errorTx)
-      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
-
-    if (dataTx) {
-      refetch();
-      refetchProposal();
-      toast.success("Successfully proposed an answer");
     }
-  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
+
+    approval.write();
+  }, [request, approval.isReady, approval.isEnabled]);
+
+  useEffect(() => {
+    if (!approval.hash) return;
+    setTxHashApproval(approval.hash);
+  }, [approval.hash]);
+
+  useEffect(() => {
+    if (!execute.isEnabled || !execute.isReady || !waitForApproval.isSuccess)
+      return;
+
+    if (waitForApproval.isSuccess) {
+      setTxHashApproval(undefined);
+      console.log("lets go");
+      execute.write();
+    }
+  }, [execute.isEnabled, execute.isReady, waitForApproval.isSuccess]);
+
+  useEffect(() => {
+    if (!execute.hash) return;
+    setTxHashPropose(execute.hash);
+  }, [execute.hash]);
+
+  useEffect(() => {
+    if (!waitForProposal.isSuccess) return;
+
+    setTxHashPropose(undefined);
+    refetch();
+    refetchProposal();
+    toast.success("Successfully proposed an answer");
+  }, [waitForProposal.isSuccess]);
+
+  useEffect(() => {
+    if (!approval.execution.error) return;
+    toast.error(
+      `Error: ${
+        (approval.execution.error as TransactionExecutionError).shortMessage
+      }`
+    );
+  }, [approval.execution.error]);
+
+  useEffect(() => {
+    if (!execute.execution.error) return;
+    toast.error(
+      `Error: ${
+        (execute.execution.error as TransactionExecutionError).shortMessage
+      }`
+    );
+  }, [execute.execution.error]);
 
   return (
     <div className="grid grid-cols-4 gap-8">
@@ -198,6 +236,16 @@ export const SolverRequestDetails = () => {
                           onChange={() => {}}
                         />
                       )}
+                      {request.answerType === 1 && (
+                        <SolverValue
+                          disabled={true}
+                          value={formatUnits(
+                            hexToBigInt(proposal.answer, { size: 32 }),
+                            6
+                          )}
+                          onChange={setProposalValue}
+                        />
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -222,27 +270,36 @@ export const SolverRequestDetails = () => {
                               />
                             )}
                             {/* VALLUATION */}
-                            {request.answerType === 1 && "VALLUATION"}
+                            {request.answerType === 1 && (
+                              <SolverValue
+                                value={proposalValue}
+                                onChange={setProposalValue}
+                              />
+                            )}
                           </div>
                         </div>
                         <Button
                           disabled={
                             !proposalValueValid ||
-                            isLoadingTx ||
-                            submitProposal.approval.execution.isPending ||
-                            submitProposal.execute.execution.isPending
+                            waitForApproval.isLoading ||
+                            waitForProposal.isLoading ||
+                            approval.execution.isPending ||
+                            execute.execution.isPending
                           }
                           onClick={handleSubmitProposal}
                           className="flex gap-2"
                         >
-                          {submitProposal.approval.execution.isPending &&
+                          {approval.execution.isPending &&
                             "Confirm approval in your wallet..."}
-                          {submitProposal.execute.execution.isPending &&
+                          {execute.execution.isPending &&
                             "Confirm proposing answer in your wallet..."}
-                          {isLoadingTx && "Finishing transaction..."}
-                          {!isLoadingTx &&
-                            !submitProposal.approval.execution.isPending &&
-                            !submitProposal.execute.execution.isPending &&
+                          {(waitForApproval.isLoading ||
+                            waitForProposal.isLoading) &&
+                            "Finishing transaction..."}
+                          {!waitForApproval.isLoading &&
+                            !waitForProposal.isLoading &&
+                            !approval.execution.isPending &&
+                            !execute.execution.isPending &&
                             "Submit proposal"}
                         </Button>
                       </>

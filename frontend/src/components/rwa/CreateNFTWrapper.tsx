@@ -210,8 +210,6 @@ export const CreateNFTWrapper = () => {
     waitForRewardApprovalTX.error,
   ]);
 
-  console.log("Minting error", mintNFT.simulate.error);
-
   // start wait for minting hash
   useEffect(() => {
     if (!mintNFT.hash) return;

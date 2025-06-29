@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 import {
   Address,
   formatUnits,
+  hexToBigInt,
   hexToBool,
   hexToString,
   toHex,
@@ -26,6 +27,7 @@ import {
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { ReviewBar } from "../ReviewBar";
 import { ReviewSelector } from "./ReviewSelector";
+import { SolverValue } from "@/components/solver/details/SolverValue";
 
 export const ReviewChallengeDetails = () => {
   const [supportChallenge, setSupportChallenge] = useState<boolean | null>(
@@ -83,9 +85,9 @@ export const ReviewChallengeDetails = () => {
   }, [reason, supportChallenge, request]);
 
   useEffect(() => {
-    if (userReview.isLoading || !userReview.isSuccess) return;
+    if (!userReview.data) return;
     setIsReviewed(userReview.data.timestamp > 0);
-  }, [userReview.isSuccess, userReview.isLoading]);
+  }, [userReview.data]);
 
   const {
     data: dataTx,
@@ -100,8 +102,10 @@ export const ReviewChallengeDetails = () => {
   useEffect(() => {
     if (!isSuccessTx || isLoadingTx) return;
 
-    if (errorTx)
+    if (errorTx) {
       toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
+      return;
+    }
 
     if (dataTx) {
       refetch();
@@ -155,7 +159,18 @@ export const ReviewChallengeDetails = () => {
                       onChange={() => {}}
                     />
                   )}
-                  {request.answerType === 1 && "VALUATION"}
+                  {request.answerType === 1 && (
+                    <SolverValue
+                      disabled={true}
+                      value={formatUnits(
+                        hexToBigInt(request.proposal.answer as Address, {
+                          size: 32,
+                        }),
+                        6
+                      )}
+                      onChange={() => {}}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -177,7 +192,18 @@ export const ReviewChallengeDetails = () => {
                       onChange={() => {}}
                     />
                   )}
-                  {request.answerType === 1 && "VALUATION"}
+                  {request.answerType === 1 && (
+                    <SolverValue
+                      disabled={true}
+                      value={formatUnits(
+                        hexToBigInt(request.challenge.answer as Address, {
+                          size: 32,
+                        }),
+                        6
+                      )}
+                      onChange={() => {}}
+                    />
+                  )}
                 </div>
               </div>
 

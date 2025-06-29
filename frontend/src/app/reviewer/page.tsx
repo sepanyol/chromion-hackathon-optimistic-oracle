@@ -8,9 +8,10 @@ import { useAvailableReviews } from "@/hooks/useAvailableReviews";
 import { useUserReviewer } from "@/hooks/useUserReviewer";
 import { AvailableReviewsType, MyReviewsType } from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
-import { Check, Handshake, Scale, Star } from "lucide-react";
+import { Check, DollarSign, Handshake, Scale, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
+import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 
 const ReviewerPage: React.FC = () => {
@@ -54,10 +55,12 @@ const ReviewerPage: React.FC = () => {
       {
         change: null,
         changeType: "positive",
-        icon: <Handshake className="w-6 h-6 text-blue-600" />,
-        title: "Consensus Rate",
+        icon: <DollarSign className="w-6 h-6 text-blue-600" />,
+        title: "Earned",
         value: reviewer.data.user
-          ? reviewer.data.user.stats.agreementRate
+          ? `${Number(
+              formatUnits(reviewer.data.user.stats.earningsInUSD, 6)
+            ).toLocaleString(navigator.language)} USDC`
           : "0",
       },
       {

@@ -67,6 +67,7 @@ export const MyReviews = ({ reviews }: MyReviewsProps) => {
                       </span>
                       <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
                         <ReviewBar
+                          requestId={review.request.id}
                           showWinner={review.request.status === 4}
                           challengeVotes={review.challenge.votesFor}
                           proposalVotes={review.challenge.votesAgainst}

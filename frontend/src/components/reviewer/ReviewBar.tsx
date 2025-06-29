@@ -1,12 +1,22 @@
+import { useIsClaimable } from "@/hooks/onchain/useIsClaimable";
 import { isBoolean } from "lodash";
+import { Address, isHex } from "viem";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { Button } from "../Button";
+import { useClaimReward } from "@/hooks/onchain/useClaimReward";
+import { useEffect, useState } from "react";
+import { Loader } from "../Loader";
 
 type ReviewBarType = {
+  requestId: Address;
   proposalVotes: number;
   challengeVotes: number;
   showWinner?: boolean;
   votedForChallenger?: boolean;
 };
+
 export const ReviewBar = ({
+  requestId,
   showWinner = false,
   challengeVotes,
   proposalVotes,
@@ -14,6 +24,37 @@ export const ReviewBar = ({
 }: ReviewBarType) => {
   const total = Number(challengeVotes) + Number(proposalVotes);
   const shareLeft = challengeVotes / total;
+  const { address } = useAccount();
+  const [hash, setHash] = useState<Address | null>(null);
+
+  const { data: isClaimable, refetch } = useIsClaimable({
+    account: address!,
+    request: requestId,
+  });
+
+  const claimReward = useClaimReward({
+    request: requestId,
+    enabled: !!isClaimable && isHex(requestId),
+  });
+
+  const waitForClaim = useWaitForTransactionReceipt({
+    hash: hash!,
+    query: { enabled: !!hash },
+  });
+
+  useEffect(() => {
+    if (!claimReward.hash) return;
+    setHash(claimReward.hash);
+  }, [claimReward.hash]);
+
+  useEffect(() => {
+    if (!waitForClaim.isSuccess) return;
+    setTimeout(() => {
+      setHash(null);
+      refetch();
+    }, 5000);
+  }, [waitForClaim.isSuccess]);
+
   return (
     <div className="flex flex-col gap-1">
       {isBoolean(votedForChallenger) && (
@@ -21,11 +62,32 @@ export const ReviewBar = ({
           You voted for {votedForChallenger ? " challenger" : " proposer"}
         </div>
       )}
-
       {showWinner ? (
-        <span className="uppercase text-gray-800 font-bold">
-          {challengeVotes > proposalVotes ? "Challenger" : "Proposer"} won&nbsp;
-          🥳
+        <span className="uppercase text-gray-800 font-bold flex items-center justify-between">
+          <span>
+            {challengeVotes > proposalVotes ? "Challenger" : "Proposer"}{" "}
+            won&nbsp; 🥳
+          </span>
+          {isClaimable && (
+            <Button
+              disabled={
+                claimReward.execution.isPending || waitForClaim.isLoading
+              }
+              onClick={(e) => {
+                claimReward.write();
+              }}
+            >
+              {claimReward.execution.isPending || waitForClaim.isLoading ? (
+                <span className="flex gap-2">
+                  <Loader className="text-white" /> in progess...
+                </span>
+              ) : waitForClaim.isSuccess ? (
+                "Claimed!"
+              ) : (
+                "Claim your rewards"
+              )}
+            </Button>
+          )}
         </span>
       ) : (
         <>

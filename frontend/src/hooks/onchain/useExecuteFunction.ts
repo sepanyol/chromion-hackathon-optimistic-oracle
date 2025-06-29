@@ -47,7 +47,6 @@ export const useExecuteFunction = ({
     abi,
     functionName,
     args,
-    scopeKey: `${functionName}-${address}-${args.join("-")}`,
     query: { enabled },
     ...(account ? { account } : {}),
     ...(value && value > BigInt(0) ? { value } : {}),
@@ -70,8 +69,9 @@ export const useExecuteFunction = ({
 
   // write function that needs to be called
   const write = useCallback(() => {
-    if (dataSimulate && dataSimulate.request && writeContract)
+    if (dataSimulate && dataSimulate.request && writeContract) {
       writeContract(dataSimulate.request);
+    }
   }, [isSuccessSimulate, dataSimulate, writeContract]);
 
   const reset = useCallback(() => {
