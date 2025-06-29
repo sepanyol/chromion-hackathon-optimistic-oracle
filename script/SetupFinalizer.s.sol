@@ -23,7 +23,7 @@ contract SetupFinalizer is BaseScript {
             _readAddress(block.chainid, "OracleCoordinator")
         );
 
-        bytes32 _role = oracle.FACTORY_ROLE();
+        bytes32 _role = oracle.FINALIZER_ROLE();
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         IAccessControl(address(oracle)).grantRole(_role, _finalizer);
         IAccessControl(address(oracle)).revokeRole(_role, _finalizerPrev);

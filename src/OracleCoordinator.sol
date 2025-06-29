@@ -535,8 +535,8 @@ contract OracleCoordinator is
             reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _successAgainst = proposalChallengeOutcome[
-            outcomeIdFor(_request)
-        ] && reviewerVote[reviewerVoteIdFor(_request, _claimer)];
+            outcomeIdAgainst(_request)
+        ] && reviewerVote[reviewerVoteIdAgainst(_request, _claimer)];
 
         bool _success = _successFor || _successAgainst;
 
