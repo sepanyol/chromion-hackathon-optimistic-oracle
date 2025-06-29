@@ -69,6 +69,47 @@ dataSources:
         - event: AddedScoring(indexed address,bytes16)
           handler: handleAddedScoring
       file: ./src/scoring-registry.ts
+  - kind: ethereum
+    name: WrappedNft
+    network: fuji
+    source:
+      address: "0x5008850991F83590717cC6aA148EafF1DDcbf18F"
+      abi: WrappedNft
+      startBlock: 42678151
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - DepositedNft
+        - EvaluatioNRequest
+        - FeedbackSubmitted
+        - NftBought
+        - NftNowActiveForSale
+        - NftNowInactiveForSale
+        - ProposedEvaluationAccepted
+        - WithdrawnNft
+      abis:
+        - name: WrappedNft
+          file: ./abis/WrappedNft.json
+      eventHandlers:
+        - event: DepositedNft(indexed address,indexed address,uint256,uint256)
+          handler: handleDepositedNft
+        - event: EvaluatioNRequest(indexed address,string,uint256)
+          handler: handleEvaluatioNRequest
+        - event: FeedbackSubmitted(indexed address,string,bool)
+          handler: handleFeedbackSubmitted
+        - event: NftBought(indexed address,uint256,uint256,uint256)
+          handler: handleNftBought
+        - event: NftNowActiveForSale(uint256)
+          handler: handleNftNowActiveForSale
+        - event: NftNowInactiveForSale(uint256)
+          handler: handleNftNowInactiveForSale
+        - event: ProposedEvaluationAccepted(indexed address,uint256,indexed address,uint256)
+          handler: handleProposedEvaluationAccepted
+        - event: WithdrawnNft(indexed address,indexed address,uint256,uint256)
+          handler: handleWithdrawnNft
+      file: ./src/wrapped-nft.ts
 templates:
   - name: RequestContract
     kind: ethereum/contract

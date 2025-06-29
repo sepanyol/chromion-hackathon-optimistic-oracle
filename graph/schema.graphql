@@ -196,3 +196,14 @@ type User @entity(immutable: false) {
   reviewer: UserReviewer
   recentActivity: [RecentActivity!] @derivedFrom(field: "user")
 }
+
+type WrappedNFT @entity(immutable: true) {
+  id: Bytes!
+  requester: Bytes! # address
+  originNFT: Bytes! # address
+  wNft: BigInt! # uint256
+  originId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
