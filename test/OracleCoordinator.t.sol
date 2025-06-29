@@ -1258,6 +1258,8 @@ contract OracleCoordinatorTest is Test {
     function test_claimReward_RevertIf_ReviewerWasOnLosingSide() public {
         address challenger = address(0xC1);
         address reviewer = address(0xC2);
+        address reviewer1 = address(0xC3);
+        address reviewer2 = address(0xC4);
         bytes memory challengeAnswer = bytes("corrected");
         bytes memory challengeReason = bytes("logic fix");
         bytes memory reviewReason = bytes("I disagree");
@@ -1285,10 +1287,22 @@ contract OracleCoordinatorTest is Test {
 
         // 3. Review (opposes challenge)
         deal(address(usdc), reviewer, 200e6);
+        deal(address(usdc), reviewer1, 200e6);
+        deal(address(usdc), reviewer2, 200e6);
         vm.prank(reviewer);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(reviewer);
         coordinator.submitReview(request, reviewReason, false); // votesAgainst = 1
+
+        vm.prank(reviewer1);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(reviewer1);
+        coordinator.submitReview(request, reviewReason, true); // voteFor = 1
+
+        vm.prank(reviewer2);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(reviewer2);
+        coordinator.submitReview(request, reviewReason, true); // voteFor = 2
 
         // 4. Finalize (Challenge wins: no opposing votes)
         vm.warp(block.timestamp + 2 days);
