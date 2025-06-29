@@ -77,7 +77,7 @@ export const MyTokens = () => {
                   <td className="px-6 py-4">
                     <PriceTag id={nft.wNft} />
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 flex justify-center">
                     <TokenStatus id={nft.wNft} />
                   </td>
                 </tr>
