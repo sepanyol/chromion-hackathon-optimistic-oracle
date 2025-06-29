@@ -6,8 +6,12 @@ import { querySubgraph } from "./urqlClient";
 export const fetchMyWrappedNfts = async (requester: Address) =>
   querySubgraph<MyWrappedNftsType>(
     gql`
-      query ($requester: Bytes!) {
-        wrappedNFT(where: { requester: $requester }) {
+      query ($requester: Bytes) {
+        wrappedNFTs(
+          where: { requester: $requester }
+          orderBy: blockTimestamp
+          orderDirection: desc
+        ) {
           id
           requester
           wNft
