@@ -4,9 +4,11 @@ pragma solidity 0.8.24;
 import "./BaseScript.sol";
 
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {OracleCoordinator} from "../src/OracleCoordinator.sol";
 import {RequestContract} from "../src/RequestContract.sol";
 import {RequestFactory} from "../src/RequestFactory.sol";
+import {WrappedNft, UUPSUpgradeable} from "../src/WrappedNft.sol";
 import {OracleRelayer, IERC20} from "../src/OracleRelayer.sol";
 
 struct SideChainsData {
@@ -102,6 +104,8 @@ contract DeployTestnet is BaseScript {
             0,
             true
         );
+
+        _deployWrapperNFT(oracleChainId, usdc, address(mainFactoryInstance));
 
         // ------------------------------------------------------------
         // Setup Oracle Chain
@@ -278,15 +282,15 @@ contract DeployTestnet is BaseScript {
                     _instance.recoverAsset(_linkToken);
 
             _instance = new OracleRelayer(_linkToken, _router);
-            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
-                _writeDeploymentJson(
-                    _chainId,
-                    "OracleRelayer",
-                    address(_instance),
-                    _args,
-                    _code
-                );
-            }
+            // if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+            _writeDeploymentJson(
+                _chainId,
+                "OracleRelayer",
+                address(_instance),
+                _args,
+                _code
+            );
+            // }
 
             // send link to new relayer
             vm.stopBroadcast();
@@ -318,15 +322,15 @@ contract DeployTestnet is BaseScript {
         bytes memory _code = type(OracleCoordinator).creationCode;
         if (_shouldDeploy(_chainId, "OracleCoordinator", _args, _code)) {
             _instance = new OracleCoordinator(_platform, _relayer, _usdc);
-            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
-                _writeDeploymentJson(
-                    _chainId,
-                    "OracleCoordinator",
-                    address(_instance),
-                    _args,
-                    _code
-                );
-            }
+            // if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+            _writeDeploymentJson(
+                _chainId,
+                "OracleCoordinator",
+                address(_instance),
+                _args,
+                _code
+            );
+            // }
         }
         _instance = OracleCoordinator(
             _readAddress(_chainId, "OracleCoordinator")
@@ -357,30 +361,83 @@ contract DeployTestnet is BaseScript {
                 _homeChainId,
                 _isOracleChain
             );
-            if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
-                _writeDeploymentJson(
-                    _chainId,
-                    "RequestFactory",
+            // if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+            _writeDeploymentJson(
+                _chainId,
+                "RequestFactory",
+                address(_instance),
+                _args,
+                _code
+            );
+            _writeDeploymentJson(
+                _chainId,
+                "RequestContract",
+                _instance.implementation(),
+                abi.encode(
                     address(_instance),
-                    _args,
-                    _code
+                    _usdc,
+                    _oracle,
+                    _homeFactory,
+                    _homeChainId,
+                    _isOracleChain
+                ),
+                type(RequestContract).creationCode
+            );
+            // }
+        }
+        _instance = RequestFactory(_readAddress(_chainId, "RequestFactory"));
+    }
+
+    function _deployWrapperNFT(
+        uint256 _chainId,
+        address _usdc,
+        address _factory
+    ) public returns (WrappedNft _instance) {
+        bytes memory _args = abi.encode(_factory);
+        bytes memory _code = type(WrappedNft).creationCode;
+        address _implementation = address(0);
+        address _currectImplementation = _readAddress(_chainId, "WrappedNft");
+        if (_shouldDeploy(_chainId, "WrappedNft", _args, _code)) {
+            _implementation = address(new WrappedNft(_factory));
+            // if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
+            _writeDeploymentJson(
+                _chainId,
+                "WrappedNft",
+                _implementation,
+                _args,
+                _code
+            );
+            // }
+        }
+
+        if (_currectImplementation != _implementation) {
+            address _proxy = _readAddress(_chainId, "WrappedNftProxy");
+            if (_proxy == address(0)) {
+                // first time
+                _proxy = address(
+                    new ERC1967Proxy(
+                        _implementation,
+                        abi.encodeCall(WrappedNft.initialize, (address(_usdc)))
+                    )
                 );
+                // if (vm.isContext(VmSafe.ForgeContext.ScriptBroadcast)) {
                 _writeDeploymentJson(
                     _chainId,
-                    "RequestContract",
-                    _instance.implementation(),
-                    abi.encode(
-                        address(_instance),
-                        _usdc,
-                        _oracle,
-                        _homeFactory,
-                        _homeChainId,
-                        _isOracleChain
-                    ),
-                    type(RequestContract).creationCode
+                    "WrappedNftProxy",
+                    _proxy,
+                    abi.encode(),
+                    abi.encode()
+                );
+                // }
+            } else {
+                // another time, update implemetation
+                UUPSUpgradeable(_proxy).upgradeToAndCall(
+                    _implementation,
+                    abi.encodeCall(WrappedNft.initialize, (address(_usdc)))
                 );
             }
         }
-        _instance = RequestFactory(_readAddress(_chainId, "RequestFactory"));
+
+        _instance = WrappedNft(_readAddress(_chainId, "WrappedNftProxy"));
     }
 }

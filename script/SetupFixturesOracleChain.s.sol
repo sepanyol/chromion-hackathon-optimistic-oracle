@@ -3,10 +3,12 @@ pragma solidity 0.8.24;
 
 import "./BaseScript.sol";
 
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOracleCoordinator} from "../src/interfaces/IOracleCoordinator.sol";
 import {IRequestFactory} from "../src/interfaces/IRequestFactory.sol";
 import {RequestTypes} from "../src/types/RequestTypes.sol";
+import {WrappedNft} from "../src/WrappedNft.sol";
 
 contract SetupFixturesOracleChain is BaseScript {
     uint256 public constant REWARD_AMOUNT = 5e6;
@@ -18,7 +20,7 @@ contract SetupFixturesOracleChain is BaseScript {
         RequestTypes.RequestParams({
             requester: abi.encode(address(0)),
             answerType: RequestTypes.AnswerType.Bool,
-            challengeWindow: 600,
+            challengeWindow: 300,
             rewardAmount: 5e6,
             question: "Question",
             context: "Context",
@@ -48,11 +50,11 @@ contract SetupFixturesOracleChain is BaseScript {
 
     function setUpFixtures_localfork() public {
         fixtures_Prepare();
-        // fixtures_Open();
-        // fixtures_Proposed();
-        // fixtures_Challenged();
-        // fixtures_ChallengedReviewFor();
-        // fixtures_ChallengedReviewAgainst();
+        fixtures_Open();
+        fixtures_Proposed();
+        fixtures_Challenged();
+        fixtures_ChallengedReviewFor();
+        fixtures_ChallengedReviewAgainst();
     }
 
     function fixtures_Prepare() public {

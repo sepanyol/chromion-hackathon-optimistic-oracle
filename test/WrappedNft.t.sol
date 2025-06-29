@@ -8,9 +8,11 @@ import {IRequestFactory} from "./../src/interfaces/IRequestFactory.sol";
 import {IBaseRequestContract} from "./../src/interfaces/IBaseRequestContract.sol";
 import {WrappedNft} from "./../src/WrappedNft.sol";
 
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {RequestTypes} from "./../src/types/RequestTypes.sol";
 import {MockUSDC} from "./../src/mocks/MockUSDC.sol";
+import {Upgrades, Options} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract MyERC721 is ERC721 {
     constructor() ERC721("Original NFT", "ONFT") {}
@@ -36,8 +38,14 @@ contract WrappedNftTest is Test {
         mockUSDC = new MockUSDC();
         mockUSDC.mint(_buyer, _expectedPrice * 2);
 
-        _nft = new WrappedNft(_factory);
-        _nft.initialize(address(mockUSDC));
+        address _implementation = address(new WrappedNft(_factory));
+        address _proxy = address(
+            new ERC1967Proxy(
+                _implementation,
+                abi.encodeCall(WrappedNft.initialize, (address(mockUSDC)))
+            )
+        );
+        _nft = WrappedNft(_proxy);
 
         _originalNFT = new MyERC721();
         _originalNFT.mint(_originNftOwner, 1);
@@ -383,9 +391,8 @@ contract WrappedNftTest is Test {
         _nft.evaluate(_newNftId, "Test evaluation context");
         _nft.acceptProposedEvaluation(_newNftId);
 
-        (, uint256 price, , , address activeRequest, ) = _nft.additionalData(
-            _newNftId
-        );
+        (, uint256 price, , , , ) = _nft.additionalData(_newNftId);
+
         _nft.getPrice(_newNftId);
         assertEq(price, _expectedPrice);
         vm.stopPrank();

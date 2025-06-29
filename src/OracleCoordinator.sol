@@ -31,7 +31,8 @@ contract OracleCoordinator is
     bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
     /// @dev Duration in seconds for which a review phase is open
-    uint256 public constant REVIEW_WINDOW = 1 days;
+    // uint256 public constant REVIEW_WINDOW = 1 days;
+    uint256 public constant REVIEW_WINDOW = 5 minutes; // TODO revert this, only for testing
 
     /// @dev Bond amount in USDC required to submit a proposal
     uint256 public constant PROPOSER_BOND = 100e6;

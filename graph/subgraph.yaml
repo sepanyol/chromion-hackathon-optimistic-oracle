@@ -8,9 +8,9 @@ dataSources:
     name: OracleCoordinator
     network: fuji
     source:
-      address: "0x4174c9a43DAcC5CEAAc214aCeeB1fEc22919cBe3"
+      address: "0x75b9F569102FA84BfA7495a008C221bbc7132B83"
       abi: OracleCoordinator
-      startBlock: 42560007
+      startBlock: 42678147
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -52,7 +52,7 @@ dataSources:
     source:
       address: "0xA70Fffa215348afBB607BB85DC9f9D43D2039c1a"
       abi: RequestScoringRegistry
-      startBlock: 42560007
+      startBlock: 42678147
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9

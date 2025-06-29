@@ -47,11 +47,19 @@ contract WrappedNft is
         uint256 price
     );
 
-    event ProposedEvaluationAccepted(address indexed request, uint256 nftid, address indexed caller, uint256 price);
-    event EvaluatioNRequest(address indexed requestAddress, string _context, uint256 _wNftId);
+    event ProposedEvaluationAccepted(
+        address indexed request,
+        uint256 nftid,
+        address indexed caller,
+        uint256 price
+    );
+    event EvaluatioNRequest(
+        address indexed requestAddress,
+        string _context,
+        uint256 _wNftId
+    );
     event NftNowActiveForSale(uint256 wrappedNftId);
-    event NftNowInactiveForSale(uint256 wrappedNftId) ;
-    
+    event NftNowInactiveForSale(uint256 wrappedNftId);
 
     struct AdditionalData {
         uint256 originId;
@@ -68,20 +76,20 @@ contract WrappedNft is
         address request;
     }
 
-    
     uint256 private wNftId;
 
     mapping(uint256 => AdditionalData) public additionalData;
 
     constructor(address _requestFactory) {
         requestFactory = _requestFactory;
+        _disableInitializers();
     }
 
     function initialize(address _usdc) public initializer {
         __ERC721_init("Wrapped NFT", "WNFT");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
-        usdc = IERC20(_usdc);   
+        usdc = IERC20(_usdc);
     }
 
     function deposit(
@@ -196,8 +204,13 @@ contract WrappedNft is
         additionalData[_wNftId].lastEvaluationTime = block.timestamp;
         address _requestId = additionalData[_wNftId].activeRequest;
         additionalData[_wNftId].activeRequest = address(0);
-    
-        emit ProposedEvaluationAccepted(_requestId, _wNftId, msg.sender, additionalData[_wNftId].price);
+
+        emit ProposedEvaluationAccepted(
+            _requestId,
+            _wNftId,
+            msg.sender,
+            additionalData[_wNftId].price
+        );
     }
 
     function updateOpenToBuyerSaleStatus(
@@ -216,10 +229,10 @@ contract WrappedNft is
         );
         additionalData[_wNftId].openToBuyer = _status;
 
-        if(_status) {
+        if (_status) {
             emit NftNowActiveForSale(_wNftId);
         } else {
-            emit NftNowInactiveForSale(_wNftId) ;
+            emit NftNowInactiveForSale(_wNftId);
         }
     }
 
@@ -231,8 +244,6 @@ contract WrappedNft is
     function getRequestInfo(
         uint256 _wNftId
     ) external view returns (RequestInfo memory _requestInfo) {
-
-
         address _request = additionalData[_wNftId].activeRequest;
 
         if (_request != address(0)) {
@@ -265,10 +276,8 @@ contract WrappedNft is
         _burn(_wNftId);
         delete additionalData[_wNftId];
 
-        
         IERC721(originNFT).transferFrom(address(this), msg.sender, originId);
 
-        
         emit NftBought(msg.sender, _wNftId, originId, price);
     }
 
@@ -284,4 +293,3 @@ contract WrappedNft is
         address newImplementation
     ) internal override onlyOwner {}
 }
-
