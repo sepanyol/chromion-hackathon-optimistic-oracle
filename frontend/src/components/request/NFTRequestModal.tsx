@@ -84,10 +84,11 @@ const NFTRequestModal: React.FC<NFTRequestModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Create New Request
+              Evaluate your Real World Asset (RWA)
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Create a new request for the oracle network
+              Create a new inquiry for the oracle network to evaluate the
+              worthiness of your RWA
             </p>
           </div>
           <button
@@ -151,7 +152,7 @@ const NFTRequestModal: React.FC<NFTRequestModalProps> = ({
               </div>
             </div>
 
-            {createContext.state.isSubmitting && (
+            {isSubmitting && (
               <div className="absolute inset-0 bg-white/80 -m-1 z-[60]"></div>
             )}
           </div>
