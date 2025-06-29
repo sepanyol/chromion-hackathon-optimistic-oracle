@@ -308,19 +308,25 @@ export const CreateNFTWrapper = () => {
   }, [waitForEvaluateTX.isSuccess, waitForEvaluateTX.error]);
 
   return (
-    <div className="w-full flex flex-col items-center justify-center p-8 gap-6">
-      <span>
-        You've a tokenized asset and don't know what its wort? Check Equolibrium
-        Optimistic Oracle
-      </span>
-      <div>
-        <Button
-          onClick={() => {
-            createRequest.dispatch({ type: ActionTypes.OpenModal });
-          }}
-        >
-          What's my RWA worth?
-        </Button>
+    <>
+      <div className="w-full flex flex-col items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full">
+          <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-4 lg:gap-0 lg:flex-row items-center justify-between">
+            <span>
+              You've a tokenized asset and don't know what its wort? Check
+              Equolibrium Optimistic Oracle
+            </span>
+            <div>
+              <Button
+                onClick={() => {
+                  createRequest.dispatch({ type: ActionTypes.OpenModal });
+                }}
+              >
+                What's my RWA worth?
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
       {createRequest.state.isSubmitting && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-60">
@@ -372,6 +378,6 @@ export const CreateNFTWrapper = () => {
         </div>
       )}
       <CreateRequest />
-    </div>
+    </>
   );
 };

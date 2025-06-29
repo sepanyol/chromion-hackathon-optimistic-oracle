@@ -20,7 +20,7 @@ export const Main = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div> */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-4 flex flex-col gap-6">
               <CreateNFTWrapper />
               <MyValuations />
               <MyTokens />
