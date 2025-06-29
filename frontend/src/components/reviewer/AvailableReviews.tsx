@@ -12,12 +12,17 @@ import { useAccount } from "wagmi";
 import { isSameAddress } from "@/utils/addresses";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isInvolvedInRequest } from "@/utils/helpers";
+import { Address } from "viem";
 
 type AvailableReviewsProps = {
   reviews: AvailableReviewsType[];
+  requestId?: Address;
 };
 
-export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
+export const AvailableReviews = ({
+  reviews,
+  requestId,
+}: AvailableReviewsProps) => {
   const { address: accountAddress } = useAccount();
 
   return (
@@ -102,6 +107,7 @@ export const AvailableReviews = ({ reviews }: AvailableReviewsProps) => {
                           "No reviews yet. Be the first!"
                         ) : (
                           <ReviewBar
+                            requestId={requestId}
                             challengeVotes={review.votesFor}
                             proposalVotes={review.votesAgainst}
                           />

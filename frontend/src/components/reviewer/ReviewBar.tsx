@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { Loader } from "../Loader";
 
 type ReviewBarType = {
-  requestId: Address;
+  requestId?: Address;
   proposalVotes: number;
   challengeVotes: number;
   showWinner?: boolean;
@@ -29,12 +29,13 @@ export const ReviewBar = ({
 
   const { data: isClaimable, refetch } = useIsClaimable({
     account: address!,
-    request: requestId,
+    request: requestId!,
+    enabled: showWinner && !!requestId,
   });
 
   const claimReward = useClaimReward({
-    request: requestId,
-    enabled: !!isClaimable && isHex(requestId),
+    request: requestId!,
+    enabled: showWinner && !!isClaimable && isHex(requestId),
   });
 
   const waitForClaim = useWaitForTransactionReceipt({
