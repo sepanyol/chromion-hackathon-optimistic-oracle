@@ -6,6 +6,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {MockUSDC} from "./mocks/MockUSDC.sol";
 
 import {IRequestFactory, RequestTypes} from "./interfaces/IRequestFactory.sol";
@@ -172,9 +173,9 @@ contract WrappedNft is
                 rewardAmount: REWARD,
                 question: string.concat(
                     "What the value of the NFT (",
-                    string(abi.encodePacked(address(this))),
+                    Strings.toHexString(address(this)),
                     ") with ID ",
-                    string(abi.encode(_wNftId))
+                    Strings.toString(_wNftId)
                 ),
                 context: _context,
                 truthMeaning: "",
