@@ -160,6 +160,7 @@ contract WrappedNft is
 
         // transfer reward to wrapped nft contract in order to send to factory
         require(usdc.transferFrom(msg.sender, address(this), REWARD));
+        require(usdc.approve(requestFactory, REWARD));
 
         address requestAddress = IRequestFactory(requestFactory).createRequest(
             RequestTypes.RequestParams({
