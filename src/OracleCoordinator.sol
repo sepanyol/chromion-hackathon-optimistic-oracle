@@ -363,13 +363,15 @@ contract OracleCoordinator is
 
                 _platformShare =
                     (_rewardAmount - _proposerShare) + // ~10% from reward for platform
-                    (_reviewersAmount -
-                        _reviewersShare +
-                        (_reviewersShare % _challenge.votesAgainst)); // ~10% from reviewers for platform + dust
+                    (_reviewersAmount - _reviewersShare); // ~10% from reviewers for platform
 
-                reviewerClaimAmount[_request] =
-                    (_reviewersShare / _challenge.votesAgainst) +
-                    REVIEWER_BOND;
+                reviewerClaimAmount[_request] = REVIEWER_BOND;
+                if (_challenge.votesAgainst > 0) {
+                    _platformShare += _reviewersShare % _challenge.votesAgainst; //  + dust
+                    reviewerClaimAmount[_request] +=
+                        _reviewersShare /
+                        _challenge.votesAgainst;
+                }
 
                 emit BondRefunded(_request, _proposal.proposer, PROPOSER_BOND);
                 emit RewardDistributed(

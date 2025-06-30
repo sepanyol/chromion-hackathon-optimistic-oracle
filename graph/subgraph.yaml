@@ -8,9 +8,9 @@ dataSources:
     name: OracleCoordinator
     network: fuji
     source:
-      address: "0x75b9F569102FA84BfA7495a008C221bbc7132B83"
+      address: "0x38AdC8e94D9D36371B76AECe6b9e42997C786790"
       abi: OracleCoordinator
-      startBlock: 42678147
+      startBlock: 42723366
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -52,7 +52,7 @@ dataSources:
     source:
       address: "0xA70Fffa215348afBB607BB85DC9f9D43D2039c1a"
       abi: RequestScoringRegistry
-      startBlock: 42678147
+      startBlock: 42723366
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -75,7 +75,7 @@ dataSources:
     source:
       address: "0x5008850991F83590717cC6aA148EafF1DDcbf18F"
       abi: WrappedNft
-      startBlock: 42678151
+      startBlock: 42723366
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
