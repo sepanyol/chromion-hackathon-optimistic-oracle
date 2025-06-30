@@ -7,7 +7,6 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -72,10 +71,9 @@ const HomePage: React.FC = () => {
   ];
 
   const stats = [
-    { number: "12.8K+", label: "Total Requests" },
-    { number: "97.8%", label: "Success Rate" },
-    { number: "1.2M+", label: "USDC Distributed" },
-    { number: "850+", label: "Active Oracles" },
+    { number: "12.8K+", label: "Total Requests (demo)" },
+    { number: "97.8%", label: "Success Rate (demo)" },
+    { number: "1.2M+", label: "USDC Distributed (demo)" },
   ];
 
   return (
@@ -124,20 +122,21 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="text-center">
             <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Decentralized Oracle
+              Democratized <br />
+              Optimistic Oracle
               <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Network
+                for Real World Assets
               </span>
             </h1>
             <p className="text-xl lg:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
               Get verified, real-world data on-chain through our
-              community-driven oracle network. Request anything from stock
-              prices to real estate valuations with guaranteed accuracy.
+              community-driven oracle network. Request anything, from stock
+              prices to real estate valuations with accuracy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/dashboard"
-                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl flex items-center space-x-2 group"
+                className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl flex items-center space-x-2 group"
               >
                 <span>Start Using Equolibrium</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -150,10 +149,10 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Background decoration */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-full opacity-10">
+        {/* <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-full opacity-10">
           <div className="absolute top-20 left-1/4 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
           <div className="absolute top-40 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
-        </div>
+        </div> */}
       </section>
 
       {/* Stats Section */}
@@ -162,7 +161,7 @@ const HomePage: React.FC = () => {
         className="bg-gradient-to-r from-blue-600 to-blue-700 py-16"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <StatItem key={index} {...stat} />
             ))}
@@ -213,7 +212,7 @@ const HomePage: React.FC = () => {
               </h3>
               <p className="text-gray-600 text-lg">
                 Submit your data request with a reward. Specify exactly what
-                information you need and when you need it.
+                information you need.
               </p>
             </div>
 
@@ -225,8 +224,8 @@ const HomePage: React.FC = () => {
                 Oracle Response
               </h3>
               <p className="text-gray-600 text-lg">
-                Network oracles compete to provide accurate data. The community
-                can challenge incorrect submissions.
+                Oracles compete to provide accurate data. The community can
+                challenge and dispute incorrect submissions.
               </p>
             </div>
 
@@ -253,7 +252,7 @@ const HomePage: React.FC = () => {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-blue-100 mb-10">
-            Join thousands of developers and protocols already using Equolibrium
+            Join hundreds of developers and protocols already using Equolibrium
             for reliable outcomes.
           </p>
           <Link
@@ -275,15 +274,18 @@ const HomePage: React.FC = () => {
                 <span className="text-xl font-bold">Equolibrium</span>
               </div>
               <p className="text-gray-400 max-w-md">
-                Decentralized oracle network providing verified real-world data
-                to blockchain applications.
+                Democratized optimistic oracle providing verified real-world
+                data to blockchain applications.
               </p>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors">
+                  <a
+                    href="/dashboard"
+                    className="hover:text-white transition-colors"
+                  >
                     Dashboard
                   </a>
                 </li>
