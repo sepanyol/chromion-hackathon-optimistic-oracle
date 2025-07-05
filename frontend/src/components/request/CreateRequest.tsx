@@ -2,7 +2,6 @@ import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
-import { TransactionExecutionError } from "viem";
 import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
 import NFTRequestModal from "./NFTRequestModal";
 import RequestModal from "./RequestModal";
@@ -18,41 +17,24 @@ export const CreateRequest = () => {
   const handleOnSubmit = () => {
     if (!state.isSubmitEnabled) return;
     dispatch({ type: ActionTypes.EnableSubmitting });
-    createRequest.initiate();
+    createRequest.run();
   };
 
   useEffect(() => {
-    if (!createRequest.execute.execution.isSuccess) return;
+    if (!createRequest.isSuccess) return;
+
+    toast.success(`Successfully create your request`, { delay: 6000 });
     setTimeout(() => {
       router.refresh();
       dispatch({ type: ActionTypes.Reset });
     }, 6000);
-  }, [createRequest.execute.execution.isSuccess]);
+  }, [createRequest.isSuccess]);
 
   useEffect(() => {
-    if (createRequest.approval.execution.error) {
-      dispatch({ type: ActionTypes.DisableSubmitting });
-      toast.error(
-        `Error: ${
-          (createRequest.approval.execution.error as TransactionExecutionError)
-            .shortMessage
-        }`
-      );
-    }
-
-    if (createRequest.execute.execution.error) {
-      dispatch({ type: ActionTypes.DisableSubmitting });
-      toast.error(
-        `Error: ${
-          (createRequest.execute.execution.error as TransactionExecutionError)
-            .shortMessage
-        }`
-      );
-    }
-  }, [
-    createRequest.approval.execution.error,
-    createRequest.approval.execution.error,
-  ]);
+    if (!createRequest.isError && !createRequest.error) return;
+    dispatch({ type: ActionTypes.DisableSubmitting });
+    toast.error(`Error: ${createRequest.error}`);
+  }, [createRequest.error, createRequest.isError]);
 
   if (!state.isModalOpen) return <></>;
 

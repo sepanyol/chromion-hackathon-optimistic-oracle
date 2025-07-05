@@ -5,9 +5,7 @@ import { ColoredTile } from "@/components/ColoredTile";
 import { Loader } from "@/components/Loader";
 import { RequestDetails } from "@/components/request-details/RequestDetails";
 import { useRequestContext } from "@/components/RequestProvider";
-import { useExecuteFunction } from "@/hooks/onchain/useExecuteFunction";
 import { useGetProposal } from "@/hooks/onchain/useGetProposal";
-import { useTokenApproval } from "@/hooks/onchain/useTokenApproval";
 import { useRequestForProposal } from "@/hooks/useRequestForProposal";
 import { useUserProposer } from "@/hooks/useUserProposer";
 import { isSameAddress } from "@/utils/addresses";
@@ -15,34 +13,32 @@ import { defaultChain } from "@/utils/appkit/context";
 import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { getReadableRequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
+import {
+  useEvmClients,
+  useEvmTransactionFlow,
+} from "@s3panyol/use-evm-transaction-flow";
 import { isBoolean, isUndefined } from "lodash";
 import { CheckCircle } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
   Abi,
-  Address,
   formatUnits,
   hexToBigInt,
   hexToBool,
-  isHex,
   parseUnits,
   toHex,
-  TransactionExecutionError,
 } from "viem";
-import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { SolverBool } from "./SolverBool";
 import { SolverValue } from "./SolverValue";
 
 export const SolverRequestDetails = () => {
   const { requestId } = useRequestContext();
-  const { address: accountAddress, chainId } = useAccount();
+  const { account: accountAddress } = useEvmClients();
 
   const [proposalValue, setProposalValue] = useState<any>(null);
   const [proposalValueComputed, setProposalValueComputed] = useState<string>();
   const [proposalValueValid, setProposalValueValid] = useState(false);
-  const [txHashApproval, setTxHashApproval] = useState<Address | undefined>();
-  const [txHashPropose, setTxHashPropose] = useState<Address | undefined>();
 
   const {
     data: proposal,
@@ -64,34 +60,16 @@ export const SolverRequestDetails = () => {
     refetch,
   } = useRequestForProposal(requestId);
 
-  const tokenAddress = getUSDCByChainId(defaultChain.id);
   const oracleAddress = getOracleByChainId(defaultChain.id);
-
-  const approval = useTokenApproval({
-    address: tokenAddress,
-    spender: oracleAddress!,
-    amount: BigInt(parseUnits("100", 6)),
-    chainId: chainId!,
-  });
-
-  const waitForApproval = useWaitForTransactionReceipt({
-    hash: txHashApproval,
-    query: { enabled: !!txHashApproval },
-  });
-
-  const execute = useExecuteFunction({
+  const proposeAnswer = useEvmTransactionFlow({
     abi: oracleAbi as Abi,
-    address: oracleAddress!,
-    functionName: "proposeAnswer",
     args: [requestId, proposalValueComputed],
-    chainId: chainId!,
-    eventNames: ["AnswerProposed"],
-    enabled: isHex(requestId) && isHex(proposalValueComputed),
-  });
-
-  const waitForProposal = useWaitForTransactionReceipt({
-    hash: txHashPropose,
-    query: { enabled: !!txHashPropose },
+    contractAddress: oracleAddress!,
+    functionName: "proposeAnswer",
+    tokenAddress: getUSDCByChainId(defaultChain.id),
+    tokenType: "ERC20",
+    amount: BigInt(parseUnits("100", 6)),
+    spender: oracleAddress,
   });
 
   useEffect(() => {
@@ -124,62 +102,25 @@ export const SolverRequestDetails = () => {
     };
   }, [proposalValue]);
 
-  const handleSubmitProposal = useCallback(() => {
-    if (!request || !approval.isReady || !approval.isEnabled) {
+  const handleSubmitProposal = () => {
+    if (!request) {
       console.log("error handleSubmitProposal");
       return;
     }
-
-    approval.write();
-  }, [request, approval.isReady, approval.isEnabled]);
-
-  useEffect(() => {
-    if (!approval.hash) return;
-    setTxHashApproval(approval.hash);
-  }, [approval.hash]);
+    proposeAnswer.run();
+  };
 
   useEffect(() => {
-    if (!execute.isEnabled || !execute.isReady || !waitForApproval.isSuccess)
-      return;
-
-    if (waitForApproval.isSuccess) {
-      setTxHashApproval(undefined);
-      console.log("lets go");
-      execute.write();
-    }
-  }, [execute.isEnabled, execute.isReady, waitForApproval.isSuccess]);
-
-  useEffect(() => {
-    if (!execute.hash) return;
-    setTxHashPropose(execute.hash);
-  }, [execute.hash]);
-
-  useEffect(() => {
-    if (!waitForProposal.isSuccess) return;
-
-    setTxHashPropose(undefined);
+    if (!proposeAnswer.isSuccess) return;
     refetch();
     refetchProposal();
     toast.success("Successfully proposed an answer");
-  }, [waitForProposal.isSuccess]);
+  }, [proposeAnswer.isSuccess]);
 
   useEffect(() => {
-    if (!approval.execution.error) return;
-    toast.error(
-      `Error: ${
-        (approval.execution.error as TransactionExecutionError).shortMessage
-      }`
-    );
-  }, [approval.execution.error]);
-
-  useEffect(() => {
-    if (!execute.execution.error) return;
-    toast.error(
-      `Error: ${
-        (execute.execution.error as TransactionExecutionError).shortMessage
-      }`
-    );
-  }, [execute.execution.error]);
+    if (!proposeAnswer.isError && !proposeAnswer.error) return;
+    toast.error(`Error: ${proposeAnswer.error}`);
+  }, [proposeAnswer.error, proposeAnswer.isError]);
 
   return (
     <div className="grid grid-cols-4 gap-8">
@@ -281,25 +222,25 @@ export const SolverRequestDetails = () => {
                         <Button
                           disabled={
                             !proposalValueValid ||
-                            waitForApproval.isLoading ||
-                            waitForProposal.isLoading ||
-                            approval.execution.isPending ||
-                            execute.execution.isPending
+                            proposeAnswer.isExecuting ||
+                            proposeAnswer.isWaitingForApproval ||
+                            proposeAnswer.isWaitingForApprovalTxConfirmation ||
+                            proposeAnswer.isWaitingForExecutionTxConfirmation
                           }
                           onClick={handleSubmitProposal}
                           className="flex gap-2"
                         >
-                          {approval.execution.isPending &&
+                          {proposeAnswer.isWaitingForApproval &&
                             "Confirm approval in your wallet..."}
-                          {execute.execution.isPending &&
+                          {proposeAnswer.isExecuting &&
                             "Confirm proposing answer in your wallet..."}
-                          {(waitForApproval.isLoading ||
-                            waitForProposal.isLoading) &&
-                            "Finishing transaction..."}
-                          {!waitForApproval.isLoading &&
-                            !waitForProposal.isLoading &&
-                            !approval.execution.isPending &&
-                            !execute.execution.isPending &&
+                          {(proposeAnswer.isWaitingForApprovalTxConfirmation ||
+                            proposeAnswer.isWaitingForExecutionTxConfirmation) &&
+                            "Waiting for transaction..."}
+                          {!proposeAnswer.isExecuting &&
+                            !proposeAnswer.isWaitingForApproval &&
+                            !proposeAnswer.isWaitingForApprovalTxConfirmation &&
+                            !proposeAnswer.isWaitingForExecutionTxConfirmation &&
                             "Submit proposal"}
                         </Button>
                       </>

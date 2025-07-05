@@ -15,6 +15,11 @@ export const urqlClient = (url: string) => {
   clientCache[url] = new Client({
     url: url,
     exchanges: [cacheExchange, fetchExchange],
+    fetchOptions: {
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUBGRAPH_API_KEY}`,
+      },
+    },
   });
 
   return clientCache[url];

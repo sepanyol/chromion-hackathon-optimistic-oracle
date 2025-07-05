@@ -4,6 +4,11 @@ import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { Address, pad, toHex } from "viem";
 import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
+import {
+  useEvmClients,
+  useEvmTransactionFlow,
+} from "@s3panyol/use-evm-transaction-flow";
+
 export type CreateNFTRequestParams = {
   context: string;
   originId: bigint;
@@ -58,31 +63,21 @@ export const useCreateRequest = ({
   params,
   onEventMatch,
 }: useCreateRequestProps) => {
-  const { address } = useAppKitAccount();
-  const { chainId } = useAppKitNetwork();
+  const { account: address, walletClient } = useEvmClients();
 
   // mandatory
-  if (params) params.requester = pad(address as Address);
+  if (params && address) params.requester = pad(address as Address);
 
-  return useExecuteFunctionWithTokenTransfer({
-    address: getFactoryByChainId(Number(chainId)),
+  const factoryAddress = getFactoryByChainId(Number(walletClient?.chain.id));
+  const tokenAddress = getUSDCByChainId(Number(walletClient?.chain.id));
+  return useEvmTransactionFlow({
     abi: abi as any,
-    account: address as Address,
-    functionName: "createRequest",
     args: [params],
-    chainId: Number(chainId),
-    eventNames: ["RequestCreated"],
-    transferToken: getUSDCByChainId(Number(chainId)),
-    transferAmount: params ? BigInt(Number(params?.rewardAmount)) : BigInt(0),
-    enabled: Boolean(
-      params &&
-        params.requester &&
-        params.question &&
-        params.context &&
-        params.challengeWindow > 0 &&
-        params.rewardAmount > 0 &&
-        (params.answerType === 0 || params.answerType === 1) // TODO make nice
-    ),
-    ...(onEventMatch ? { onEventMatch } : {}),
+    contractAddress: factoryAddress,
+    functionName: "createRequest",
+    tokenAddress,
+    tokenType: "ERC20",
+    amount: params ? BigInt(Number(params?.rewardAmount)) : BigInt(0),
+    spender: factoryAddress,
   });
 };
