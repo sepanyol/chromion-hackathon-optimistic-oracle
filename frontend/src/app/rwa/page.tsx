@@ -1,3 +1,4 @@
+"use client";
 import Navbar from "@/components/Navbar";
 import { Main } from "@/components/rwa/Main";
 import React from "react";

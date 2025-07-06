@@ -5,6 +5,7 @@ type RequestTokenAddressProps = {
   tokenName?: string;
   tokenSymbol?: string;
   error?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 };
 export const RequestTokenAddress = ({
@@ -13,6 +14,7 @@ export const RequestTokenAddress = ({
   tokenSymbol,
   error,
   onChange,
+  disabled = false,
 }: RequestTokenAddressProps) => {
   return (
     <>
@@ -22,6 +24,7 @@ export const RequestTokenAddress = ({
         </label>
         <input
           type="text"
+          disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0x"

@@ -29,6 +29,7 @@ export type CreateRequestType = {
   nftDepositTxHash: Address | null;
   nftEvaluateTxHash: Address | null;
   nftIdForWrapping: number | null;
+  isOnlyContextField: boolean;
 };
 
 const initialState: CreateRequestType = {
@@ -49,6 +50,7 @@ const initialState: CreateRequestType = {
   nftDepositTxHash: null,
   nftEvaluateTxHash: null,
   nftIdForWrapping: null,
+  isOnlyContextField: false,
 };
 
 export enum ActionTypes {
@@ -86,6 +88,9 @@ export enum ActionTypes {
   UnsetNftEvaluateTxHash = "UNSET_NFT_EVALUATE_TX_HASH",
   SetNftIdForWrapping = "SET_NFT_ID_FOR_WRAPPING",
   UnsetNftIdForWrapping = "UNSET_NFT_ID_FOR_WRAPPING",
+
+  EnableOnlyContextField = "ENABLE_ONLY_CONTEXT_FIELD",
+  DisableOnlyContextField = "DISABLE_ONLY_CONTEXT_FIELD",
 
   Reset = "RESET",
   ResetNFT = "RESET_NFT",
@@ -140,6 +145,9 @@ type CreateRequestActionPayloads = {
   };
   [ActionTypes.UnsetNftIdForWrapping]: undefined;
 
+  [ActionTypes.EnableOnlyContextField]: undefined;
+  [ActionTypes.DisableOnlyContextField]: undefined;
+
   [ActionTypes.Reset]: undefined;
   [ActionTypes.ResetNFT]: undefined;
 };
@@ -190,9 +198,10 @@ const reducer = (
         ...state,
         nftParams: { context, originId, originNFT },
         isSubmitEnabled:
-          !!context.trim() &&
-          originId > BigInt(0) &&
-          isAddress(originNFT, { strict: false }),
+          (state.isOnlyContextField && !!context.trim()) ||
+          (!!context.trim() &&
+            originId > BigInt(0) &&
+            isAddress(originNFT, { strict: false })),
       };
     }
 
@@ -292,6 +301,19 @@ const reducer = (
       return {
         ...state,
         nftIdForWrapping: null,
+      };
+    }
+
+    case ActionTypes.EnableOnlyContextField: {
+      return {
+        ...state,
+        isOnlyContextField: true,
+      };
+    }
+    case ActionTypes.DisableOnlyContextField: {
+      return {
+        ...state,
+        isOnlyContextField: false,
       };
     }
 

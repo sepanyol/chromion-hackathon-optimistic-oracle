@@ -1,19 +1,18 @@
 "use client";
 import wrapperAbi from "@/abis/wrapper.json";
-import { useERC721Approval } from "@/hooks/onchain/useERC721Approval";
-import { useEvaluateNFT } from "@/hooks/onchain/useEvaluateNFT";
 import { useGetNFTInfos } from "@/hooks/onchain/useGetNFTInfos";
 import { useGetNFTOwnerOf } from "@/hooks/onchain/useGetNFTOwnerOf";
-import { useMintNFT } from "@/hooks/onchain/useMintNFT";
-import { useTokenApproval } from "@/hooks/onchain/useTokenApproval";
 import { isSameAddress } from "@/utils/addresses";
 import { getNFTWrapperByChainId, getUSDCByChainId } from "@/utils/contracts";
+import {
+  useEvmClients,
+  useEvmTransactionFlow,
+} from "@s3panyol/use-evm-transaction-flow";
 import { isEmpty } from "lodash";
 import { Check, Clock } from "lucide-react";
 import { useContext, useEffect } from "react";
 import { toast } from "react-toastify";
-import { Abi, Address, isHex, parseEventLogs } from "viem";
-import { useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { Abi, Address, parseEventLogs } from "viem";
 import { Button } from "../Button";
 import { Loader } from "../Loader";
 import { CreateRequest } from "../request/CreateRequest";
@@ -23,8 +22,9 @@ import {
 } from "../request/CreateRequestProvider";
 
 export const CreateNFTWrapper = () => {
-  const { address, chainId } = useAccount();
   const createRequest = useContext(CreateRequestContext);
+
+  const { account: address, walletClient, publicClient } = useEvmClients();
 
   const nftInfos = useGetNFTInfos({
     address: createRequest.state.nftParams?.originNFT!,
@@ -37,69 +37,47 @@ export const CreateNFTWrapper = () => {
       : undefined!,
   });
 
-  // approval for current NFT
-  const nftApproval = useERC721Approval({
-    address: createRequest.state.nftParams?.originNFT!,
-    chainId: chainId!,
-    id: createRequest.state.nftParams?.originId
-      ? BigInt(createRequest.state.nftParams?.originId!)
-      : undefined!,
-    spender: getNFTWrapperByChainId(chainId!),
+  // NFT Wrapping
+  const originNftAddress = createRequest.state.nftParams?.originNFT as Address;
+  const originNftId = BigInt(createRequest.state.nftParams?.originId || 0);
+  const wrapperAddress = getNFTWrapperByChainId(walletClient?.chain.id!);
+  const rewardAddress = getUSDCByChainId(walletClient?.chain.id!);
+
+  const nftWrap = useEvmTransactionFlow({
+    tokenType: "ERC721",
+    tokenAddress: originNftAddress,
+    tokenId: originNftId,
+    amount: BigInt(1),
+    spender: wrapperAddress,
+    abi: wrapperAbi as Abi,
+    functionName: "deposit",
+    // requireExplicitApproval: true, // TODO when it works, enable it
+    args: [originNftId, originNftAddress],
+    contractAddress: wrapperAddress,
   });
 
-  // approval for current NFT
-  const rewardApproval = useTokenApproval({
-    address: getUSDCByChainId(chainId!),
-    chainId: chainId!,
-    spender: getNFTWrapperByChainId(chainId!),
-    amount: BigInt(10e6), // TODO maybe read from wrapped nft contract constant or something
+  // NFT Valuation
+  const nftValuation = useEvmTransactionFlow({
+    tokenType: "ERC20",
+    tokenAddress: rewardAddress,
+    amount: BigInt(10e6),
+    spender: wrapperAddress,
+    abi: wrapperAbi as Abi,
+    functionName: "evaluate",
+    // requireExplicitApproval: true,
+    args: [
+      Number(createRequest.state.nftIdForWrapping),
+      createRequest.state.nftParams?.context!,
+    ],
+    contractAddress: wrapperAddress,
   });
 
-  // mint nft
-  const mintNFT = useMintNFT({
-    enabled:
-      !!createRequest.state.nftParams?.originId &&
-      !!createRequest.state.nftParams?.originNFT &&
-      createRequest.state.isSubmitting,
-    originId: Number(createRequest.state.nftParams?.originId),
-    originNFT: createRequest.state.nftParams?.originNFT as Address,
-  });
-
-  // evaluate nft
-  const evaluateNFT = useEvaluateNFT({
-    enabled: !!Number(createRequest.state.nftIdForWrapping),
-    nftId: Number(createRequest.state.nftIdForWrapping),
-    context: createRequest.state.nftParams?.context!,
-  });
-
-  const waitForApprovalTX = useWaitForTransactionReceipt({
-    chainId,
-    hash: createRequest.state.nftApprovalTxHash!,
-    query: { enabled: isHex(createRequest.state.nftApprovalTxHash) },
-  });
-
-  const waitForRewardApprovalTX = useWaitForTransactionReceipt({
-    chainId,
-    hash: createRequest.state.nftApprovalRewardTxHash!,
-    query: { enabled: isHex(createRequest.state.nftApprovalRewardTxHash) },
-  });
-
-  const waitForDepositTX = useWaitForTransactionReceipt({
-    chainId,
-    hash: createRequest.state.nftDepositTxHash!,
-    query: { enabled: isHex(createRequest.state.nftDepositTxHash) },
-  });
-
-  const waitForEvaluateTX = useWaitForTransactionReceipt({
-    chainId,
-    hash: createRequest.state.nftEvaluateTxHash!,
-    query: { enabled: isHex(createRequest.state.nftEvaluateTxHash) },
-  });
-
+  // init, set proper create form state
   useEffect(() => {
     createRequest.dispatch({ type: ActionTypes.EnableCreateTokenWrapper });
   }, []);
 
+  // form info, when token info was loaded properly
   useEffect(() => {
     if (!nftInfos.data) return;
 
@@ -112,6 +90,7 @@ export const CreateNFTWrapper = () => {
     });
   }, [nftInfos.data]);
 
+  // error handling of invalid input of token information by "owner"
   useEffect(() => {
     if (isEmpty(createRequest.state.nftParams?.originId)) {
       createRequest.dispatch({
@@ -143,167 +122,81 @@ export const CreateNFTWrapper = () => {
     createRequest.state.nftParams?.originId,
   ]);
 
-  /// WORKFLOW DEPOSIT
+  // Start flow
+  // 1. NFT Wrapping
   useEffect(() => {
-    if (createRequest.state.isSubmitting) {
-      // init approval
-      nftApproval.write();
-    }
-  }, [createRequest.state.isSubmitting]);
-
-  useEffect(() => {
-    if (!nftApproval.hash) return;
-    // set hash for monitoring recipe
-    console.log("Approval NFT Hash", nftApproval.hash);
-    createRequest.dispatch({
-      type: ActionTypes.SetNftApprovalTxHash,
-      payload: { txHash: nftApproval.hash },
-    });
-  }, [nftApproval.hash]);
-
-  // when approve is finished, start minting
-  useEffect(() => {
-    if (waitForApprovalTX.isSuccess) {
-      createRequest.dispatch({
-        type: ActionTypes.UnsetNftApprovalTxHash,
-      });
-      console.log("Successfully waited for nft approval");
-      console.log("Start approval for reward");
-      rewardApproval.write();
-    }
-
-    if (waitForApprovalTX.error)
-      toast.error(`ERROR: ${waitForApprovalTX.error}`);
+    if (
+      createRequest.state.isSubmitting &&
+      createRequest.state.isCreateTokenWrapperEnabled
+    )
+      nftWrap.run();
   }, [
-    waitForApprovalTX.data,
-    waitForApprovalTX.isSuccess,
-    waitForApprovalTX.error,
+    createRequest.state.isSubmitting,
+    createRequest.state.isCreateTokenWrapperEnabled,
   ]);
 
-  // when nft approval is done, do reward approval
+  // 2. NFT Valuation
   useEffect(() => {
-    if (!rewardApproval.hash) return;
-    // set hash for monitoring recipe
-    console.log("Approval Reward Hash", rewardApproval.hash);
-    createRequest.dispatch({
-      type: ActionTypes.SetNftApprovalRewardTxHash,
-      payload: { txHash: rewardApproval.hash },
-    });
-  }, [rewardApproval.hash]);
-
-  // when reward approval is finished, start minting
-  useEffect(() => {
-    if (waitForRewardApprovalTX.isSuccess) {
-      createRequest.dispatch({
-        type: ActionTypes.UnsetNftApprovalRewardTxHash,
-      });
-      console.log("Successfully waited for reward approval");
-      console.log("Start minting");
-      mintNFT.write();
-    }
-
-    if (waitForRewardApprovalTX.error)
-      toast.error(`ERROR: ${waitForRewardApprovalTX.error}`);
+    // started from process
+    if (
+      nftWrap.isSuccess &&
+      nftValuation.isReady &&
+      createRequest.state.nftIdForWrapping
+    )
+      nftValuation.run();
   }, [
-    waitForRewardApprovalTX.data,
-    waitForRewardApprovalTX.isSuccess,
-    waitForRewardApprovalTX.error,
+    nftWrap.isSuccess,
+    nftValuation.isReady,
+    createRequest.state.nftIdForWrapping,
   ]);
 
-  // start wait for minting hash
+  // error handling
   useEffect(() => {
-    if (!mintNFT.hash) return;
-    // set hash for monitoring recipe
-    console.log("Minting Hash", mintNFT.hash);
-    createRequest.dispatch({
-      type: ActionTypes.SetNftDepositTxHash,
-      payload: { txHash: mintNFT.hash },
-    });
-  }, [mintNFT.hash]);
+    if (nftWrap.error) {
+      toast.error(`ERROR: ${nftWrap.error}`, { toastId: "wrapError" });
+    } else if (nftValuation.error) {
+      toast.error(`ERROR: ${nftValuation.error}`, { toastId: "valuateError" });
+    }
+  }, [nftWrap.error, nftValuation.error]);
 
   // when minting is done, set new nft id
   useEffect(() => {
-    if (waitForDepositTX.isSuccess) {
-      createRequest.dispatch({
-        type: ActionTypes.UnsetNftDepositTxHash,
-      });
-
-      console.log("Successfully waited for minting");
-      console.log("Check logs for new nft id");
-
-      const logs = parseEventLogs({
-        abi: wrapperAbi as Abi,
-        logs: waitForDepositTX.data.logs,
-      });
-
-      const depositedLog = logs.find((log) => log.eventName == "DepositedNft");
-
-      if (!depositedLog) {
-        toast.error(`ERROR: new nft id can't be resolved`);
-      } else {
-        const { wNft } = depositedLog.args as any;
-        console.log("Found and set NFT ID", wNft);
-        createRequest.dispatch({
-          type: ActionTypes.SetNftIdForWrapping,
-          payload: { nftId: Number(wNft) },
+    if (nftWrap.isSuccess && nftWrap.executeHash && publicClient) {
+      publicClient
+        .getTransactionReceipt({ hash: nftWrap.executeHash })
+        .then((receipt) => {
+          const depositedLog = parseEventLogs({
+            abi: wrapperAbi as Abi,
+            logs: receipt.logs,
+          }).find((log) => log.eventName == "DepositedNft");
+          if (!depositedLog) {
+            toast.error(`ERROR: new nft id can't be resolved`, {
+              toastId: "failResolve",
+            });
+          } else {
+            createRequest.dispatch({
+              type: ActionTypes.SetNftIdForWrapping,
+              payload: { nftId: Number((depositedLog.args as any).wNft) },
+            });
+          }
         });
-      }
     }
-
-    if (waitForDepositTX.error) toast.error(`ERROR: ${waitForDepositTX.error}`);
-  }, [
-    waitForDepositTX.data,
-    waitForDepositTX.isSuccess,
-    waitForDepositTX.error,
-  ]);
-
-  // when in submitting and nft id is set, start evaluation process
-  useEffect(() => {
-    if (
-      !createRequest.state.isSubmitting ||
-      !createRequest.state.nftIdForWrapping ||
-      !evaluateNFT.isReady ||
-      !evaluateNFT.isEnabled
-    )
-      return;
-
-    console.log(
-      "Form is still submitting and NFT ID is found",
-      `${createRequest.state.nftIdForWrapping}`
-    );
-
-    evaluateNFT.write();
-  }, [
-    createRequest.state.isSubmitting,
-    createRequest.state.nftIdForWrapping,
-    evaluateNFT.isReady,
-    evaluateNFT.isEnabled,
-  ]);
-
-  // start wait for evaluation
-  useEffect(() => {
-    if (!evaluateNFT.hash) return;
-
-    console.log("Evaluation Hash", evaluateNFT.hash);
-
-    createRequest.dispatch({
-      type: ActionTypes.SetNftEvaluateTxHash,
-      payload: { txHash: evaluateNFT.hash },
-    });
-  }, [evaluateNFT.hash]);
+  }, [nftWrap.isSuccess, nftWrap.executeHash, publicClient]);
 
   // when evaluate is done, success
   useEffect(() => {
-    if (waitForEvaluateTX.isSuccess) {
+    if (nftWrap.isSuccess && nftValuation.isSuccess) {
       createRequest.dispatch({
         type: ActionTypes.Reset,
       });
       toast.success("Successfully wrapped your NFT and issued a valuation");
+    } else if (!nftWrap.isSuccess && nftValuation.isSuccess) {
+      createRequest.dispatch({
+        type: ActionTypes.Reset,
+      });
+      toast.success("Successfully issued a valuation");
     }
-
-    if (waitForEvaluateTX.error)
-      toast.error(`ERROR: ${waitForEvaluateTX.error}`);
-  }, [waitForEvaluateTX.isSuccess, waitForEvaluateTX.error]);
+  }, [nftWrap.isSuccess, nftValuation.isSuccess]);
 
   return (
     <>
@@ -333,42 +226,46 @@ export const CreateNFTWrapper = () => {
               <div className="text-xl font-bold">Status</div>
               <div className="flex gap-2 items-center">
                 Approve NFT transfer
-                {nftApproval.execution.isPending ? (
-                  <Loader />
-                ) : nftApproval.execution.isSuccess ? (
+                {nftWrap.isSuccess ||
+                nftWrap.isExecuting ||
+                nftWrap.isWaitingForExecutionTxConfirmation ? (
                   <Check className="text-green-500" />
-                ) : (
+                ) : nftWrap.isError ? (
                   <Clock className="text-orange-500" />
-                )}
-              </div>
-              <div className="flex gap-2 items-center">
-                Approve Reward transfer
-                {rewardApproval.execution.isPending ? (
+                ) : (
                   <Loader />
-                ) : rewardApproval.execution.isSuccess ? (
-                  <Check className="text-green-500" />
-                ) : (
-                  <Clock className="text-orange-500" />
                 )}
               </div>
               <div className="flex gap-2 items-center">
                 Minting & Deposit to Wrapper
-                {mintNFT.execution.isPending ? (
-                  <Loader />
-                ) : mintNFT.execution.isSuccess ? (
+                {nftWrap.isSuccess ? (
                   <Check className="text-green-500" />
-                ) : (
+                ) : nftWrap.isError ? (
                   <Clock className="text-orange-500" />
+                ) : (
+                  <Loader />
+                )}
+              </div>
+              <div className="flex gap-2 items-center">
+                Approve Reward transfer
+                {nftValuation.isSuccess ||
+                nftValuation.isExecuting ||
+                nftValuation.isWaitingForExecutionTxConfirmation ? (
+                  <Check className="text-green-500" />
+                ) : nftValuation.isError ? (
+                  <Clock className="text-orange-500" />
+                ) : (
+                  <Loader />
                 )}
               </div>
               <div className="flex gap-2 items-center">
                 Create evaluation inquiry
-                {evaluateNFT.execution.isPending ? (
-                  <Loader />
-                ) : evaluateNFT.execution.isSuccess ? (
+                {nftValuation.isSuccess ? (
                   <Check className="text-green-500" />
-                ) : (
+                ) : nftValuation.isError ? (
                   <Clock className="text-orange-500" />
+                ) : (
+                  <Loader />
                 )}
               </div>
             </div>

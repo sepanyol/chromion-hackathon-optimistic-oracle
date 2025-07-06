@@ -17,7 +17,9 @@ export const CreateRequest = () => {
   const handleOnSubmit = () => {
     if (!state.isSubmitEnabled) return;
     dispatch({ type: ActionTypes.EnableSubmitting });
-    createRequest.run();
+
+    // exclude nft process
+    if (!state.isCreateTokenWrapperEnabled) createRequest.run();
   };
 
   useEffect(() => {
