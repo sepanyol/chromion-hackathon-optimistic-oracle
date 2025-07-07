@@ -43,6 +43,7 @@ jobs:
           NEXT_PUBLIC_APPKIT_PROJECT_ID: ${{vars.NEXT_PUBLIC_APPKIT_PROJECT_ID}}
           NEXT_PUBLIC_GAS_API: ${{vars.NEXT_PUBLIC_GAS_API}}
           NEXT_PUBLIC_SUBGRAPH_API: ${{vars.NEXT_PUBLIC_SUBGRAPH_API}}
+          NEXT_PUBLIC_SUBGRAPH_API_KEY: ${{secrets.NEXT_PUBLIC_SUBGRAPH_API_KEY}}
 
       # Deploy
       - name: Deploy Project Artifacts to Vercel
