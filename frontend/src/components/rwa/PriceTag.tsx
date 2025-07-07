@@ -1,26 +1,71 @@
 import nftAbi from "@/abis/wrapper.json";
-import { useGetRequestInfo } from "@/hooks/onchain/useGetRequestInfo";
 import { defaultChain } from "@/utils/appkit/context";
 import { getNFTWrapperByChainId } from "@/utils/contracts";
-import { formatUnits } from "viem";
-import { useReadContract } from "wagmi";
+import { isUndefined } from "lodash";
+import { Address, erc20Abi, formatUnits } from "viem";
+import { useReadContract, useReadContracts } from "wagmi";
 
-type PriceTagProps = { id: bigint };
-export const PriceTag = ({ id }: PriceTagProps) => {
-  const getRequestInfo = useGetRequestInfo({ id });
-  const getPrice = useReadContract({
+type PriceTagProps = {
+  id: bigint;
+  priceFromList?: bigint;
+  assetFromList?: Address;
+};
+export const PriceTag = ({
+  id,
+  priceFromList,
+  assetFromList,
+}: PriceTagProps) => {
+  const { data: priceFromContract } = useReadContract({
     abi: nftAbi,
     args: [id],
     address: getNFTWrapperByChainId(defaultChain.id),
     functionName: "getPrice",
     query: {
-      enabled: !!id,
+      enabled: !!id && !priceFromList,
       select: (res: any) => res as bigint,
       retry: false,
     },
   });
 
-  if (!getRequestInfo.data || !getRequestInfo.data.isResolved) return <>n/a</>;
+  const { data: assetFromContract } = useReadContract({
+    abi: nftAbi,
+    address: getNFTWrapperByChainId(defaultChain.id),
+    functionName: "usdc",
+    query: {
+      enabled: !assetFromList,
+      select: (res: any) => res as Address,
+      retry: false,
+    },
+  });
 
-  return <span>${formatUnits(getPrice.data || BigInt(0), 6)}</span>;
+  const asset = assetFromContract || assetFromList;
+  const { data: tokenInfo } = useReadContracts({
+    allowFailure: false,
+    contracts: [
+      {
+        address: asset,
+        abi: erc20Abi,
+        functionName: "decimals",
+      },
+
+      {
+        address: asset,
+        abi: erc20Abi,
+        functionName: "symbol",
+      },
+    ],
+    query: {
+      select: ([decimals, symbol]) => ({ decimals, symbol }),
+    },
+  });
+
+  if (tokenInfo && (priceFromContract || priceFromList))
+    return (
+      <span>
+        {formatUnits(priceFromContract || priceFromList!, tokenInfo.decimals)}{" "}
+        {tokenInfo.symbol}
+      </span>
+    );
+
+  return <span>n/a</span>;
 };

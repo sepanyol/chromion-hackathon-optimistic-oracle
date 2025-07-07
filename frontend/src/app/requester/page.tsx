@@ -16,6 +16,7 @@ import { defaultChain } from "@/utils/appkit/context";
 import { getChainById } from "@/utils/chains";
 import { getReadableRequestStatus, RequestStatus } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
+import { useEvmClients } from "@s3panyol/use-evm-transaction-flow";
 import { CheckCircle, Clock, TrendingUp } from "lucide-react";
 import React, { useContext, useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
@@ -23,8 +24,7 @@ import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 
 const RequesterPage: React.FC = () => {
-  const { address, chainId, isConnected } = useAccount();
-  const createRequest = useContext(CreateRequestContext);
+  const { account: address, isConnected, isReady } = useEvmClients();
   const requester = useUserRequester(address!);
 
   const [stats, setStats] = useState<StatData[]>([]);
@@ -178,14 +178,18 @@ const RequesterPage: React.FC = () => {
           )}
         </div>
 
-        {/* Floating Action Button */}
-        <FloatingCreateRequestAction />
+        {isReady && (
+          <>
+            {/* Floating Action Button */}
+            <FloatingCreateRequestAction />
 
-        {/* Template Modal */}
-        {/* {showTemplateModal && (
+            {/* Template Modal */}
+            {/* {showTemplateModal && (
           <TemplateModal onClose={() => setShowTemplateModal(false)} />
         )} */}
-        <CreateRequest />
+            <CreateRequest />
+          </>
+        )}
       </div>
       <ToastContainer />
     </CreateRequestProvider>

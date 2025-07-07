@@ -1,5 +1,7 @@
 import wrapperAbi from "@/abis/wrapper.json";
+import { useAcceptPrice } from "@/hooks/onchain/useAcceptPrice";
 import { useGetRequestInfo } from "@/hooks/onchain/useGetRequestInfo";
+import { useRequestForPriceReview } from "@/hooks/useRequestForPriceReview";
 import { getNFTWrapperByChainId, getUSDCByChainId } from "@/utils/contracts";
 import {
   useEvmClients,
@@ -10,9 +12,8 @@ import { toast } from "react-toastify";
 import { Abi, formatUnits } from "viem";
 import { Button } from "../Button";
 import { Loader } from "../Loader";
-import { CreateValuationModal } from "./CreateValuationModal";
 import { AcceptPriceModal } from "./AcceptPriceModal";
-import { useRequestForReview } from "@/hooks/useRequestForReview";
+import { CreateValuationModal } from "./CreateValuationModal";
 
 type TokenStatusProps = { id: bigint };
 
@@ -22,7 +23,7 @@ export const TokenStatus = ({ id }: TokenStatusProps) => {
   const wrapperAddress = getNFTWrapperByChainId(walletClient?.chain.id!);
   const rewardAddress = getUSDCByChainId(walletClient?.chain.id!);
 
-  const { data: request } = useRequestForReview(
+  const { data: request, refetch } = useRequestForPriceReview(
     getRequestInfo.data && getRequestInfo.data.isResolved
       ? getRequestInfo.data.request
       : undefined!
@@ -47,7 +48,10 @@ export const TokenStatus = ({ id }: TokenStatusProps) => {
     tokenType: "ERC20",
   });
 
-  // TODO accept price
+  const acceptPrice = useAcceptPrice(
+    id,
+    Boolean(getRequestInfo.data && getRequestInfo.data.isResolved)
+  );
 
   useEffect(() => {
     if (isSubmitting && evaluate.isReady) evaluate.run();
@@ -57,9 +61,18 @@ export const TokenStatus = ({ id }: TokenStatusProps) => {
     if (evaluate.isSuccess) toast.success("Successfully issued a valuation");
   }, [evaluate.isSuccess]);
 
-  // useEffect(() => {
-  //   if (isSubmittingPrice) evaluate.run();
-  // }, [isSubmittingPrice, evaluate.isReady]);
+  useEffect(() => {
+    if (isSubmittingPrice && acceptPrice.isReady) acceptPrice.write();
+  }, [isSubmittingPrice, acceptPrice.isReady]);
+
+  useEffect(() => {
+    if (acceptPrice.execution.isSuccess) {
+      toast.success("Successfully accepted the price");
+      refetch();
+      setOpenModalPrice(false);
+      setIsSubmittingPrice(false);
+    }
+  }, [acceptPrice.execution.isSuccess]);
 
   if (getRequestInfo.isLoading || getRequestInfo.isFetching) return <></>;
 
@@ -127,18 +140,18 @@ export const TokenStatus = ({ id }: TokenStatusProps) => {
           isSubmitDisabled={false}
           isSubmitting={isSubmittingPrice}
           challengerId={
-            request.challenge.challenger
+            request.challenge && request.challenge.challenger
               ? request.challenge.challenger.id
               : null
           }
           price={`${Number(
-            formatUnits(BigInt(request.proposal.answer), 6)
+            formatUnits(BigInt(request.answer!), 6)
           ).toLocaleString(navigator.language, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 6,
           })} USDC`}
           proposerId={request.proposal.proposer.id}
-          requestId={request.id}
+          requestId={request.id!}
           onClose={() => setOpenModalPrice(false)}
           onSubmit={() => setIsSubmittingPrice(true)}
         />

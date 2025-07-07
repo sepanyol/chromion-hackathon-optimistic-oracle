@@ -1,4 +1,12 @@
 import { Address } from "viem";
+import { FullRequestType } from "./Requests";
+
+export type WrappedNFTValuationType = {
+  request: FullRequestType;
+  nft: FullWrappedNFTType;
+  amount: bigint;
+  asset: Address;
+};
 
 export type FullWrappedNFTType = {
   id: Address;
@@ -9,9 +17,15 @@ export type FullWrappedNFTType = {
   blockNumber: bigint;
   blockTimestamp: bigint;
   transactionHash: Address;
+  valuations: WrappedNFTValuationType[];
+  currentValuation: WrappedNFTValuationType;
 };
+
 export type MyWrappedNftType = Omit<
   FullWrappedNFTType,
-  "transactionHash" | "blockNumber"
->;
+  "transactionHash" | "blockNumber" | "valuations"
+> & {
+  currentValuation: Omit<WrappedNFTValuationType, "id">;
+};
+
 export type MyWrappedNftsType = { wrappedNFTs: MyWrappedNftType[] };

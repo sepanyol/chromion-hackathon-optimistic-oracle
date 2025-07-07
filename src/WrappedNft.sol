@@ -258,10 +258,17 @@ contract WrappedNft is
                 IBaseRequestContract(_request).status() ==
                 RequestTypes.RequestStatus.Resolved;
         } else {
+            // TODO when info is requested afterwards, we loose connection to request
             revert NoActiveRequest();
         }
 
         return _requestInfo;
+    }
+
+    function getData(
+        uint256 _wNftId
+    ) external view returns (AdditionalData memory _additionalData) {
+        _additionalData = additionalData[_wNftId];
     }
 
     // TODO nonReentrant

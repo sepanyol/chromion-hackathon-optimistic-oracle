@@ -2,6 +2,7 @@ import {
   FullRequestChallengeType,
   FullRequestProposalType,
   FullRequestReviewType,
+  RequestPriceReviewType,
 } from "@/types/Requests";
 import { gql } from "urql";
 import { Address } from "viem";
@@ -124,6 +125,25 @@ const FetchRequestForReview = gql`
   }
 `;
 
+const FetchRequestForPriceReview = gql`
+  query ($id: Bytes) {
+    request(id: $id) {
+      id
+      answer
+      proposal {
+        proposer {
+          id
+        }
+      }
+      challenge {
+        challenger {
+          id
+        }
+      }
+    }
+  }
+`;
+
 export const fetchRequestForProposal = async (address: Address) =>
   querySubgraph<{ request: FullRequestProposalType }>(FetchRequestForProposal, {
     id: address,
@@ -141,3 +161,11 @@ export const fetchRequestForReview = async (address: Address) =>
   querySubgraph<{ request: FullRequestReviewType }>(FetchRequestForReview, {
     id: address,
   });
+
+export const fetchRequestForPriceReview = async (address: Address) =>
+  querySubgraph<{ request: RequestPriceReviewType }>(
+    FetchRequestForPriceReview,
+    {
+      id: address,
+    }
+  );

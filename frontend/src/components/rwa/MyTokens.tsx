@@ -13,6 +13,7 @@ export const MyTokens = () => {
 
   const nfts = useMyWrappedNfts({ account });
 
+  console.log("MyTokens", nfts);
   return (
     <>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -81,7 +82,19 @@ export const MyTokens = () => {
                       <ProposedPrice id={nft.wNft} />
                     </td>
                     <td className="px-6 py-4">
-                      <PriceTag id={nft.wNft} />
+                      <PriceTag
+                        id={nft.wNft}
+                        assetFromList={
+                          nft.currentValuation
+                            ? nft.currentValuation.asset
+                            : undefined
+                        }
+                        priceFromList={
+                          nft.currentValuation
+                            ? nft.currentValuation.amount
+                            : undefined
+                        }
+                      />
                     </td>
                     <td className="px-6 py-4 flex justify-center">
                       <TokenStatus id={nft.wNft} />

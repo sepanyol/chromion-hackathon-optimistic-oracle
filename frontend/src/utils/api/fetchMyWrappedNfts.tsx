@@ -18,6 +18,10 @@ export const fetchMyWrappedNfts = async (requester: Address) =>
           originNFT
           originId
           blockTimestamp
+          currentValuation {
+            asset
+            amount
+          }
         }
       }
     `,

@@ -189,3 +189,18 @@ export type FullRequestReviewType = {
   };
   reviews: FullReviewType[];
 } & FullRequestChallengeType;
+
+export type RequestPriceReviewType = {
+  challenge: {
+    challenger: {
+      id: Address;
+    };
+  };
+  proposal: {
+    proposer: {
+      id: Address;
+    };
+  };
+  answer?: string;
+  id?: string;
+};
