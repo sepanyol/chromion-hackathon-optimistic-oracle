@@ -206,4 +206,15 @@ type WrappedNFT @entity(immutable: true) {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+  valuations: [WrappedNFTValuation]! @derivedFrom(field: "nft")
+  currentValuation: WrappedNFTValuation
+}
+
+type WrappedNFTValuation @entity(immutable: false) {
+  id: Bytes!
+  nft: WrappedNFT!
+  amount: BigInt!
+  asset: Bytes!
+  request: Request
 }
