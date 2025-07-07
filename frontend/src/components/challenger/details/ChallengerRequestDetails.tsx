@@ -114,7 +114,6 @@ export const ChallengerRequestDetails = () => {
 
     if (waitForApproval.isSuccess) {
       setTxHashApproval(undefined);
-      console.log("lets go");
       execute.write();
     }
   }, [execute.isEnabled, execute.isReady, waitForApproval.isSuccess]);
