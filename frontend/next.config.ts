@@ -3,9 +3,9 @@ import { join } from "path";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // ignoreBuildErrors: true,
-  reactStrictMode: true,
-  outputFileTracingRoot: join(__dirname, ".."),
+  // // ignoreBuildErrors: true,
+  // reactStrictMode: true,
+  // outputFileTracingRoot: join(__dirname, ".."),
   eslint: {
     ignoreDuringBuilds: true,
   },
