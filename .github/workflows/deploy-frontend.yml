@@ -33,8 +33,8 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: patch lightningcss because that kind of packages suck
+        run: npm install lightningcss --force --ignore-scripts=false
 
       - name: Build Project Artifacts
         run: |
