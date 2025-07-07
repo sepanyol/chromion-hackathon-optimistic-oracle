@@ -95,20 +95,20 @@ dataSources:
       eventHandlers:
         - event: DepositedNft(indexed address,indexed address,uint256,uint256)
           handler: handleDepositedNft
-        - event: EvaluatioNRequest(indexed address,string,uint256)
-          handler: handleEvaluatioNRequest
-        - event: FeedbackSubmitted(indexed address,string,bool)
-          handler: handleFeedbackSubmitted
-        - event: NftBought(indexed address,uint256,uint256,uint256)
-          handler: handleNftBought
-        - event: NftNowActiveForSale(uint256)
-          handler: handleNftNowActiveForSale
-        - event: NftNowInactiveForSale(uint256)
-          handler: handleNftNowInactiveForSale
+        # - event: EvaluatioNRequest(indexed address,string,uint256)
+        #   handler: handleEvaluatioNRequest
+        # - event: FeedbackSubmitted(indexed address,string,bool)
+        #   handler: handleFeedbackSubmitted
+        # - event: NftBought(indexed address,uint256,uint256,uint256)
+        #   handler: handleNftBought
+        # - event: NftNowActiveForSale(uint256)
+        #   handler: handleNftNowActiveForSale
+        # - event: NftNowInactiveForSale(uint256)
+        #   handler: handleNftNowInactiveForSale
         - event: ProposedEvaluationAccepted(indexed address,uint256,indexed address,uint256)
           handler: handleProposedEvaluationAccepted
-        - event: WithdrawnNft(indexed address,indexed address,uint256,uint256)
-          handler: handleWithdrawnNft
+        # - event: WithdrawnNft(indexed address,indexed address,uint256,uint256)
+        #   handler: handleWithdrawnNft
       file: ./src/wrapped-nft.ts
 templates:
   - name: RequestContract
