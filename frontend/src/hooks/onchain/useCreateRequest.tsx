@@ -1,8 +1,6 @@
 import abi from "@/abis/factory.json";
 import { getFactoryByChainId, getUSDCByChainId } from "@/utils/contracts";
-import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { Address, pad, toHex } from "viem";
-import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
 
 import {
   useEvmClients,

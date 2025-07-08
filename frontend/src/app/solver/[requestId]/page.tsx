@@ -8,9 +8,7 @@ import { useParams } from "next/navigation";
 import { ToastContainer } from "react-toastify";
 import { Address } from "viem";
 
-const ProposeAnswerPage: React.FC<{
-  params: Promise<{ requestId: Address }>;
-}> = () => {
+const ProposeAnswerPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: Address }>();
   return (
     <div className="min-h-screen bg-gray-50">

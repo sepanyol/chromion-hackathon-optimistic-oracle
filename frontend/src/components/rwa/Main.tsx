@@ -1,12 +1,17 @@
 "use client";
 import { useEvmClients } from "@s3panyol/use-evm-transaction-flow";
-import CreateRequestProvider from "../request/CreateRequestProvider";
-import { CreateNFTWrapper } from "./CreateNFTWrapper";
+import { Button } from "../Button";
+import { CreateNFTRequest } from "../request/CreateNFTRequest";
+import CreateRequestProvider, {
+  ActionTypes,
+  useCreateRequestContext,
+} from "../request/CreateRequestProvider";
 import { MyTokens } from "./MyTokens";
 import { MyValuations } from "./MyValuations";
 
 export const Main = () => {
   const { isReady, isConnected } = useEvmClients();
+  const createRequest = useCreateRequestContext();
 
   if (isConnected && !isReady)
     return (
@@ -73,17 +78,31 @@ export const Main = () => {
 
   if (isConnected && isReady)
     return (
-      <CreateRequestProvider>
-        {/* <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div> */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <CreateNFTWrapper />
-            <MyValuations />
-            <MyTokens />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="w-full flex flex-col items-center justify-center">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full">
+              <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-4 lg:gap-0 lg:flex-row items-center justify-between">
+                <span>
+                  You've a tokenized asset and don't know what its wort? Check
+                  Equolibrium Optimistic Oracle
+                </span>
+                <div>
+                  <Button
+                    onClick={() => {
+                      createRequest.dispatch({ type: ActionTypes.OpenModal });
+                    }}
+                  >
+                    What's my RWA worth?
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
+          <MyValuations />
+          <MyTokens />
         </div>
-      </CreateRequestProvider>
+        <CreateNFTRequest />
+      </div>
     );
 };

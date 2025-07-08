@@ -8,7 +8,7 @@ import {
   getReadableRequestStatusForOpposition,
 } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Abi,
   Address,
@@ -24,7 +24,8 @@ import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 // import { SolverBool } from "./SolverBool";
 import oracleAbi from "@/abis/coordinator.json";
 import { ColoredTile } from "@/components/ColoredTile";
-import { RequestContext } from "@/components/RequestProvider";
+import { useOracleContext } from "@/components/OracleProvider";
+import { useRequestContext } from "@/components/RequestProvider";
 import { SolverBool } from "@/components/solver/details/SolverBool";
 import { SolverValue } from "@/components/solver/details/SolverValue";
 import { useExecuteFunction } from "@/hooks/onchain/useExecuteFunction";
@@ -36,12 +37,21 @@ import { defaultChain } from "@/utils/appkit/context";
 import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
 import { CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  useEvmClients,
+  useEvmTransactionFlow,
+} from "@s3panyol/use-evm-transaction-flow";
 
 export const ChallengerRequestDetails = () => {
   const tokenAddress = getUSDCByChainId(defaultChain.id);
   const oracleAddress = getOracleByChainId(defaultChain.id);
 
-  const { requestId } = useContext(RequestContext);
+  const { requestId } = useRequestContext();
+  const { assetDecimals, assetSymbol, challengerBond, proposerBond } =
+    useOracleContext();
+
+  const { account: accountAddress, isConnected } = useEvmClients();
+
   const [challengeValue, setChallengeValue] = useState<any>(null);
   const [challengeValueComputed, setChallengeValueComputed] =
     useState<any>(null);
@@ -51,7 +61,7 @@ export const ChallengerRequestDetails = () => {
   const [txHashApproval, setTxHashApproval] = useState<Address | undefined>();
   const [txHashPropose, setTxHashPropose] = useState<Address | undefined>();
 
-  const { address: accountAddress, chainId } = useAccount();
+  const chainId = 43113;
 
   const {
     data: request,
@@ -65,6 +75,17 @@ export const ChallengerRequestDetails = () => {
     refetch: refetchChallenge,
   } = useGetChallenge({
     requestId,
+  });
+
+  const challengeProposal = useEvmTransactionFlow({
+    abi: oracleAbi as Abi,
+    contractAddress: oracleAddress!,
+    tokenAddress,
+    args: [requestId, true, challengeValueComputed, reasonBytes],
+    functionName: "challengeAnswer",
+    tokenType: "ERC20",
+    amount: challengerBond!,
+    spender: oracleAddress!,
   });
 
   const approval = useTokenApproval({
@@ -96,41 +117,20 @@ export const ChallengerRequestDetails = () => {
   });
 
   const handleSubmitChallenge = useCallback(() => {
-    if (!request || !approval.isReady || !approval.isEnabled) {
+    if (!request || !challengeProposal.isReady) {
       console.log("error handleSubmitChallenge");
       return;
     }
-    approval.write();
-  }, [request, approval.isReady, approval.isEnabled]);
+    challengeProposal.run();
+  }, [request, challengeProposal.isReady]);
 
   useEffect(() => {
-    if (!approval.hash) return;
-    setTxHashApproval(approval.hash);
-  }, [approval.hash]);
+    if (!challengeProposal.isSuccess) return;
 
-  useEffect(() => {
-    if (!execute.isEnabled || !execute.isReady || !waitForApproval.isSuccess)
-      return;
-
-    if (waitForApproval.isSuccess) {
-      setTxHashApproval(undefined);
-      execute.write();
-    }
-  }, [execute.isEnabled, execute.isReady, waitForApproval.isSuccess]);
-
-  useEffect(() => {
-    if (!execute.hash) return;
-    setTxHashPropose(execute.hash);
-  }, [execute.hash]);
-
-  useEffect(() => {
-    if (!waitForProposal.isSuccess) return;
-
-    setTxHashPropose(undefined);
     refetch();
     refetchChallenge();
     toast.success("Successfully challenged answer");
-  }, [waitForProposal.isSuccess]);
+  }, [challengeProposal.isSuccess]);
 
   useEffect(() => {
     if (!request) return;
@@ -341,25 +341,27 @@ export const ChallengerRequestDetails = () => {
                         </div>
                         <Button
                           disabled={
+                            !isConnected ||
                             !enableSubmit ||
-                            waitForApproval.isLoading ||
-                            waitForProposal.isLoading ||
-                            approval.execution.isPending ||
-                            execute.execution.isPending
+                            challengeProposal.isExecuting ||
+                            challengeProposal.isWaitingForApproval ||
+                            challengeProposal.isWaitingForApprovalTxConfirmation ||
+                            challengeProposal.isWaitingForExecutionTxConfirmation
                           }
                           onClick={handleSubmitChallenge}
+                          className="flex gap-2"
                         >
-                          {approval.execution.isPending &&
+                          {challengeProposal.isWaitingForApproval &&
                             "Confirm approval in your wallet..."}
-                          {execute.execution.isPending &&
-                            "Confirm challenging proposal in your wallet..."}
-                          {(waitForApproval.isLoading ||
-                            waitForProposal.isLoading) &&
-                            "Finishing transaction..."}
-                          {!waitForApproval.isLoading &&
-                            !waitForProposal.isLoading &&
-                            !approval.execution.isPending &&
-                            !execute.execution.isPending &&
+                          {challengeProposal.isExecuting &&
+                            "Confirm proposing answer in your wallet..."}
+                          {(challengeProposal.isWaitingForApprovalTxConfirmation ||
+                            challengeProposal.isWaitingForExecutionTxConfirmation) &&
+                            "Waiting for transaction..."}
+                          {!challengeProposal.isExecuting &&
+                            !challengeProposal.isWaitingForApproval &&
+                            !challengeProposal.isWaitingForApprovalTxConfirmation &&
+                            !challengeProposal.isWaitingForExecutionTxConfirmation &&
                             "Submit challenge"}
                         </Button>
                       </>
@@ -381,13 +383,18 @@ export const ChallengerRequestDetails = () => {
             <div>
               <span>Reward (+ Proposer Bond):</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(request.rewardAmount) + BigInt(1e8), 6)}{" "}
-                USDC
+                {formatUnits(
+                  request.rewardAmount + proposerBond!,
+                  assetDecimals!
+                )}{" "}
+                {assetSymbol}
               </span>
             </div>
             <div>
               <span>Bonding:</span> <br />
-              <span className="font-bold">100 USDC</span>
+              <span className="font-bold">
+                {formatUnits(challengerBond!, assetDecimals!)} {assetSymbol}
+              </span>
             </div>
             <div>
               <span>Challenge window:</span> <br />

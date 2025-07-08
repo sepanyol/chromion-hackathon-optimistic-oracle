@@ -83,11 +83,6 @@ export const MyTokens = () => {
                     <td className="px-6 py-4">
                       <PriceTag
                         id={nft.wNft}
-                        assetFromList={
-                          nft.currentValuation
-                            ? nft.currentValuation.asset
-                            : undefined
-                        }
                         priceFromList={
                           nft.currentValuation
                             ? nft.currentValuation.amount

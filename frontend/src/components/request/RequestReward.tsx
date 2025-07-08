@@ -1,5 +1,6 @@
+"use client";
 import { DollarSign } from "lucide-react";
-import { ChangeEvent, MouseEventHandler } from "react";
+import { useOracleContext } from "../OracleProvider";
 
 type RequestRewardProps = {
   value: string;
@@ -11,12 +12,14 @@ export const RequestReward = ({
   error,
   onChange,
 }: RequestRewardProps) => {
+  const { assetSymbol } = useOracleContext();
+
   return (
     <>
       <div>
         <label className="flex items-center  text-sm font-medium text-gray-700 mb-2">
           <DollarSign className="w-4 h-4 inline mr-1" />
-          Reward (in USDC)
+          Reward in {assetSymbol}
         </label>
         <input
           type="number"

@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { Abi, formatUnits } from "viem";
 import { Button } from "../Button";
 import { Loader } from "../Loader";
+import { useOracleContext } from "../OracleProvider";
 import { AcceptPriceModal } from "./AcceptPriceModal";
 import { CreateValuationModal } from "./CreateValuationModal";
 
@@ -19,6 +20,7 @@ type TokenStatusProps = { id: bigint };
 
 export const TokenStatus = ({ id }: TokenStatusProps) => {
   const { walletClient } = useEvmClients();
+  const { assetDecimals, assetName } = useOracleContext();
   const getRequestInfo = useGetRequestInfo({ id });
   const wrapperAddress = getNFTWrapperByChainId(walletClient?.chain.id!);
   const rewardAddress = getUSDCByChainId(walletClient?.chain.id!);
@@ -145,11 +147,11 @@ export const TokenStatus = ({ id }: TokenStatusProps) => {
               : null
           }
           price={`${Number(
-            formatUnits(BigInt(request.answer!), 6)
+            formatUnits(BigInt(request.answer!), assetDecimals!)
           ).toLocaleString(navigator.language, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 6,
-          })} USDC`}
+          })} ${assetName}`}
           proposerId={request.proposal.proposer.id}
           requestId={request.id!}
           onClose={() => setOpenModalPrice(false)}

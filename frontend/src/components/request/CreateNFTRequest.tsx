@@ -1,4 +1,3 @@
-"use client";
 import wrapperAbi from "@/abis/wrapper.json";
 import { useGetNFTInfos } from "@/hooks/onchain/useGetNFTInfos";
 import { useGetNFTOwnerOf } from "@/hooks/onchain/useGetNFTOwnerOf";
@@ -10,19 +9,15 @@ import {
 } from "@s3panyol/use-evm-transaction-flow";
 import { isEmpty } from "lodash";
 import { Check, Clock } from "lucide-react";
-import { useContext, useEffect } from "react";
+import { useEffect } from "react";
 import { toast } from "react-toastify";
 import { Abi, Address, parseEventLogs } from "viem";
-import { Button } from "../Button";
 import { Loader } from "../Loader";
-import { CreateRequest } from "../request/CreateRequest";
-import {
-  ActionTypes,
-  CreateRequestContext,
-} from "../request/CreateRequestProvider";
+import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
+import NFTRequestModal from "./NFTRequestModal";
 
-export const CreateNFTWrapper = () => {
-  const createRequest = useContext(CreateRequestContext);
+export const CreateNFTRequest = () => {
+  const createRequest = useCreateRequestContext();
 
   const { account: address, walletClient, publicClient } = useEvmClients();
 
@@ -72,11 +67,6 @@ export const CreateNFTWrapper = () => {
     contractAddress: wrapperAddress,
   });
 
-  // init, set proper create form state
-  useEffect(() => {
-    createRequest.dispatch({ type: ActionTypes.EnableCreateTokenWrapper });
-  }, []);
-
   // form info, when token info was loaded properly
   useEffect(() => {
     if (!nftInfos.data) return;
@@ -120,19 +110,6 @@ export const CreateNFTWrapper = () => {
     nftOwnerCheck.data,
     nftOwnerCheck.error,
     createRequest.state.nftParams?.originId,
-  ]);
-
-  // Start flow
-  // 1. NFT Wrapping
-  useEffect(() => {
-    if (
-      createRequest.state.isSubmitting &&
-      createRequest.state.isCreateTokenWrapperEnabled
-    )
-      nftWrap.run();
-  }, [
-    createRequest.state.isSubmitting,
-    createRequest.state.isCreateTokenWrapperEnabled,
   ]);
 
   // 2. NFT Valuation
@@ -185,41 +162,30 @@ export const CreateNFTWrapper = () => {
 
   // when evaluate is done, success
   useEffect(() => {
-    if (nftWrap.isSuccess && nftValuation.isSuccess) {
-      createRequest.dispatch({
-        type: ActionTypes.Reset,
-      });
-      toast.success("Successfully wrapped your NFT and issued a valuation");
-    } else if (!nftWrap.isSuccess && nftValuation.isSuccess) {
+    if (!nftWrap.isSuccess && nftValuation.isSuccess) {
       createRequest.dispatch({
         type: ActionTypes.Reset,
       });
       toast.success("Successfully issued a valuation");
+    } else if (nftWrap.isSuccess && nftValuation.isSuccess) {
+      createRequest.dispatch({
+        type: ActionTypes.Reset,
+      });
+      toast.success("Successfully wrapped your NFT and issued a valuation");
     }
   }, [nftWrap.isSuccess, nftValuation.isSuccess]);
 
+  const handleOnSubmit = () => {
+    if (!createRequest.state.isSubmitEnabled) return;
+    createRequest.dispatch({ type: ActionTypes.EnableSubmittingNFT });
+    nftWrap.run();
+  };
+
+  if (!createRequest.state.isModalOpen) return <></>;
+
   return (
     <>
-      <div className="w-full flex flex-col items-center justify-center">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full">
-          <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-4 lg:gap-0 lg:flex-row items-center justify-between">
-            <span>
-              You've a tokenized asset and don't know what its wort? Check
-              Equolibrium Optimistic Oracle
-            </span>
-            <div>
-              <Button
-                onClick={() => {
-                  createRequest.dispatch({ type: ActionTypes.OpenModal });
-                }}
-              >
-                What's my RWA worth?
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-      {createRequest.state.isSubmitting && (
+      {createRequest.state.isSubmittingNFT && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-60">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex flex-col gap-2 items-center justify-between p-6 border-b border-gray-200">
@@ -272,7 +238,23 @@ export const CreateNFTWrapper = () => {
           </div>
         </div>
       )}
-      <CreateRequest />
+      {createRequest.state.isSubmittingNFT ? "submits" : "NOOO"}
+      <NFTRequestModal
+        isSubmitting={createRequest.state.isSubmittingNFT}
+        isSubmitDisabled={!createRequest.state.isSubmitEnabled}
+        onUpdate={(data: any) =>
+          createRequest.dispatch({
+            type: ActionTypes.UpdateNFTCreateParams,
+            payload: {
+              context: data.details,
+              originId: data.tokenId,
+              originNFT: data.tokenAddress,
+            },
+          })
+        }
+        onSubmit={handleOnSubmit}
+        onClose={() => createRequest.dispatch({ type: ActionTypes.ResetNFT })}
+      />
     </>
   );
 };

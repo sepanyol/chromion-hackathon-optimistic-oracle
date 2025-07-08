@@ -2,13 +2,15 @@ import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { parseUnits } from "viem";
+import { useOracleContext } from "../OracleProvider";
 import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
-import NFTRequestModal from "./NFTRequestModal";
 import RequestModal from "./RequestModal";
 
 export const CreateRequest = () => {
   const router = useRouter();
   const { state, dispatch } = useCreateRequestContext();
+  const { assetDecimals } = useOracleContext();
 
   const createRequest = useCreateRequest({
     params: state.params,
@@ -17,9 +19,7 @@ export const CreateRequest = () => {
   const handleOnSubmit = () => {
     if (!state.isSubmitEnabled) return;
     dispatch({ type: ActionTypes.EnableSubmitting });
-
-    // exclude nft process
-    if (!state.isCreateTokenWrapperEnabled) createRequest.run();
+    createRequest.run();
   };
 
   useEffect(() => {
@@ -40,30 +40,16 @@ export const CreateRequest = () => {
 
   if (!state.isModalOpen) return <></>;
 
-  return state.isCreateTokenWrapperEnabled ? (
-    <NFTRequestModal
-      isSubmitting={state.isSubmitting}
-      isSubmitDisabled={!state.isSubmitEnabled}
-      onUpdate={(data: any) => {
-        dispatch({
-          type: ActionTypes.UpdateNFTCreateParams,
-          payload: {
-            context: data.details,
-            originId: data.tokenId,
-            originNFT: data.tokenAddress,
-          },
-        });
-      }}
-      onSubmit={handleOnSubmit}
-      onClose={() => {
-        dispatch({ type: ActionTypes.ResetNFT });
-      }}
-    />
-  ) : (
+  return (
     <RequestModal
       isSubmitting={state.isSubmitting}
       isSubmitDisabled={!state.isSubmitEnabled}
       onUpdate={(data: any) => {
+        console.log(
+          parseUnits(data.reward || "0", assetDecimals!),
+          data.reward,
+          assetDecimals
+        );
         dispatch({
           type: ActionTypes.UpdateCreateParams,
           payload: {
@@ -71,7 +57,7 @@ export const CreateRequest = () => {
             challengeWindow: Number(data.period),
             context: data.details,
             question: data.description,
-            rewardAmount: BigInt(Number(data.reward) * 10 ** 6),
+            rewardAmount: parseUnits(data.reward || "0", assetDecimals!),
             truthMeaning: data.truthMeaning,
           },
         });

@@ -10,10 +10,12 @@ import { isEmpty } from "lodash";
 import { PropsWithChildren, useContext, useReducer } from "react";
 import { Address, isAddress } from "viem";
 
+// Maybe split more between RWA creation and regular Request
 export type CreateRequestType = {
   isModalOpen: boolean;
   isModalLoading: boolean;
   isSubmitting: boolean;
+  isSubmittingNFT: boolean;
   isSubmitEnabled: boolean;
   isCreateTokenWrapperEnabled: boolean;
   params: CreateRequestParams | null;
@@ -36,6 +38,7 @@ const initialState: CreateRequestType = {
   isModalOpen: false,
   isModalLoading: false,
   isSubmitting: false,
+  isSubmittingNFT: false,
   isSubmitEnabled: false,
   isCreateTokenWrapperEnabled: false,
   params: null,
@@ -64,6 +67,9 @@ export enum ActionTypes {
 
   EnableSubmitting = "ENABLE_SUBMITTING",
   DisableSubmitting = "DISABLE_SUBMITTING",
+
+  EnableSubmittingNFT = "ENABLE_SUBMITTING_NFT",
+  DisableSubmittingNFT = "DISABLE_SUBMITTING_NFT",
 
   UpdateCreateParams = "UPDATE_CREATE_PARAMS",
 
@@ -105,6 +111,9 @@ type CreateRequestActionPayloads = {
 
   [ActionTypes.EnableSubmitting]: undefined;
   [ActionTypes.DisableSubmitting]: undefined;
+
+  [ActionTypes.EnableSubmittingNFT]: undefined;
+  [ActionTypes.DisableSubmittingNFT]: undefined;
 
   [ActionTypes.UpdateCreateParams]: InputCreateRequestParams;
   [ActionTypes.UpdateNFTCreateParams]: InputNFTCreateRequestParams;
@@ -159,6 +168,7 @@ const reducer = (
   state: CreateRequestType,
   action: CreateRequestActions
 ): CreateRequestType => {
+  console.log(Date.now(), action.type);
   switch (action.type) {
     case ActionTypes.OpenModal:
       return { ...state, isModalOpen: true };
@@ -175,6 +185,11 @@ const reducer = (
     case ActionTypes.DisableSubmitting:
       return { ...state, isSubmitting: false };
 
+    case ActionTypes.EnableSubmittingNFT:
+      return { ...state, isSubmittingNFT: true };
+    case ActionTypes.DisableSubmittingNFT:
+      return { ...state, isSubmittingNFT: false };
+
     case ActionTypes.EnableCreateTokenWrapper:
       return { ...state, isCreateTokenWrapperEnabled: true };
     case ActionTypes.DisableCreateTokenWrapper:
@@ -182,6 +197,7 @@ const reducer = (
 
     case ActionTypes.UpdateCreateParams:
       const params = generateCreateRequestParams(action.payload);
+      console.log(params);
       const isSubmitEnabled =
         !isEmpty(params.question) &&
         !isEmpty(params.context) &&

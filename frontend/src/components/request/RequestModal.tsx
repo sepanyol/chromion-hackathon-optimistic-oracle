@@ -1,8 +1,6 @@
-// components/RequestModal.tsx
 "use client";
 import { Info, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
 import { RequestChallengePeriod, ValidPeriods } from "./RequestChallengePeriod";
 import { RequestContext } from "./RequestContext";
 import { RequestDescription } from "./RequestDescription";
@@ -26,8 +24,6 @@ type FormData = {
   period: ValidPeriods;
   details: string;
   truthMeaning: string;
-  tokenAddress: string;
-  tokenId: string;
 };
 
 const RequestModal: React.FC<RequestModalProps> = ({
@@ -45,10 +41,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
     period: 86400,
     details: "",
     truthMeaning: "",
-    tokenAddress: "",
-    tokenId: "",
   };
-  const createContext = useCreateRequestContext();
   const [formData, setFormData] = useState<FormData>(initialFormData);
 
   const [errors, setErrors] = useState<any>({});
@@ -63,21 +56,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
     if (!formData.details.trim()) {
       newErrors.details = "This is required";
     }
-
-    createContext.dispatch({
-      type:
-        formData.type == "Value"
-          ? ActionTypes.EnableCreateTokenWrapper
-          : ActionTypes.DisableCreateTokenWrapper,
-    });
-
-    if (formData.type == "Value" && !formData.tokenAddress.trim()) {
-      newErrors.tokenAddress = "Token address is required";
-    }
-
-    // if (formData.type == "Value" && !formData.tokenId.trim()) {
-    //   newErrors.tokenId = "Token ID is required";
-    // }
 
     if (!formData.reward || parseInt(formData.reward) <= 0) {
       newErrors.reward = "Valid reward amount is required";
@@ -185,7 +163,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
               </div>
             </div>
 
-            {createContext.state.isSubmitting && (
+            {isSubmitting && (
               <div className="absolute inset-0 bg-white/80 -m-1 z-[60]"></div>
             )}
           </div>
