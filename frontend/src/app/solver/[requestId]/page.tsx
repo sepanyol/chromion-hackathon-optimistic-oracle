@@ -1,6 +1,7 @@
 "use client";
 import { BackLinkBar } from "@/components/BackLinkBar";
 import Navbar from "@/components/Navbar";
+import OracleProvider from "@/components/OracleProvider";
 import RequestProvider from "@/components/RequestProvider";
 import { SolverRequestDetails } from "@/components/solver/details/SolverRequestDetails";
 import { useParams } from "next/navigation";
@@ -16,9 +17,11 @@ const ProposeAnswerPage: React.FC<{
       <Navbar showNavigation />
       <BackLinkBar href="/solver" label="Back to Overview" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <RequestProvider requestId={requestId}>
-          <SolverRequestDetails />
-        </RequestProvider>
+        <OracleProvider>
+          <RequestProvider requestId={requestId}>
+            <SolverRequestDetails />
+          </RequestProvider>
+        </OracleProvider>
       </div>
       <ToastContainer />
     </div>

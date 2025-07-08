@@ -1,7 +1,13 @@
 import { gql } from "urql";
 import { querySubgraph } from "./urqlClient";
 import { RequestStatus } from "../helpers";
-import { DashboardRequestType } from "@/types/Requests";
+import {
+  DashboardRequestType,
+  FullRequestChallengeType,
+  FullRequestReviewType,
+  FullRequestType,
+  RequestsForChallenge,
+} from "@/types/Requests";
 
 const FetchRequestsDefault = gql`
   query {
@@ -68,6 +74,55 @@ const FetchRequestsByStatus = gql`
     }
   }
 `;
+const FetchFullRequests = gql`
+  query ($status: Int!) {
+    requests(status: $status) {
+      id
+      answerType
+      challengeWindow
+      context
+      createdAt
+      isCrossChain
+      originAddress
+      originChainId
+      question
+      rewardAmount
+      status
+      truthMeaning
+      scoring {
+        final_decision
+        score
+        heatmap {
+          ambiguity
+          clarity
+          completeness
+          logical_consistency
+          source_trust
+          time_reference
+        }
+        ratings {
+          ambiguity
+          clarity
+          completeness
+          logical_consistency
+          source_trust
+          time_reference
+        }
+      }
+      proposal {
+        createdAt
+        answer
+        isChallenged
+        proposer {
+          id
+        }
+      }
+      requester {
+        id
+      }
+    }
+  }
+`;
 
 export const fetchRequests = async (status?: RequestStatus | "all") =>
   querySubgraph<{ requests: DashboardRequestType[] }>(
@@ -76,3 +131,68 @@ export const fetchRequests = async (status?: RequestStatus | "all") =>
       ...(status != "all" ? { status } : {}),
     }
   );
+
+const FetchRequestsForChallenge = gql<RequestsForChallenge, { status: number }>`
+  query ($status: Int) {
+    requests(where: { status: $status }) {
+      id
+      answerType
+      challengeWindow
+      context
+      createdAt
+      isCrossChain
+      originAddress
+      originChainId
+      question
+      rewardAmount
+      status
+      truthMeaning
+      scoring {
+        final_decision
+        score
+        heatmap {
+          ambiguity
+          clarity
+          completeness
+          logical_consistency
+          source_trust
+          time_reference
+        }
+        ratings {
+          ambiguity
+          clarity
+          completeness
+          logical_consistency
+          source_trust
+          time_reference
+        }
+      }
+      proposal {
+        createdAt
+        answer
+        isChallenged
+        proposer {
+          id
+        }
+      }
+      challenge {
+        createdAt
+        answer
+        reason
+        votesAgainst
+        votesFor
+        challenger {
+          id
+        }
+      }
+      requester {
+        id
+      }
+    }
+  }
+`;
+
+export const fetchRequestsForChallenge = async () =>
+  querySubgraph<RequestsForChallenge>(FetchRequestsForChallenge, {
+    status: RequestStatus.Proposed,
+  });

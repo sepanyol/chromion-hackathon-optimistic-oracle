@@ -4,20 +4,16 @@ import { Button } from "@/components/Button";
 import Navbar from "@/components/Navbar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import StatCard from "@/components/StatCard";
-import ChallengerSubmissionPanel from "@/components/challenger/ChallengerSubmissionPanel";
-import MyActiveChallenges from "@/components/challenger/MyActiveChallenges";
 import { ShortAddress } from "@/components/utilities/ShortAddress";
+import { useRequestsForChallenge } from "@/hooks/useRequestsForChallenge";
 import { useUserChallenger } from "@/hooks/useUserChallenger";
-import {
-  AvailableReviewsType,
-  FullRequestChallengeType,
-} from "@/types/Requests";
 import { StatData } from "@/types/StatsCards";
 import { isInvolvedInRequest } from "@/utils/helpers";
 import { timeAgo } from "@/utils/time-ago";
 import {
   AlertTriangle,
   CheckCircle,
+  Clock,
   DollarSign,
   Shield,
   TrendingUp,
@@ -57,13 +53,21 @@ interface Challenge {
 
 const ChallengerPage: React.FC = () => {
   const [stats, setStats] = useState<StatData[]>([]);
-  const [requests, setRequests] = useState<FullRequestChallengeType[]>([]);
+  // const [requests, setRequests] = useState<FullRequestChallengeType[]>([]);
   // const [answers, setAnswers] = useState<Answer[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const { address } = useAccount();
   const challenger = useUserChallenger(address!);
+
+  const {
+    data: requests,
+    isLoading: isLoadingRequests,
+    isSuccess: isSuccessRequests,
+  } = useRequestsForChallenge();
+
+  console.log({ requests });
 
   useEffect(() => {
     if (!challenger.isSuccess || !challenger.data) return;
@@ -108,8 +112,8 @@ const ChallengerPage: React.FC = () => {
       },
     ]);
 
-    if (challenger.data.requests) setRequests(challenger.data.requests);
-    else setRequests([]);
+    // if (challenger.data.requests) setRequests(challenger.data.requests);
+    // else setRequests([]);
   }, [challenger.data, challenger.isSuccess]);
 
   useEffect(() => {
@@ -220,6 +224,10 @@ const ChallengerPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar showNavigation />
+
+        {/* Network Status Bar */}
+        <NetworkStatusBar />
+
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -247,129 +255,154 @@ const ChallengerPage: React.FC = () => {
 
           {/* Main Content */}
           <div className="col-span-4 space-y-8">
+            {requests && requests.length === 0 && (
+              <div className="text-center py-12 bg-white/40 rounded-lg border border-dashed border-gray-300">
+                <div className="text-gray-400 mb-4">
+                  <Clock className="w-12 h-12 mx-auto" />
+                </div>
+                <p className="text-gray-500 text-lg">
+                  No new proposals available
+                </p>
+                <p className="text-gray-400 text-sm">
+                  Come back later to challenge more proposals
+                </p>
+              </div>
+            )}
+
             {/* Available Answers */}
             <div className="space-y-4">
-              {requests.map((request) => (
-                <div
-                  key={request.id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 shadow"
-                >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <span
-                        className={`inline-flex gap-1 items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${getRiskColor(
-                          Number(
-                            request.scoring ? request.scoring.final_decision : 0
-                          )
-                        )}`}
-                      >
-                        {getRiskIcon(
-                          Number(
-                            request.scoring ? request.scoring.final_decision : 0
-                          )
-                        )}
-                        {request.scoring ? (
-                          <>
-                            {request.scoring.final_decision == 1 && "Low"}
-                            {request.scoring.final_decision == 2 && "Medium"}
-                            {request.scoring.final_decision == 3 &&
-                              "High"}: {request.scoring.score / 10}/10
-                          </>
-                        ) : (
-                          <span>waiting for assessment...</span>
-                        )}
-                      </span>
-
-                      {Number(request.proposal.createdAt) * 1000 - Date.now() <
-                        21600000 && (
-                        <span className="bg-gray-300 text-gray-600 px-2 py-1 rounded text-xs font-bold animate-pulse justify-self-end">
-                          URGENT
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-gray-400 text-sm font-medium">
-                      created{" "}
-                      {timeAgo.format(
-                        Number(request.proposal.createdAt) * 1000
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Question and Answer */}
-                  <div className="mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                      Q: {request.question}
-                    </h4>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">A:</span>{" "}
-                        {request.answerType === 0 && (
-                          <span>
-                            {["0x01", "0x00"].includes(
-                              trim(request.proposal.answer as Address)
+              {requests &&
+                requests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="bg-white border border-gray-200 rounded-lg p-6 shadow"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <span
+                          className={`inline-flex gap-1 items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${getRiskColor(
+                            Number(
+                              request.scoring
+                                ? request.scoring.final_decision
+                                : 0
                             )
-                              ? hexToBool(request.proposal.answer as Address, {
-                                  size: 32,
-                                })
-                                ? "YES"
-                                : "NO"
-                              : "NO"}
+                          )}`}
+                        >
+                          {getRiskIcon(
+                            Number(
+                              request.scoring
+                                ? request.scoring.final_decision
+                                : 0
+                            )
+                          )}
+                          {request.scoring ? (
+                            <>
+                              {request.scoring.final_decision == 1 && "Low"}
+                              {request.scoring.final_decision == 2 && "Medium"}
+                              {request.scoring.final_decision == 3 &&
+                                "High"}: {request.scoring.score / 10}/10
+                            </>
+                          ) : (
+                            <span>waiting for assessment...</span>
+                          )}
+                        </span>
+
+                        {request.proposal ? "iek" : "NOPE"}
+                        {Number(request.proposal.createdAt) * 1000 -
+                          Date.now() <
+                          21600000 && (
+                          <span className="bg-gray-300 text-gray-600 px-2 py-1 rounded text-xs font-bold animate-pulse justify-self-end">
+                            URGENT
                           </span>
                         )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Metrics */}
-                  <div className="grid grid-cols-4 gap-4 mb-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Proposer Bond:</span>
-                      <p className="font-semibold">100 USDC</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Proposer:</span>
-                      <ShortAddress address={request.proposal.proposer.id} />
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Challenge Window:</span>
-                      <p className="font-semibold">
+                      </div>
+                      <div className="text-gray-400 text-sm font-medium">
+                        created{" "}
                         {timeAgo.format(
-                          (Number(request.proposal.createdAt) +
-                            Number(request.challengeWindow)) *
-                            1000,
-                          "twitter"
-                        )}{" "}
-                        remaining
-                      </p>
+                          Number(request.proposal.createdAt) * 1000
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-gray-500">Potential Reward:</span>
-                      <p className="font-semibold text-green-600">
-                        {90 + Number(formatUnits(request.rewardAmount, 6))} USDC
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex space-x-3 justify-end">
-                    <Link href={`/challenger/${request.id}`}>
-                      <Button className="from-red-600! to-red-600! text-white! hover:from-red-700! hover:to-red-700!">
-                        {isInvolvedInRequest(
-                          request.requester.id,
-                          request.proposal.proposer.id,
-                          (request as any).challenge &&
-                            (request as any).challenge.challenger.id,
-                          address
-                        )
-                          ? "View"
-                          : "Challenge"}{" "}
-                        Answer
-                      </Button>
-                    </Link>
+                    {/* Question and Answer */}
+                    <div className="mb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        Q: {request.question}
+                      </h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">A:</span>{" "}
+                          {request.answerType === 0 && (
+                            <span>
+                              {["0x01", "0x00"].includes(
+                                trim(request.proposal.answer as Address)
+                              )
+                                ? hexToBool(
+                                    request.proposal.answer as Address,
+                                    {
+                                      size: 32,
+                                    }
+                                  )
+                                  ? "YES"
+                                  : "NO"
+                                : "NO"}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-4 gap-4 mb-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Proposer Bond:</span>
+                        <p className="font-semibold">100 USDC</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Proposer:</span>
+                        <ShortAddress address={request.proposal.proposer.id} />
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Challenge Window:</span>
+                        <p className="font-semibold">
+                          {timeAgo.format(
+                            (Number(request.proposal.createdAt) +
+                              Number(request.challengeWindow)) *
+                              1000,
+                            "twitter"
+                          )}{" "}
+                          remaining
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Potential Reward:</span>
+                        <p className="font-semibold text-green-600">
+                          {90 + Number(formatUnits(request.rewardAmount, 6))}{" "}
+                          USDC
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex space-x-3 justify-end">
+                      <Link href={`/challenger/${request.id}`}>
+                        <Button className="from-red-600! to-red-600! text-white! hover:from-red-700! hover:to-red-700!">
+                          {isInvolvedInRequest(
+                            request.requester.id,
+                            request.proposal.proposer.id,
+                            (request as any).challenge &&
+                              (request as any).challenge.challenger.id,
+                            address
+                          )
+                            ? "View"
+                            : "Challenge"}{" "}
+                          Answer
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 

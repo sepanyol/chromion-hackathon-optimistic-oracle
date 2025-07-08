@@ -31,10 +31,12 @@ import {
 } from "viem";
 import { SolverBool } from "./SolverBool";
 import { SolverValue } from "./SolverValue";
+import { useOracleContext } from "@/components/OracleProvider";
 
 export const SolverRequestDetails = () => {
+  const { assetDecimals, proposerBond, isOracleLoaded } = useOracleContext();
   const { requestId } = useRequestContext();
-  const { account: accountAddress } = useEvmClients();
+  const { account: accountAddress, isConnected } = useEvmClients();
 
   const [proposalValue, setProposalValue] = useState<any>(null);
   const [proposalValueComputed, setProposalValueComputed] = useState<string>();
@@ -68,7 +70,7 @@ export const SolverRequestDetails = () => {
     functionName: "proposeAnswer",
     tokenAddress: getUSDCByChainId(defaultChain.id),
     tokenType: "ERC20",
-    amount: BigInt(parseUnits("100", 6)),
+    amount: proposerBond!,
     spender: oracleAddress,
   });
 
@@ -90,7 +92,9 @@ export const SolverRequestDetails = () => {
           setProposalValueValid(_isNumber);
           setProposalValueComputed(
             _isNumber
-              ? toHex(parseUnits(proposalValue.trim(), 6), { size: 32 })
+              ? toHex(parseUnits(proposalValue.trim(), assetDecimals!), {
+                  size: 32,
+                })
               : undefined
           );
           break;
@@ -182,7 +186,7 @@ export const SolverRequestDetails = () => {
                           disabled={true}
                           value={formatUnits(
                             hexToBigInt(proposal.answer, { size: 32 }),
-                            6
+                            assetDecimals!
                           )}
                           onChange={setProposalValue}
                         />
@@ -200,12 +204,15 @@ export const SolverRequestDetails = () => {
                       <>
                         <div className="flex flex-col w-full gap-2">
                           <div className="text-xl block font-bold">
-                            Submit your proposal
+                            {isConnected
+                              ? "Submit your proposal"
+                              : "Connect your wallet and submit your proposal"}
                           </div>
                           <div>
                             {/* YES/NO */}
                             {request.answerType === 0 && (
                               <SolverBool
+                                disabled={!isConnected}
                                 value={proposalValue}
                                 onChange={setProposalValue}
                               />
@@ -213,6 +220,7 @@ export const SolverRequestDetails = () => {
                             {/* VALLUATION */}
                             {request.answerType === 1 && (
                               <SolverValue
+                                disabled={!isConnected}
                                 value={proposalValue}
                                 onChange={setProposalValue}
                               />
@@ -221,6 +229,7 @@ export const SolverRequestDetails = () => {
                         </div>
                         <Button
                           disabled={
+                            !isConnected ||
                             !proposalValueValid ||
                             proposeAnswer.isExecuting ||
                             proposeAnswer.isWaitingForApproval ||
@@ -262,12 +271,14 @@ export const SolverRequestDetails = () => {
             <div>
               <span>Reward:</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(request.rewardAmount), 6)} USDC
+                {formatUnits(BigInt(request.rewardAmount), assetDecimals!)} USDC
               </span>
             </div>
             <div>
               <span>Bond:</span> <br />
-              <span className="font-bold">100 USDC</span>
+              <span className="font-bold">
+                {formatUnits(proposerBond!, assetDecimals!)} USDC
+              </span>
             </div>
             <div>
               <span>Challenge window:</span> <br />

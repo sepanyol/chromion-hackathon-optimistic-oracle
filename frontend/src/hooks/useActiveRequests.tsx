@@ -9,5 +9,5 @@ export const useActiveRequests = (status?: RequestStatus) =>
     select: (result) =>
       result.data && result.data.requests && result.data.requests.length
         ? result.data.requests
-        : null,
+        : [],
   });

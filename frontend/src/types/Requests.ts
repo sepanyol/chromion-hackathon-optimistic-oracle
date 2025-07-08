@@ -204,3 +204,14 @@ export type RequestPriceReviewType = {
   answer?: string;
   id?: string;
 };
+
+export type RequestForChallenge = FullRequestChallengeType &
+  Omit<FullRequestReviewType, "reviews"> & {
+    requester: {
+      id: Address;
+    };
+  };
+
+export type RequestsForChallenge = {
+  requests: RequestForChallenge[];
+};

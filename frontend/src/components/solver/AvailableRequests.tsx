@@ -151,7 +151,7 @@ const AvailableRequests: React.FC<AvailableRequestsProps> = ({ requests }) => {
           </div>
           <p className="text-gray-500 text-lg">No new requests available</p>
           <p className="text-gray-400 text-sm">
-            Come back later to propose mor answers
+            Come back later to propose more answers
           </p>
         </div>
       )}

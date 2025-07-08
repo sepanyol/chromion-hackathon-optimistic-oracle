@@ -564,26 +564,30 @@ contract OracleCoordinator is
         return address(0);
     }
 
+    // TODO test this new behaviour... time elapsing and such. also check initial request made with time goes by, THEN create proposal...
     /// @dev Returns whether a request is eligible for finalization and its current status
     function _isFinalizable(
         address _request
     ) internal view returns (bool _is, RequestTypes.RequestStatus _status) {
         _status = requestStore[_request].status();
 
-        Proposal storage _proposal = proposalStore[_request];
+        if (
+            _status != RequestTypes.RequestStatus.Proposed &&
+            _status != RequestTypes.RequestStatus.Challenged
+        ) return (false, _status);
 
+        Proposal storage _proposal = proposalStore[_request];
         if (
             _status == RequestTypes.RequestStatus.Proposed && // is proposed
-            block.timestamp - requestStore[_request].createdAt() >
+            block.timestamp - _proposal.timestamp >
             requestStore[_request].challengeWindow() // and elapsed time is > challenge window
-        ) return (true, _status);
+        ) _is = true;
 
+        Challenge storage _challenge = _proposal.challenge;
         if (
             _status == RequestTypes.RequestStatus.Challenged && // is challenged
-            block.timestamp - _proposal.timestamp > REVIEW_WINDOW // and elapsed time is > review window
-        ) return (true, _status);
-
-        return (false, _status);
+            block.timestamp - _challenge.timestamp > REVIEW_WINDOW // and elapsed time is > review window
+        ) _is = true;
     }
 
     /// @inheritdoc IOracleCoordinator
