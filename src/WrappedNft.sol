@@ -172,7 +172,7 @@ contract WrappedNft is
                 challengeWindow: 60 * 5,
                 rewardAmount: REWARD,
                 question: string.concat(
-                    "What the value of the NFT (",
+                    "What's the value of the NFT (",
                     Strings.toHexString(address(this)),
                     ") with ID ",
                     Strings.toString(_wNftId)
