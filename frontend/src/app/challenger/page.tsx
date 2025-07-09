@@ -1,7 +1,7 @@
 // app/challenger/page.tsx
 "use client";
 import { Button } from "@/components/Button";
-import Navbar from "@/components/Navbar";
+import NavBar from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import StatCard from "@/components/StatCard";
 import { ShortAddress } from "@/components/utilities/ShortAddress";
@@ -61,13 +61,7 @@ const ChallengerPage: React.FC = () => {
   const { address } = useAccount();
   const challenger = useUserChallenger(address!);
 
-  const {
-    data: requests,
-    isLoading: isLoadingRequests,
-    isSuccess: isSuccessRequests,
-  } = useRequestsForChallenge();
-
-  console.log({ requests });
+  const { data: requests } = useRequestsForChallenge();
 
   useEffect(() => {
     if (!challenger.isSuccess || !challenger.data) return;
@@ -223,7 +217,7 @@ const ChallengerPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />
@@ -237,7 +231,7 @@ const ChallengerPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+      <NavBar />
 
       {/* Network Status Bar */}
       <NetworkStatusBar />

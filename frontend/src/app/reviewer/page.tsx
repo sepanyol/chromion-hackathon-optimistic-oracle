@@ -1,5 +1,5 @@
 "use client";
-import Navbar from "@/components/Navbar";
+import NavBar  from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import { AvailableReviews } from "@/components/reviewer/AvailableReviews";
 import { MyReviews } from "@/components/reviewer/MyReviews";
@@ -82,7 +82,7 @@ const ReviewerPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -92,7 +92,7 @@ const ReviewerPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+      <NavBar />
 
       {/* Network Status Bar */}
       <NetworkStatusBar />

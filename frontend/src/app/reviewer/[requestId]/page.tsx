@@ -1,5 +1,5 @@
 import { BackLinkBar } from "@/components/BackLinkBar";
-import Navbar from "@/components/Navbar";
+import NavBar  from "@/components/NavBar";
 import RequestProvider from "@/components/RequestProvider";
 import { ReviewChallengeDetails } from "@/components/reviewer/details/ReviewChallengeDetails";
 import { ToastContainer } from "react-toastify";
@@ -11,7 +11,7 @@ const ReviewChallengePage: React.FC<{
   const { requestId } = await params;
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+      <NavBar />
       <BackLinkBar href="/reviewer" label="Back to Overview" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <RequestProvider requestId={requestId}>

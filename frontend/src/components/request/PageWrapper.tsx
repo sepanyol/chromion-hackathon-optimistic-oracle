@@ -1,5 +1,5 @@
 "use client";
-import Navbar from "@/components/Navbar";
+import NavBar  from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import { useOracleContext } from "@/components/OracleProvider";
 import { FloatingCreateRequestAction } from "@/components/Requester/FloatingCreateRequestAction";
@@ -81,7 +81,7 @@ export const RequestPageWrapper = () => {
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />
@@ -101,7 +101,7 @@ export const RequestPageWrapper = () => {
   if (!isOracleLoaded) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />
@@ -115,7 +115,7 @@ export const RequestPageWrapper = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+      <NavBar />
 
       {/* Network Status Bar */}
       <NetworkStatusBar />

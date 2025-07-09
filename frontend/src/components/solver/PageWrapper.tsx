@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import Navbar from "../Navbar";
+import NavBar  from "../NavBar";
 import { useOracleContext } from "../OracleProvider";
 
 export const SolverPageWrapper = () => {
@@ -141,7 +141,7 @@ export const SolverPageWrapper = () => {
   if (proposer.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -151,7 +151,7 @@ export const SolverPageWrapper = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar showNavigation />
+      <NavBar />
 
       {/* Network Status Bar */}
       <NetworkStatusBar />

@@ -29,3 +29,7 @@ input,
 textarea {
   @apply placeholder:text-gray-400;
 }
+
+.equo-gradient {
+  @apply bg-gradient-to-tr from-[#5473f3] via-[#d38cb7] to-[#f4a45e] hover:from-[#405cda] hover:via-[#bb73a3]  hover:to-[#e38d45]  transition-all duration-300 text-white;
+}

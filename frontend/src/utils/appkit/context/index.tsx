@@ -55,7 +55,8 @@ const modal = createAppKit({
   adapters: [wagmiAdapter /*, solanaWeb3JsAdapter */],
   projectId,
   themeVariables: {
-    "--w3m-accent": "var(--color-blue-600)",
+    // "--w3m-accent": "var(--color-blue-600)",
+    // "--w3m-accent": "transparent",
   },
   networks: availableNetworks,
   defaultNetwork: defaultChain,

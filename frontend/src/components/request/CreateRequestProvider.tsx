@@ -168,7 +168,6 @@ const reducer = (
   state: CreateRequestType,
   action: CreateRequestActions
 ): CreateRequestType => {
-  console.log(Date.now(), action.type);
   switch (action.type) {
     case ActionTypes.OpenModal:
       return { ...state, isModalOpen: true };
@@ -197,7 +196,6 @@ const reducer = (
 
     case ActionTypes.UpdateCreateParams:
       const params = generateCreateRequestParams(action.payload);
-      console.log(params);
       const isSubmitEnabled =
         !isEmpty(params.question) &&
         !isEmpty(params.context) &&

@@ -1,5 +1,5 @@
 "use client";
-import Navbar from "@/components/Navbar";
+import NavBar  from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import OracleProvider from "@/components/OracleProvider";
 import CreateRequestProvider from "@/components/request/CreateRequestProvider";
@@ -14,7 +14,7 @@ const RequesterPage: React.FC = () => {
   if (!isConnected) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />

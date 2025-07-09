@@ -2,7 +2,7 @@
 import ActivityFeed from "@/components/ActivityFeed";
 import CrossChainStatus from "@/components/CrossChainStatus";
 import { Loader } from "@/components/Loader";
-import Navbar from "@/components/Navbar";
+import NavBar  from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
 import QuickActions from "@/components/QuickActions";
 import { CreateRequest } from "@/components/request/CreateRequest";
@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />
@@ -204,7 +204,7 @@ const Dashboard: React.FC = () => {
   return (
     <CreateRequestProvider>
       <div className="min-h-screen bg-gray-50">
-        <Navbar showNavigation />
+        <NavBar />
 
         {/* Network Status Bar */}
         <NetworkStatusBar />
