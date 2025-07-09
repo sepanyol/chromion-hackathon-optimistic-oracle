@@ -10,7 +10,7 @@ import RequestModal from "./RequestModal";
 export const CreateRequest = () => {
   const router = useRouter();
   const { state, dispatch } = useCreateRequestContext();
-  const { assetDecimals } = useOracleContext();
+  const { assetDecimals, isOracleLoaded } = useOracleContext();
 
   const createRequest = useCreateRequest({
     params: state.params,
@@ -45,6 +45,11 @@ export const CreateRequest = () => {
       isSubmitting={state.isSubmitting}
       isSubmitDisabled={!state.isSubmitEnabled}
       onUpdate={(data: any) => {
+        console.log(
+          parseUnits(data.reward || "0", assetDecimals!),
+          data.reward,
+          assetDecimals
+        );
         dispatch({
           type: ActionTypes.UpdateCreateParams,
           payload: {

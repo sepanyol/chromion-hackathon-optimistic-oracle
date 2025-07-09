@@ -2,8 +2,9 @@
 import ActivityFeed from "@/components/ActivityFeed";
 import CrossChainStatus from "@/components/CrossChainStatus";
 import { Loader } from "@/components/Loader";
-import NavBar  from "@/components/NavBar";
+import NavBar from "@/components/NavBar";
 import { NetworkStatusBar } from "@/components/NetworkStatusBar";
+import OracleProvider from "@/components/OracleProvider";
 import QuickActions from "@/components/QuickActions";
 import { CreateRequest } from "@/components/request/CreateRequest";
 import CreateRequestProvider from "@/components/request/CreateRequestProvider";
@@ -202,85 +203,87 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <CreateRequestProvider>
-      <div className="min-h-screen bg-gray-50">
-        <NavBar />
+    <OracleProvider>
+      <CreateRequestProvider>
+        <div className="min-h-screen bg-gray-50">
+          <NavBar />
 
-        {/* Network Status Bar */}
-        <NetworkStatusBar />
+          {/* Network Status Bar */}
+          <NetworkStatusBar />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 mb-18 lg:grid-cols-4 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-3 space-y-8">
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, index) => (
-                  <StatCard key={index} {...stat} />
-                ))}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-1 mb-18 lg:grid-cols-4 gap-8">
+              {/* Main Content */}
+              <div className="lg:col-span-3 space-y-8">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {stats.map((stat, index) => (
+                    <StatCard key={index} {...stat} />
+                  ))}
+                </div>
+
+                {/* Recent Activity */}
+                {/* Add linking based on status and redirect to desired section */}
+                <ActivityFeed activities={activities} />
+
+                {/* Requests Section */}
               </div>
 
-              {/* Recent Activity */}
-              {/* Add linking based on status and redirect to desired section */}
-              <ActivityFeed activities={activities} />
-
-              {/* Requests Section */}
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <CrossChainStatus networks={networks} />
+                <QuickActions />
+              </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <CrossChainStatus networks={networks} />
-              <QuickActions />
-            </div>
-          </div>
+            <div className="bg-white mt-5 rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Active Requests
+                  </h2>
 
-          <div className="bg-white mt-5 rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Active Requests
-                </h2>
-
-                <div className="flex items-center space-x-4">
-                  {/* Filter Tabs */}
-                  <div className="flex bg-gray-100 rounded-lg p-1">
-                    {(["all", "open", "proposed", "challenged"] as const).map(
-                      (tab) => (
-                        <button
-                          key={tab}
-                          onClick={() => setSelectedTab(tab)}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 ${
-                            selectedTab === tab
-                              ? "bg-white text-blue-600 shadow-sm"
-                              : "text-gray-600 hover:text-gray-900"
-                          }`}
-                        >
-                          {upperFirst(tab)}
-                        </button>
-                      )
-                    )}
+                  <div className="flex items-center space-x-4">
+                    {/* Filter Tabs */}
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      {(["all", "open", "proposed", "challenged"] as const).map(
+                        (tab) => (
+                          <button
+                            key={tab}
+                            onClick={() => setSelectedTab(tab)}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-200 ${
+                              selectedTab === tab
+                                ? "bg-white text-blue-600 shadow-sm"
+                                : "text-gray-600 hover:text-gray-900"
+                            }`}
+                          >
+                            {upperFirst(tab)}
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {activeRequests.isLoading || activeRequests.isFetching ? (
+                <div className="p-4 flex flex-row justify-center items-center">
+                  <Loader size={36} />
+                </div>
+              ) : (
+                <RequestsTable
+                  requests={requests}
+                  onPropose={handlePropose}
+                  onChallenge={handleChallenge}
+                />
+              )}
             </div>
-
-            {activeRequests.isLoading || activeRequests.isFetching ? (
-              <div className="p-4 flex flex-row justify-center items-center">
-                <Loader size={36} />
-              </div>
-            ) : (
-              <RequestsTable
-                requests={requests}
-                onPropose={handlePropose}
-                onChallenge={handleChallenge}
-              />
-            )}
           </div>
-        </div>
 
-        {isReady && <CreateRequest />}
-      </div>
-    </CreateRequestProvider>
+          {isReady && <CreateRequest />}
+        </div>
+      </CreateRequestProvider>
+    </OracleProvider>
   );
 };
 

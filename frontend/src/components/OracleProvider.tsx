@@ -1,10 +1,12 @@
 import oracleAbi from "@/abis/coordinator.json";
+import factoryAbi from "@/abis/factory.json";
 import { defaultChain } from "@/utils/appkit/context";
-import { getOracleByChainId } from "@/utils/contracts";
+import { getFactoryByChainId, getOracleByChainId } from "@/utils/contracts";
 import { useEvmClients } from "@s3panyol/use-evm-transaction-flow";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, PropsWithChildren, useContext } from "react";
 import { Abi, Address, erc20Abi } from "viem";
+import { usePublicClient } from "wagmi";
 
 type OracleType = {
   asset: Address | null;
@@ -41,34 +43,49 @@ export const useOracleContext = () => {
 
 const OracleProvider = function ({ children }: PropsWithChildren) {
   const { publicClient } = useEvmClients();
+  const publicClientOracleChain = usePublicClient({ chainId: defaultChain.id });
+
+  const calls: any[] = [
+    publicClientOracleChain?.multicall({
+      allowFailure: false,
+      contracts: [
+        "REVIEW_WINDOW",
+        "PROPOSER_BOND",
+        "CHALLENGER_BOND",
+        "REVIEWER_BOND",
+        "usdc",
+      ].map((functionName) => ({
+        abi: oracleAbi as Abi,
+        functionName,
+        address: getOracleByChainId(publicClientOracleChain.chain.id)!,
+      })),
+    }),
+  ];
+
+  if (publicClient?.chain.id != publicClientOracleChain?.chain.id) {
+    calls.push(
+      publicClient?.readContract({
+        abi: factoryAbi as Abi,
+        functionName: "paymentAsset",
+        address: getFactoryByChainId(publicClient.chain.id)!,
+      })
+    );
+  }
+
   const oracleQuery = useQuery({
-    queryKey: ["oracle-base-data"],
-    queryFn: async () =>
-      publicClient?.multicall({
-        allowFailure: false,
-        contracts: [
-          "REVIEW_WINDOW",
-          "PROPOSER_BOND",
-          "CHALLENGER_BOND",
-          "REVIEWER_BOND",
-          "usdc",
-        ].map((functionName) => ({
-          abi: oracleAbi as Abi,
-          functionName,
-          address: getOracleByChainId(defaultChain.id)!,
-        })),
-      }),
-    select: (data) => ({
-      reviewWindow: data![0] as bigint,
-      proposerBond: data![1] as bigint,
-      challengerBond: data![2] as bigint,
-      reviewerBond: data![3] as bigint,
-      asset: data![4] as Address,
+    queryKey: ["oracle-base-data", publicClient?.chain.id],
+    queryFn: () => Promise.all(calls),
+    select: ([oracleData, factoryData]) => ({
+      reviewWindow: oracleData![0] as bigint,
+      proposerBond: oracleData![1] as bigint,
+      challengerBond: oracleData![2] as bigint,
+      reviewerBond: oracleData![3] as bigint,
+      asset: (factoryData || oracleData![4]) as Address,
     }),
   });
 
   const assetQuery = useQuery({
-    queryKey: ["oracle-asset"],
+    queryKey: ["oracle-asset", publicClient?.chain.id, oracleQuery.data?.asset],
     queryFn: async () =>
       publicClient?.multicall({
         allowFailure: false,
