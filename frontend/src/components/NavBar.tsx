@@ -84,11 +84,7 @@ const NavBar: React.FC = () => {
               <div className="flex shrink-0 items-center">
                 <Link href="/" className="flex items-center space-x-2 group">
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent flex-shrink-0">
-                    <img
-                      alt="Logo"
-                      src="/logo.png"
-                      className="h-12"
-                    />
+                    <img alt="Logo" src="/logo.png" className="h-12" />
                   </h1>
                 </Link>
               </div>
