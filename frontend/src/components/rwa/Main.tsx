@@ -8,20 +8,14 @@ import CreateRequestProvider, {
 } from "../request/CreateRequestProvider";
 import { MyTokens } from "./MyTokens";
 import { MyValuations } from "./MyValuations";
+import { ButtonWalletConnect } from "../ButtonConnectWallet";
 
 export const Main = () => {
   const { isReady, isConnected } = useEvmClients();
   const createRequest = useCreateRequestContext();
 
-  if (isConnected && !isReady)
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-
-  if (!isConnected && !isReady)
-    return (
+  return (
+    <>
       <div className="w-full flex flex-col items-center justify-center">
         <div className="bg-white px-6 py-4 rounded-lg shadow-sm border gap-4 flex flex-col border-gray-200 w-full">
           <h2 className="text-4xl">
@@ -67,42 +61,40 @@ export const Main = () => {
           <h2 className="text-2xl">
             Ready to initiate your first RWA valuation?
           </h2>
-          <p>
-            Connect your wallet to get started and fund your request with just a
-            few clicks.
-          </p>
-          <appkit-button />
-        </div>
-      </div>
-    );
 
-  if (isConnected && isReady)
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="w-full flex flex-col items-center justify-center">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full">
-              <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-4 lg:gap-0 lg:flex-row items-center justify-between">
-                <span>
-                  You've a tokenized asset and don't know what its wort? Check
-                  Equolibrium Optimistic Oracle
-                </span>
-                <div>
-                  <Button
-                    onClick={() => {
-                      createRequest.dispatch({ type: ActionTypes.OpenModal });
-                    }}
-                  >
-                    What's my RWA worth?
-                  </Button>
-                </div>
+          {!isConnected ? (
+            <>
+              <p>
+                Connect your wallet to get started and fund your request with
+                just a few clicks.
+              </p>
+              <div>
+                <ButtonWalletConnect />
               </div>
+            </>
+          ) : (
+            <div>
+              <Button
+                onClick={() => {
+                  createRequest.dispatch({ type: ActionTypes.OpenModal });
+                }}
+              >
+                What value has my tokenized asset?
+              </Button>
             </div>
-          </div>
-          <MyValuations />
-          <MyTokens />
+          )}
         </div>
-        <CreateNFTRequest />
       </div>
-    );
+
+      {isConnected && isReady && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <MyValuations />
+            <MyTokens />
+          </div>
+          <CreateNFTRequest />
+        </div>
+      )}
+    </>
+  );
 };
