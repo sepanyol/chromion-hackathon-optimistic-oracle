@@ -1,10 +1,9 @@
 import abi from "@/abis/coordinator.json";
+import { useOracleContext } from "@/components/OracleProvider";
 import { defaultChain } from "@/utils/appkit/context";
 import { getOracleByChainId, getUSDCByChainId } from "@/utils/contracts";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { isBoolean } from "lodash";
-import { Address, parseUnits } from "viem";
-import { useExecuteFunctionWithTokenTransfer } from "./useExecuteFunctionWithTokenTransfer";
+import { useEvmTransactionFlow } from "@s3panyol/use-evm-transaction-flow";
+import { Abi, Address } from "viem";
 
 type useSubmitReviewProps = {
   request: Address;
@@ -17,19 +16,16 @@ export const useSubmitReview = ({
   reason,
   supportChallenge,
 }: useSubmitReviewProps) => {
-  const { address: account } = useAppKitAccount();
-  const address = getOracleByChainId(defaultChain.id)!;
-  const chainId = defaultChain.id;
-  return useExecuteFunctionWithTokenTransfer({
-    address,
-    abi: abi as any,
-    account: account as Address,
-    functionName: "submitReview",
+  const { reviewerBond } = useOracleContext();
+  const oracleAddress = getOracleByChainId(defaultChain.id)!;
+  return useEvmTransactionFlow({
+    abi: abi as Abi,
+    tokenAddress: getUSDCByChainId(defaultChain.id),
+    contractAddress: oracleAddress,
+    spender: oracleAddress,
     args: [request, reason, supportChallenge],
-    chainId,
-    eventNames: ["ReviewSubmitted"],
-    transferToken: getUSDCByChainId(defaultChain.id),
-    transferAmount: BigInt(parseUnits("5", 6)), // TODO get from Oracle
-    enabled: Boolean(request && reason && isBoolean(supportChallenge)),
+    functionName: "submitReview",
+    tokenType: "ERC20",
+    amount: reviewerBond!,
   });
 };

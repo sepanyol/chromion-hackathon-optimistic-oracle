@@ -45,11 +45,6 @@ export const CreateRequest = () => {
       isSubmitting={state.isSubmitting}
       isSubmitDisabled={!state.isSubmitEnabled}
       onUpdate={(data: any) => {
-        console.log(
-          parseUnits(data.reward || "0", assetDecimals!),
-          data.reward,
-          assetDecimals
-        );
         dispatch({
           type: ActionTypes.UpdateCreateParams,
           payload: {

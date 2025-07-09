@@ -17,9 +17,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { formatUnits } from "viem";
-import NavBar  from "../NavBar";
+import { formatUnits, hexToBigInt } from "viem";
+import NavBar from "../NavBar";
 import { useOracleContext } from "../OracleProvider";
+import { getChainById } from "@/utils/chains";
 
 export const SolverPageWrapper = () => {
   const { account } = useEvmClients();
@@ -121,7 +122,10 @@ export const SolverPageWrapper = () => {
               assetDecimals!
             )} ${assetSymbol}`,
             category: request.answerType === 0 ? "Yes/No" : "Valuation",
-            chain: request.isCrossChain ? "cross chain" : defaultChain.name,
+            chain:
+              request.originChainId != "0x"
+                ? getChainById(Number(hexToBigInt(request.originChainId))).name
+                : defaultChain.name,
             createdAt: timeAgo.format(Number(request.createdAt) * 1000),
             description: request.context,
             reward: `${formatUnits(

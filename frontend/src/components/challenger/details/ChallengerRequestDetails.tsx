@@ -41,6 +41,7 @@ import {
   useEvmClients,
   useEvmTransactionFlow,
 } from "@s3panyol/use-evm-transaction-flow";
+import { isBoolean, isNull } from "lodash";
 
 export const ChallengerRequestDetails = () => {
   const tokenAddress = getUSDCByChainId(defaultChain.id);
@@ -58,10 +59,6 @@ export const ChallengerRequestDetails = () => {
   const [reason, setReason] = useState<string>();
   const [reasonBytes, setReasonBytes] = useState<string>();
   const [enableSubmit, setEnableSubmit] = useState(false);
-  const [txHashApproval, setTxHashApproval] = useState<Address | undefined>();
-  const [txHashPropose, setTxHashPropose] = useState<Address | undefined>();
-
-  const chainId = 43113;
 
   const {
     data: request,
@@ -86,34 +83,6 @@ export const ChallengerRequestDetails = () => {
     tokenType: "ERC20",
     amount: challengerBond!,
     spender: oracleAddress!,
-  });
-
-  const approval = useTokenApproval({
-    address: tokenAddress,
-    spender: oracleAddress!,
-    amount: BigInt(100e6),
-    chainId: chainId!,
-  });
-
-  const waitForApproval = useWaitForTransactionReceipt({
-    hash: txHashApproval,
-    query: { enabled: !!txHashApproval },
-  });
-
-  const execute = useExecuteFunction({
-    abi: oracleAbi as Abi,
-    address: oracleAddress!,
-    functionName: "challengeAnswer",
-    args: [requestId, true, challengeValueComputed, reasonBytes],
-    chainId: chainId!,
-    eventNames: ["ChallengeSubmitted"],
-    enabled:
-      isHex(requestId) && isHex(challengeValueComputed) && isHex(reasonBytes),
-  });
-
-  const waitForProposal = useWaitForTransactionReceipt({
-    hash: txHashPropose,
-    query: { enabled: !!txHashPropose },
   });
 
   const handleSubmitChallenge = useCallback(() => {
@@ -161,21 +130,20 @@ export const ChallengerRequestDetails = () => {
   useEffect(() => {
     if (!request) return;
 
-    if (!challengeValue) {
-      setChallengeValueComputed(null);
-      return;
-    }
-
     if (request.answerType === 0) {
-      setChallengeValueComputed(toHex(challengeValue, { size: 32 }));
+      if (isBoolean(challengeValue)) {
+        setChallengeValueComputed(toHex(challengeValue, { size: 32 }));
+      } else setChallengeValueComputed(null);
     }
 
     if (request.answerType === 1) {
-      setChallengeValueComputed(
-        toHex(parseUnits(challengeValue, 6), {
-          size: 32,
-        })
-      );
+      if (isFinite(challengeValue)) {
+        setChallengeValueComputed(
+          toHex(parseUnits(challengeValue, assetDecimals!), {
+            size: 32,
+          })
+        );
+      } else setChallengeValueComputed(null);
     }
   }, [request, challengeValue]);
 
@@ -384,7 +352,7 @@ export const ChallengerRequestDetails = () => {
               <span>Reward (+ Proposer Bond):</span> <br />
               <span className="font-bold">
                 {formatUnits(
-                  request.rewardAmount + proposerBond!,
+                  BigInt(request.rewardAmount) + proposerBond!,
                   assetDecimals!
                 )}{" "}
                 {assetSymbol}

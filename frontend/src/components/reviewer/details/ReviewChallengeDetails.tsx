@@ -28,8 +28,18 @@ import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { ReviewBar } from "../ReviewBar";
 import { ReviewSelector } from "./ReviewSelector";
 import { SolverValue } from "@/components/solver/details/SolverValue";
+import { useEvmClients } from "@s3panyol/use-evm-transaction-flow";
+import { useOracleContext } from "@/components/OracleProvider";
 
 export const ReviewChallengeDetails = () => {
+  const { isConnected } = useEvmClients();
+  const {
+    assetDecimals,
+    proposerBond,
+    challengerBond,
+    assetSymbol,
+    reviewWindow,
+  } = useOracleContext();
   const [supportChallenge, setSupportChallenge] = useState<boolean | null>(
     null
   );
@@ -56,25 +66,9 @@ export const ReviewChallengeDetails = () => {
   });
 
   const handleSubmitReview = useCallback(() => {
-    if (
-      !request ||
-      !submitReview ||
-      !submitReview.execute.isEnabled ||
-      !submitReview.execute.isReady
-    )
-      return;
-    submitReview.initiate();
-  }, [
-    submitReview,
-    request,
-    submitReview.execute.isEnabled,
-    submitReview.execute.isReady,
-  ]);
-
-  useEffect(() => {
-    if (!submitReview.execute.execution.isSuccess) return;
-    setTxHash(submitReview.execute.hash);
-  }, [submitReview.execute.execution.isSuccess, userReview]);
+    if (!request || !submitReview || !submitReview.isReady) return;
+    submitReview.run();
+  }, [submitReview, request, submitReview.isReady]);
 
   useEffect(() => {
     if (!request) return;
@@ -89,30 +83,17 @@ export const ReviewChallengeDetails = () => {
     setIsReviewed(userReview.data.timestamp > 0);
   }, [userReview.data]);
 
-  const {
-    data: dataTx,
-    isLoading: isLoadingTx,
-    isSuccess: isSuccessTx,
-    error: errorTx,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-    query: { enabled: !!txHash },
-  });
+  useEffect(() => {
+    if (!submitReview.error) return;
+    toast.error(submitReview.error);
+  }, [submitReview.error]);
 
   useEffect(() => {
-    if (!isSuccessTx || isLoadingTx) return;
-
-    if (errorTx) {
-      toast.error((errorTx as WaitForTransactionReceiptErrorType).message);
-      return;
-    }
-
-    if (dataTx) {
-      refetch();
-      userReview.refetch();
-      toast.success("Successfully put your vote");
-    }
-  }, [dataTx, isLoadingTx, isSuccessTx, errorTx]);
+    if (!submitReview.isSuccess) return;
+    toast.success("Successfully put your vote");
+    refetch();
+    userReview.refetch();
+  }, [submitReview.isSuccess]);
 
   if (isLoading) return <Loader size={48} />;
 
@@ -274,20 +255,25 @@ export const ReviewChallengeDetails = () => {
                     <Button
                       disabled={
                         !enableSubmit ||
-                        isLoadingTx ||
-                        submitReview.approval.execution.isPending ||
-                        submitReview.execute.execution.isPending
+                        !isConnected ||
+                        submitReview.isExecuting ||
+                        submitReview.isWaitingForApproval ||
+                        submitReview.isWaitingForApprovalTxConfirmation ||
+                        submitReview.isWaitingForExecutionTxConfirmation
                       }
                       onClick={handleSubmitReview}
                     >
-                      {submitReview.approval.execution.isPending &&
+                      {submitReview.isWaitingForApproval &&
                         "Confirm approval in your wallet..."}
-                      {submitReview.execute.execution.isPending &&
+                      {submitReview.isExecuting &&
                         "Confirm review in your wallet..."}
-                      {isLoadingTx && "Finishing transaction..."}
-                      {!isLoadingTx &&
-                        !submitReview.approval.execution.isPending &&
-                        !submitReview.execute.execution.isPending &&
+                      {(submitReview.isWaitingForApprovalTxConfirmation ||
+                        submitReview.isWaitingForExecutionTxConfirmation) &&
+                        "Waiting for transaction..."}
+                      {!submitReview.isExecuting &&
+                        !submitReview.isWaitingForApproval &&
+                        !submitReview.isWaitingForApprovalTxConfirmation &&
+                        !submitReview.isWaitingForExecutionTxConfirmation &&
                         "Submit review"}
                     </Button>
                   )}
@@ -325,19 +311,20 @@ export const ReviewChallengeDetails = () => {
             <div>
               <span>Request Reward:</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(request.rewardAmount), 6)} USDC
+                {formatUnits(BigInt(request.rewardAmount), assetDecimals!)}{" "}
+                {assetSymbol}
               </span>
             </div>
             <div>
               <span>Proposer Bond:</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(1e8), 6)} USDC
+                {formatUnits(proposerBond!, assetDecimals!)} {assetSymbol}
               </span>
             </div>
             <div>
               <span>Challenger Bond:</span> <br />
               <span className="font-bold">
-                {formatUnits(BigInt(1e8), 6)} USDC
+                {formatUnits(challengerBond!, assetDecimals!)} {assetSymbol}
               </span>
             </div>
             <div>
@@ -359,19 +346,22 @@ export const ReviewChallengeDetails = () => {
             <div>
               <span>Review Period:</span> <br />
               <span className="font-bold">
-                {(24).toLocaleString("en", {
+                {(Number(reviewWindow) < 86400
+                  ? Number(reviewWindow) / 3600
+                  : Number(reviewWindow) / 86400
+                ).toLocaleString("en", {
                   minimumFractionDigits: 0,
-                  maximumFractionDigits: 2,
+                  maximumFractionDigits: 4,
                 })}
-                h
+                {Number(reviewWindow) < 86400 ? "h" : "d"}
               </span>
             </div>
             <div>
               <span>Review ends:</span> <br />
               <span className="font-bold">
-                {/* TODO implement proper challenge end date. Get general oracle data on start and use it, or store on request or in challenge */}
                 {timeAgo.format(
-                  (Number(request.challenge.createdAt) + 86400) * 1000
+                  (Number(request.challenge.createdAt) + Number(reviewWindow)) *
+                    1000
                 )}
               </span>
             </div>

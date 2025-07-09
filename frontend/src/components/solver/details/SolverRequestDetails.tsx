@@ -34,7 +34,7 @@ import { SolverValue } from "./SolverValue";
 import { useOracleContext } from "@/components/OracleProvider";
 
 export const SolverRequestDetails = () => {
-  const { assetDecimals, proposerBond, isOracleLoaded } = useOracleContext();
+  const { assetDecimals, proposerBond } = useOracleContext();
   const { requestId } = useRequestContext();
   const { account: accountAddress, isConnected } = useEvmClients();
 
