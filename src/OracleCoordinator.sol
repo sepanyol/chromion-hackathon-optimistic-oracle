@@ -5,10 +5,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import {IOracleRelayer} from "./interfaces/IOracleRelayer.sol";
 import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
+import {IRequestType} from "./interfaces/request-types/IRequestType.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
 
@@ -23,6 +25,9 @@ contract OracleCoordinator is
     using RequestTypes for RequestTypes.RequestStatus;
 
     // === Constants ===
+
+    /// @dev Role allowed to manage the oracle
+    bytes32 public constant ORACLE_MANAGER = keccak256("ORACLE_MANAGER");
 
     /// @dev Role allowed to finalize requests
     bytes32 public constant FINALIZER_ROLE = keccak256("FINALIZER_ROLE");
@@ -71,6 +76,9 @@ contract OracleCoordinator is
 
     /// @dev Tracks which vote (for/against) a reviewer submitted
     mapping(bytes32 => bool) private reviewerVote;
+
+    /// @dev registers different request types that are allows to be created
+    mapping(bytes32 => bool) public allowedRequestTypes;
 
     /// @dev Tracks if a reviewer has claimed their reward for a specific request
     mapping(address => mapping(address => bool)) private reviewerRewarded;
@@ -256,6 +264,24 @@ contract OracleCoordinator is
         );
 
         emit ReviewSubmitted(_request, msg.sender, reason, supportsChallenge);
+    }
+
+    function updateAllowedRequestTypes(
+        address _type,
+        bool _enable
+    ) external onlyRole(ORACLE_MANAGER) {
+        if (_enable) {
+            if (
+                !ERC165Checker.supportsInterface(
+                    _type,
+                    type(IRequestType).interfaceId
+                )
+            ) {
+                revert("Invalid Interface");
+            }
+        }
+        allowedRequestTypes[IRequestType(_type).ID()] = _enable;
+        emit UpdateRequestType(msg.sender, _type, _enable);
     }
 
     /// @inheritdoc IOracleCoordinator

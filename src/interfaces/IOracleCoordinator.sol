@@ -126,6 +126,13 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
         uint256 amount
     );
 
+    /// @notice Emitted when a request type is getting updated is refunded to a participant
+    event UpdateRequestType(
+        address indexed requester,
+        address indexed requestType,
+        bool status
+    );
+
     // =================================
     // ========= Core Actions ==========
     // =================================
