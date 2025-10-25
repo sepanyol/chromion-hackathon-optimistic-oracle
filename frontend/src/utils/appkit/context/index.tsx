@@ -2,6 +2,7 @@
 
 import { SolanaAdapter } from "@reown/appkit-adapter-solana";
 import {
+  AppKitNetwork,
   arbitrum,
   arbitrumSepolia,
   avalanche,
@@ -34,6 +35,21 @@ const metadata = {
 
 const solanaWeb3JsAdapter = new SolanaAdapter();
 
+export const defaultChain = avalancheFuji;
+export const availableNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
+  avalanche,
+  avalancheFuji,
+  mainnet,
+  sepolia,
+  arbitrum,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  // solana,
+  // solanaTestnet,
+  // solanaDevnet,
+];
+
 // Create the modal
 const modal = createAppKit({
   adapters: [wagmiAdapter /*, solanaWeb3JsAdapter */],
@@ -41,8 +57,8 @@ const modal = createAppKit({
   themeVariables: {
     "--w3m-accent": "var(--color-blue-600)",
   },
-  networks: networks as any, // Use the centralized network configuration
-  defaultNetwork: networkConfig.defaultNetwork,
+  networks: availableNetworks,
+  defaultNetwork: defaultChain,
   metadata: metadata,
   allowUnsupportedChain: true,
   features: {

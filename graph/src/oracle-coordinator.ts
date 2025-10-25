@@ -174,6 +174,7 @@ export function handleChallengeSubmitted(event: ChallengeSubmitted): void {
     _challengerStats.challengesActive.plus(INT32_ONE);
 
   // update dashboard
+  _dashboard.challenges = _dashboard.challenges.plus(INT32_ONE);
   _dashboard.activeChallenges = _dashboard.activeChallenges.plus(INT32_ONE);
 
   // update proposer stats
@@ -308,6 +309,13 @@ export function handleRequestResolved(event: RequestResolved): void {
       // challenged and challenged won
       // add sucessful challenge
       _challengerStats.successful = _challengerStats.successful.plus(INT32_ONE);
+
+      // increase dashboard stats
+      _dashboard.challengesWon = _dashboard.challengesWon.plus(INT32_ONE);
+      _dashboard.challengeSuccessRate = divBigIntAndCreateTwoDigitDecimal(
+        _dashboard.challengesWon,
+        _dashboard.challenges.minus(_dashboard.activeChallenges)
+      );
     } else {
       // challenged and proposal won
       // increase successful proposal

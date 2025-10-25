@@ -62,7 +62,7 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
         //   - 40% of proposer bond + initial reward go back to requester for compensation
         //   - 40% of proposer bond is given to the challenger
         //   - 20% of proposer bons is given to the reviewer voted for too early challenge
-        // bool isTooEarly; 
+        // bool isTooEarly;
     }
 
     /// @notice Statistics for a participant's activity within the protocol
@@ -255,6 +255,15 @@ interface IOracleCoordinator is AutomationCompatibleInterface {
     function getReviews(
         address _request
     ) external view returns (Review[] memory);
+
+    /// @notice Returns the given vote for a given request and reviewer
+    /// @param _request The address of the request
+    /// @param _reviewer The address of the reviewer
+    /// @return _review Review struct
+    function getReviewerVotes(
+        address _request,
+        address _reviewer
+    ) external view returns (Review memory _review);
 
     /// @notice Returns vote tally for a challenge on a given request
     /// @param _request The address of the request

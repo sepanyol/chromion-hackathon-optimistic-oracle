@@ -6,6 +6,10 @@ type Dashboard @entity(immutable: false) {
   proposalsFinished: BigInt!
   proposalsFinishedSuccessful: BigInt!
   proposalSuccessRate: BigDecimal!
+
+  challenges: BigInt!
+  challengeSuccessRate: BigDecimal!
+  challengesWon: BigInt!
 }
 
 type RequestScoringHeatmap @entity(immutable: true) {
@@ -191,4 +195,15 @@ type User @entity(immutable: false) {
   challenger: UserChallenger
   reviewer: UserReviewer
   recentActivity: [RecentActivity!] @derivedFrom(field: "user")
+}
+
+type WrappedNFT @entity(immutable: true) {
+  id: Bytes!
+  requester: Bytes! # address
+  originNFT: Bytes! # address
+  wNft: BigInt! # uint256
+  originId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
 }

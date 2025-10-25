@@ -1,8 +1,11 @@
 import { useCreateRequest } from "@/hooks/onchain/useCreateRequest";
-import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
-import RequestModal from "./RequestModal";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
+import { TransactionExecutionError } from "viem";
+import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
+import NFTRequestModal from "./NFTRequestModal";
+import RequestModal from "./RequestModal";
 
 export const CreateRequest = () => {
   const router = useRouter();
@@ -13,22 +16,69 @@ export const CreateRequest = () => {
   });
 
   const handleOnSubmit = () => {
+    if (!state.isSubmitEnabled) return;
     dispatch({ type: ActionTypes.EnableSubmitting });
     createRequest.initiate();
   };
 
   useEffect(() => {
-    if (createRequest.execute.execution.isSuccess)
+    if (!createRequest.execute.execution.isSuccess) return;
+    setTimeout(() => {
+      router.refresh();
       dispatch({ type: ActionTypes.Reset });
-    router.refresh();
+    }, 6000);
   }, [createRequest.execute.execution.isSuccess]);
+
+  useEffect(() => {
+    if (createRequest.approval.execution.error) {
+      dispatch({ type: ActionTypes.DisableSubmitting });
+      toast.error(
+        `Error: ${
+          (createRequest.approval.execution.error as TransactionExecutionError)
+            .shortMessage
+        }`
+      );
+    }
+
+    if (createRequest.execute.execution.error) {
+      dispatch({ type: ActionTypes.DisableSubmitting });
+      toast.error(
+        `Error: ${
+          (createRequest.execute.execution.error as TransactionExecutionError)
+            .shortMessage
+        }`
+      );
+    }
+  }, [
+    createRequest.approval.execution.error,
+    createRequest.approval.execution.error,
+  ]);
 
   if (!state.isModalOpen) return <></>;
 
-  return (
+  return state.isCreateTokenWrapperEnabled ? (
+    <NFTRequestModal
+      isSubmitting={state.isSubmitting}
+      isSubmitDisabled={!state.isSubmitEnabled}
+      onUpdate={(data: any) => {
+        dispatch({
+          type: ActionTypes.UpdateNFTCreateParams,
+          payload: {
+            context: data.details,
+            originId: data.tokenId,
+            originNFT: data.tokenAddress,
+          },
+        });
+      }}
+      onSubmit={handleOnSubmit}
+      onClose={() => {
+        dispatch({ type: ActionTypes.ResetNFT });
+      }}
+    />
+  ) : (
     <RequestModal
       isSubmitting={state.isSubmitting}
-      isSubmitDisabled={!createRequest.execute.isReady}
+      isSubmitDisabled={!state.isSubmitEnabled}
       onUpdate={(data: any) => {
         dispatch({
           type: ActionTypes.UpdateCreateParams,
@@ -44,7 +94,6 @@ export const CreateRequest = () => {
       }}
       onSubmit={handleOnSubmit}
       onClose={() => {
-        dispatch({ type: ActionTypes.CloseModal });
         dispatch({ type: ActionTypes.Reset });
       }}
     />
