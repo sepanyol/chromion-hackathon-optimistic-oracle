@@ -16,7 +16,7 @@ import { createAppKit } from "@reown/appkit/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode } from "react";
 import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
-import { projectId, wagmiAdapter } from "../index";
+import { projectId, wagmiAdapter, networks, networkConfig } from "../index";
 
 // Set up queryClient
 const queryClient = new QueryClient();
@@ -28,8 +28,8 @@ if (!projectId) {
 // Set up metadata
 const metadata = {
   name: "Chromion Optimistic Oracle",
-  description: "AppKit Example",
-  url: "https://reown.com/appkit", // origin must match your domain & subdomain
+  description: "Decentralized Oracle Network for Cross-Chain Data Verification",
+  url: "https://chromion-hackathon-optimistic-oracle.vercel.app", // Updated to match project domain
   icons: ["https://assets.reown.com/reown-profile-pic.png"],
 };
 
@@ -65,6 +65,7 @@ const modal = createAppKit({
     email: false,
     socials: false,
     analytics: true, // Optional - defaults to your Cloud configuration
+    onramp: true, // Enable onramp for easier token acquisition
   },
 });
 
