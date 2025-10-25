@@ -1,7 +1,9 @@
 {
   "name": "ccip-starter-kit-foundry",
   "dependencies": {
-    "@chainlink/local": "^0.2.5-beta"
+    "@chainlink/local": "^0.2.5-beta",
+    "@reown/appkit-adapter-solana": "^1.7.11",
+    "lucide-react": "^0.515.0"
   },
   "scripts": {
     "coverage": "forge coverage --report lcov && genhtml lcov.info --output-dir coverage && npx http-server coverage"
