@@ -25,48 +25,49 @@ if (!projectId) {
   throw new Error("Project ID is not defined");
 }
 
-// Set up metadata
+// Environment detection (Billoq-style)
+const isMainnet = process.env.NEXT_PUBLIC_ENVIRONMENT === 'mainnet';
+
+// Set up metadata (Billoq-style with environment awareness)
 const metadata = {
-  name: "Chromion Optimistic Oracle",
-  description: "Decentralized Oracle Network for Cross-Chain Data Verification",
-  url: "https://chromion-hackathon-optimistic-oracle.vercel.app", // Updated to match project domain
+  name: "Equolibrium Oracle",
+  description: `Decentralized Oracle Network for Cross-Chain Data Verification - ${isMainnet ? 'Mainnet' : 'Testnet'} Mode`,
+  url: "https://chromion-hackathon-optimistic-oracle.vercel.app",
   icons: ["https://assets.reown.com/reown-profile-pic.png"],
 };
 
 const solanaWeb3JsAdapter = new SolanaAdapter();
 
-export const defaultChain = avalancheFuji;
-export const availableNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
-  avalanche,
-  avalancheFuji,
-  mainnet,
-  sepolia,
-  arbitrum,
-  arbitrumSepolia,
-  base,
-  baseSepolia,
-  // solana,
-  // solanaTestnet,
-  // solanaDevnet,
-];
+// Log environment info for debugging (Billoq-style)
+console.log(`🌍 AppKit Environment: ${isMainnet ? 'Mainnet' : 'Testnet'}`);
+console.log(`📡 Supported Networks:`, networks.map(n => n.name));
 
-// Create the modal
+// Create the modal (Billoq-style configuration)
 const modal = createAppKit({
   adapters: [wagmiAdapter /*, solanaWeb3JsAdapter */],
   projectId,
   themeVariables: {
     "--w3m-accent": "var(--color-blue-600)",
   },
-  networks: availableNetworks,
-  defaultNetwork: defaultChain,
+  networks: networks as any, // Use the centralized network configuration
+  defaultNetwork: networkConfig.defaultNetwork,
   metadata: metadata,
   allowUnsupportedChain: true,
   features: {
     email: false,
     socials: false,
     analytics: true, // Optional - defaults to your Cloud configuration
-    onramp: true, // Enable onramp for easier token acquisition
+    onramp: isMainnet, // Enable onramp only for mainnet
   },
+  // Optional: Add environment-specific features (Billoq-style)
+  ...(isMainnet ? {
+    // Mainnet specific configurations
+    enableExplorer: true,
+  } : {
+    // Testnet specific configurations
+    enableExplorer: true,
+    enableOnramp: false, // Disable on-ramp for testnets
+  })
 });
 
 function ContextProvider({

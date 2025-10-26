@@ -1,4 +1,6 @@
 // app/page.tsx
+"use client";
+
 import {
   ArrowRight,
   CheckCircle,
@@ -9,6 +11,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
+import { useRouter } from "next/navigation";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -43,6 +47,25 @@ const StatItem: React.FC<StatItemProps> = ({ number, label }) => (
 );
 
 const HomePage: React.FC = () => {
+  // Wallet connection hooks (Billoq-style)
+  const { isConnected } = useAppKitAccount();
+  const { open } = useAppKit();
+  const router = useRouter();
+
+  const handleGetStarted = async () => {
+    if (isConnected) {
+      // If already connected, navigate to dashboard
+      router.push("/dashboard");
+    } else {
+      // If not connected, open wallet connection modal
+      try {
+        await open();
+      } catch (error) {
+        console.error("Connection error:", error);
+      }
+    }
+  };
+
   const features = [
     {
       icon: <Shield className="w-6 h-6 text-blue-600" />,
@@ -134,13 +157,13 @@ const HomePage: React.FC = () => {
               prices to real estate valuations with accuracy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                href="/dashboard"
-                className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl flex items-center space-x-2 group"
+              <button
+                onClick={handleGetStarted}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-xl hover:shadow-2xl flex items-center space-x-2 group"
               >
-                <span>Start Using Equolibrium</span>
+                <span>{isConnected ? "Go to Dashboard" : "Connect Wallet"}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </button>
               <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-200">
                 Learn More
               </button>
@@ -255,13 +278,13 @@ const HomePage: React.FC = () => {
             Join hundreds of developers and protocols already using Equolibrium
             for reliable outcomes.
           </p>
-          <Link
-            href="/dashboard"
+          <button
+            onClick={handleGetStarted}
             className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all duration-200 shadow-xl hover:shadow-2xl inline-flex items-center space-x-2 group"
           >
-            <span>Launch Equolibrium</span>
+            <span>{isConnected ? "Launch Equolibrium" : "Connect Wallet"}</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          </button>
         </div>
       </section>
 
