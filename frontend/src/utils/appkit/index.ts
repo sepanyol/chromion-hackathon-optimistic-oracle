@@ -12,56 +12,47 @@ import {
   polygonMumbai,
   optimism,
   optimismSepolia,
+  lisk,
+  liskSepolia,
+  bsc,
+  bscTestnet,
 } from "@reown/appkit/networks";
 import { cookieStorage, createStorage } from "@wagmi/core";
 
-// Get project ID from environment variables with fallback
-export const projectId = process.env.NEXT_PUBLIC_APPKIT_PROJECT_ID || "a9fbadc760baa309220363ec867b732e";
+// Get project ID from environment variables with fallback (Billoq-style)
+export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID || "a9fbadc760baa309220363ec867b732e";
 
-// Validate project ID
-if (!projectId || projectId.length < 32) {
-  throw new Error("Invalid or missing AppKit Project ID. Please check your NEXT_PUBLIC_APPKIT_PROJECT_ID environment variable.");
+if (!projectId) {
+  throw new Error('Project ID is not defined');
 }
 
-// Define supported networks for the application
-export const networks = [
-  // Mainnets
-  mainnet,
-  avalanche,
-  arbitrum,
-  base,
-  polygon,
-  optimism,
-  
-  // Testnets
-  sepolia,
-  avalancheFuji,
-  arbitrumSepolia,
-  baseSepolia,
-  polygonMumbai,
-  optimismSepolia,
-];
+// Environment detection (Billoq-style)
+const isMainnet = process.env.NEXT_PUBLIC_ENVIRONMENT === 'mainnet';
 
-// Network configuration for better UX
+// Dynamic network configuration based on environment (Billoq-style)
+const mainnetNetworks: [any, ...any[]] = [lisk, arbitrum, base, bsc];
+const testnetNetworks: [any, ...any[]] = [sepolia, liskSepolia, arbitrumSepolia, bscTestnet];
+
+// Use appropriate networks based on environment (always ensure at least one network)
+export const networks = isMainnet ? mainnetNetworks : testnetNetworks;
+
+// Network configuration for better UX (Billoq-style environment awareness)
 export const networkConfig = {
-  // Default network for new users
-  defaultNetwork: avalancheFuji,
+  // Default network for new users (environment-aware)
+  defaultNetwork: isMainnet ? lisk : liskSepolia,
   
   // Networks that support the optimistic oracle
-  oracleSupportedNetworks: [
-    avalancheFuji, // Primary testnet
-    baseSepolia,   // Secondary testnet
-    sepolia,       // Ethereum testnet
-  ],
+  oracleSupportedNetworks: isMainnet 
+    ? [lisk, arbitrum, base] 
+    : [liskSepolia, arbitrumSepolia, sepolia],
   
   // Networks with native USDC support
-  usdcSupportedNetworks: [
-    mainnet,
-    arbitrum,
-    base,
-    polygon,
-    optimism,
-  ],
+  usdcSupportedNetworks: isMainnet
+    ? [mainnet, arbitrum, base, lisk, bsc]
+    : [sepolia, arbitrumSepolia, liskSepolia, bscTestnet],
+  
+  // Environment info
+  isMainnet,
 };
 
 // Create Wagmi adapter with enhanced configuration
@@ -104,13 +95,29 @@ export const networkUtils = {
    * Get all mainnet networks
    */
   getMainnets: () => {
-    return [mainnet, avalanche, arbitrum, base, polygon, optimism];
+    return mainnetNetworks;
   },
   
   /**
    * Get all testnet networks
    */
   getTestnets: () => {
-    return networkConfig.oracleSupportedNetworks;
+    return testnetNetworks;
+  },
+  
+  /**
+   * Get current environment
+   */
+  getCurrentEnvironment: () => {
+    return isMainnet ? 'mainnet' : 'testnet';
+  },
+  
+  /**
+   * Get supported chains based on environment
+   */
+  getSupportedChains: () => {
+    return isMainnet 
+      ? ["Lisk", "Arbitrum", "Base", "BSC"]
+      : ["Ethereum Sepolia", "Lisk Sepolia", "Arbitrum Sepolia", "BSC Testnet"];
   },
 };
