@@ -1,6 +1,7 @@
 import { gql } from "urql";
 import { querySubgraph } from "./urqlClient";
 import { RequestStatus } from "../helpers";
+import { DashboardRequestType } from "@/types/Requests";
 
 const FetchRequestsDefault = gql`
   query {
@@ -44,13 +45,13 @@ const FetchRequestsByStatus = gql`
       where: { status_not: 4, status: $status }
     ) {
       id
-      isCrossChain
-      originChainId
-      originAddress
-      question
       answerType
-      createdAt
       challengeWindow
+      createdAt
+      isCrossChain
+      originAddress
+      originChainId
+      question
       rewardAmount
       status
       scoring {
@@ -69,6 +70,9 @@ const FetchRequestsByStatus = gql`
 `;
 
 export const fetchRequests = async (status?: RequestStatus | "all") =>
-  querySubgraph(status ? FetchRequestsByStatus : FetchRequestsDefault, {
-    ...(status != "all" ? { status } : {}),
-  });
+  querySubgraph<{ requests: DashboardRequestType[] }>(
+    status ? FetchRequestsByStatus : FetchRequestsDefault,
+    {
+      ...(status != "all" ? { status } : {}),
+    }
+  );

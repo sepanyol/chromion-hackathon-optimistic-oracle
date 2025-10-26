@@ -18,9 +18,9 @@ export const RequestType = ({ value, onChange }: RequestTypeProps) => {
     },
     {
       value: "Value",
-      label: "Real World Asset (RWA) Valuation",
+      label: "USD Value",
       description:
-        "Request an estimation of the value of your RAW to the oracle",
+        "Request an estimation of the value of any asset to the oracle",
     },
   ];
 

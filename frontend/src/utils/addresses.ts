@@ -14,3 +14,4 @@ export const isAddress = (
 
 export const isSameAddress = (a?: string, b?: string): boolean =>
   a === b || a?.toLowerCase() === b?.toLowerCase(); // Lazy-lowercases the addresses
+;;

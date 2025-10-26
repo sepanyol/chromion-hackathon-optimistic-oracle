@@ -41,6 +41,9 @@ export function getDashboard(): Dashboard {
     _dashboard.proposalsFinished = BigInt.zero();
     _dashboard.proposalsFinishedSuccessful = BigInt.zero();
     _dashboard.proposalSuccessRate = BigDecimal.fromString("0");
+    _dashboard.challenges = BigInt.zero();
+    _dashboard.challengeSuccessRate = BigDecimal.fromString("0");
+    _dashboard.challengesWon = BigInt.zero();
   }
   return _dashboard;
 }

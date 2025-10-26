@@ -11,7 +11,6 @@ import {IOracleCoordinator} from "./interfaces/IOracleCoordinator.sol";
 import {IBaseRequestContract} from "./interfaces/IBaseRequestContract.sol";
 
 import {RequestTypes} from "./types/RequestTypes.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title OracleCoordinator
 /// @notice Manages answer proposals, challenges, review voting, and resolution of requests.
@@ -32,7 +31,8 @@ contract OracleCoordinator is
     bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
     /// @dev Duration in seconds for which a review phase is open
-    uint256 public constant REVIEW_WINDOW = 1 days;
+    // uint256 public constant REVIEW_WINDOW = 1 days;
+    uint256 public constant REVIEW_WINDOW = 5 minutes; // TODO revert this, only for testing
 
     /// @dev Bond amount in USDC required to submit a proposal
     uint256 public constant PROPOSER_BOND = 100e6;
@@ -136,6 +136,12 @@ contract OracleCoordinator is
         require(
             requestStore[_request].status() == RequestTypes.RequestStatus.Open,
             "Already proposed"
+        );
+
+        require(
+            keccak256(requestStore[_request].requester()) !=
+                keccak256(abi.encode(msg.sender)),
+            "Proposer not allowed"
         );
 
         _updateRequestStatus(_request, RequestTypes.RequestStatus.Proposed);
@@ -357,13 +363,15 @@ contract OracleCoordinator is
 
                 _platformShare =
                     (_rewardAmount - _proposerShare) + // ~10% from reward for platform
-                    (_reviewersAmount -
-                        _reviewersShare +
-                        (_reviewersShare % _challenge.votesAgainst)); // ~10% from reviewers for platform + dust
+                    (_reviewersAmount - _reviewersShare); // ~10% from reviewers for platform
 
-                reviewerClaimAmount[_request] =
-                    (_reviewersShare / _challenge.votesAgainst) +
-                    REVIEWER_BOND;
+                reviewerClaimAmount[_request] = REVIEWER_BOND;
+                if (_challenge.votesAgainst > 0) {
+                    _platformShare += _reviewersShare % _challenge.votesAgainst; //  + dust
+                    reviewerClaimAmount[_request] +=
+                        _reviewersShare /
+                        _challenge.votesAgainst;
+                }
 
                 emit BondRefunded(_request, _proposal.proposer, PROPOSER_BOND);
                 emit RewardDistributed(
@@ -473,6 +481,30 @@ contract OracleCoordinator is
         _reviews = proposalStore[_request].challenge.reviews;
     }
 
+    // /// @inheritdoc IOracleCoordinator
+    // function getReview(
+    //     address _request, address _reviewer
+    // ) external view returns (Review[] memory _reviews) {
+    //     _reviews = proposalStore[_request].challenge.reviews;
+    // }
+
+    /// @inheritdoc IOracleCoordinator
+    function getReviewerVotes(
+        address _request,
+        address _reviewer
+    ) external view returns (Review memory _review) {
+        uint256 _length = proposalStore[_request].challenge.reviews.length;
+        for (uint256 i = 0; i < _length; ) {
+            if (
+                proposalStore[_request].challenge.reviews[i].reviewer ==
+                _reviewer
+            ) return proposalStore[_request].challenge.reviews[i];
+            unchecked {
+                i++;
+            }
+        }
+    }
+
     /// @inheritdoc IOracleCoordinator
     function getReviewTally(
         address _request
@@ -505,8 +537,8 @@ contract OracleCoordinator is
             reviewerVote[reviewerVoteIdFor(_request, _claimer)];
 
         bool _successAgainst = proposalChallengeOutcome[
-            outcomeIdFor(_request)
-        ] && reviewerVote[reviewerVoteIdFor(_request, _claimer)];
+            outcomeIdAgainst(_request)
+        ] && reviewerVote[reviewerVoteIdAgainst(_request, _claimer)];
 
         bool _success = _successFor || _successAgainst;
 

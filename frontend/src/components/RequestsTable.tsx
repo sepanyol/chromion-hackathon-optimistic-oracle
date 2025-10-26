@@ -3,6 +3,7 @@
 import { ActiveRequest } from "@/types/Requests";
 import { ReadableRequestStatus, RequestStatus } from "@/utils/helpers";
 import { AlertCircle, CheckCircle2, Clock, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 interface RequestsTableProps {
@@ -20,6 +21,8 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
     requestId: string;
     action: string;
   } | null>(null);
+
+  const router = useRouter();
 
   const getStatusColor = (status: ReadableRequestStatus) => {
     switch (status) {
@@ -62,20 +65,17 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
 
   const handleAction = async (
     requestId: string,
-    action: "propose" | "challenge"
+    action: "propose" | "challenge" | "review"
   ) => {
-    setLoadingAction({ requestId, action });
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (action === "propose") {
-      onPropose(requestId);
-    } else {
-      onChallenge(requestId);
+    if (action == "challenge") {
+      router.push(`/challenger/${requestId}`);
     }
-
-    setLoadingAction(null);
+    if (action == "propose") {
+      router.push(`/solver/${requestId}`);
+    }
+    if (action == "review") {
+      router.push(`/reviewer/${requestId}`);
+    }
   };
 
   const canPropose = (status: RequestStatus) => status === RequestStatus.Open;
@@ -200,7 +200,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     )}
                     {canReview(request.status) && (
                       <button
-                        onClick={() => handleAction(request.id, "challenge")}
+                        onClick={() => handleAction(request.id, "review")}
                         disabled={loadingAction?.requestId === request.id}
                         className="bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >

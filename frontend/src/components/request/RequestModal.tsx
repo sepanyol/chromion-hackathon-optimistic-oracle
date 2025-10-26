@@ -2,13 +2,13 @@
 "use client";
 import { Info, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { ActionTypes, useCreateRequestContext } from "./CreateRequestProvider";
 import { RequestChallengePeriod, ValidPeriods } from "./RequestChallengePeriod";
 import { RequestContext } from "./RequestContext";
 import { RequestDescription } from "./RequestDescription";
 import { RequestReward } from "./RequestReward";
-import { RequestType } from "./RequestType";
-import { useCreateRequestContext } from "./CreateRequestProvider";
 import { RequestTruthMeaning } from "./RequestTruthMeaning";
+import { RequestType } from "./RequestType";
 
 interface RequestModalProps {
   isSubmitting: boolean;
@@ -26,6 +26,8 @@ type FormData = {
   period: ValidPeriods;
   details: string;
   truthMeaning: string;
+  tokenAddress: string;
+  tokenId: string;
 };
 
 const RequestModal: React.FC<RequestModalProps> = ({
@@ -43,6 +45,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
     period: 86400,
     details: "",
     truthMeaning: "",
+    tokenAddress: "",
+    tokenId: "",
   };
   const createContext = useCreateRequestContext();
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -56,9 +60,24 @@ const RequestModal: React.FC<RequestModalProps> = ({
       newErrors.description = "Description is required";
     }
 
-    if (!formData.truthMeaning.trim()) {
-      newErrors.truthMeaning = "This is required";
+    if (!formData.details.trim()) {
+      newErrors.details = "This is required";
     }
+
+    createContext.dispatch({
+      type:
+        formData.type == "Value"
+          ? ActionTypes.EnableCreateTokenWrapper
+          : ActionTypes.DisableCreateTokenWrapper,
+    });
+
+    if (formData.type == "Value" && !formData.tokenAddress.trim()) {
+      newErrors.tokenAddress = "Token address is required";
+    }
+
+    // if (formData.type == "Value" && !formData.tokenId.trim()) {
+    //   newErrors.tokenId = "Token ID is required";
+    // }
 
     if (!formData.reward || parseInt(formData.reward) <= 0) {
       newErrors.reward = "Valid reward amount is required";
@@ -80,7 +99,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
   };
 
   useEffect(() => {
-    onUpdate(formData);
+    onUpdate && onUpdate(formData);
   }, [formData]);
 
   const handleOnClose = () => {
@@ -117,12 +136,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
               value={formData.type}
             />
 
-            {formData.type == "Value" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                ENTER NFT ADDRESS FORM FIELD
-              </div>
-            )}
-
             <RequestDescription
               onChange={(value) => handleInputChange("description", value)}
               error={errors.description}
@@ -143,15 +156,15 @@ const RequestModal: React.FC<RequestModalProps> = ({
               />
             </div>
 
-            <RequestTruthMeaning
-              onChange={(value) => handleInputChange("truthMeaning", value)}
-              error={errors.truthMeaning}
-              value={formData.truthMeaning}
-            />
-
             <RequestContext
               onChange={(value) => handleInputChange("details", value)}
+              error={errors.details}
               value={formData.details}
+            />
+
+            <RequestTruthMeaning
+              onChange={(value) => handleInputChange("truthMeaning", value)}
+              value={formData.truthMeaning}
             />
 
             {/* Info Box */}

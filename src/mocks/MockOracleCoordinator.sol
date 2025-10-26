@@ -46,6 +46,11 @@ contract MockOracleCoordinator is IOracleCoordinator {
         address _request
     ) external view returns (Review[] memory) {}
 
+    function getReviewerVotes(
+        address _request,
+        address _reviewer
+    ) external view returns (Review memory _review) {}
+
     function getReviewTally(
         address _request
     ) external view returns (uint256 _for, uint256 _against) {}

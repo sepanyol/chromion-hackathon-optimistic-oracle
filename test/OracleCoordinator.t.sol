@@ -266,6 +266,54 @@ contract OracleCoordinatorTest is Test {
         assertEq(_proposal.proposer, proposer, "Proposal proposer mismatch");
     }
 
+    function test_proposeAnswer_succeedsWithBoolAnswer() public {
+        bytes memory answer = abi.encode(true);
+
+        // allow USDC + fund proposer
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        // call propose
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, answer);
+
+        // optional assertion: proposal state set
+        IOracleCoordinator.Proposal memory _proposal = coordinator.getProposal(
+            request
+        );
+
+        assertEq(_proposal.proposer, proposer, "Proposal proposer mismatch");
+        bool _answer = abi.decode(_proposal.answer, (bool));
+        assertEq(_answer, true, "should habe true answer");
+    }
+
+    function test_proposeAnswer_succeedsWithNumberAnswer() public {
+        bytes memory answer = abi.encode(1234 * 1e6);
+
+        // allow USDC + fund proposer
+        deal(address(usdc), proposer, 200e6);
+        vm.prank(proposer);
+        usdc.approve(address(coordinator), type(uint256).max);
+
+        // call propose
+        vm.prank(proposer);
+        coordinator.proposeAnswer(request, answer);
+
+        console.logBytes(
+            abi.encodeCall(coordinator.proposeAnswer, (request, answer))
+        );
+
+        // optional assertion: proposal state set
+        IOracleCoordinator.Proposal memory _proposal = coordinator.getProposal(
+            request
+        );
+
+        assertEq(_proposal.proposer, proposer, "Proposal proposer mismatch");
+        uint256 _answer = abi.decode(_proposal.answer, (uint256));
+        assertEq(_answer, 1234 * 1e6, "should habe 1234000000 answer");
+    }
+
     function test_proposeAnswer_RevertIf_AlreadyProposed() public {
         vm.mockCall(
             request,
@@ -283,6 +331,12 @@ contract OracleCoordinatorTest is Test {
         usdc.setFailOnTransfer(true);
         vm.expectRevert("Bond transfer failed");
         vm.prank(proposer);
+        coordinator.proposeAnswer(request, bytes("original answer"));
+    }
+
+    function test_proposeAnswer_RevertIf_ProposerIsRequester() public {
+        vm.expectRevert("Proposer not allowed");
+        vm.prank(requester);
         coordinator.proposeAnswer(request, bytes("original answer"));
     }
 
@@ -315,7 +369,7 @@ contract OracleCoordinatorTest is Test {
         );
 
         vm.prank(challenger);
-        coordinator.challengeAnswer(request,false, answer, reason);
+        coordinator.challengeAnswer(request, false, answer, reason);
 
         // assert challenge stored
         IOracleCoordinator.Challenge memory _challenge = coordinator
@@ -352,7 +406,7 @@ contract OracleCoordinatorTest is Test {
         vm.expectRevert("Challenge bond failed");
 
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, false,answer, reason);
+        coordinator.challengeAnswer(request, false, answer, reason);
     }
 
     function test_challengeAnswer_RevertIf_CallerIsRequester() public {
@@ -370,7 +424,7 @@ contract OracleCoordinatorTest is Test {
         usdc.approve(address(coordinator), type(uint256).max);
 
         vm.expectRevert("Challenger not allowed");
-        coordinator.challengeAnswer(request,false, answer, reason);
+        coordinator.challengeAnswer(request, false, answer, reason);
     }
 
     function test_challengeAnswer_RevertIf_StatusNotProposed() public {
@@ -390,7 +444,7 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger1, 200e6);
         vm.startPrank(challenger1);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,answer1, reason);
+        coordinator.challengeAnswer(request, false, answer1, reason);
 
         // challenger2 tries second challenge
         deal(address(usdc), challenger2, 200e6);
@@ -398,7 +452,7 @@ contract OracleCoordinatorTest is Test {
         usdc.approve(address(coordinator), type(uint256).max);
 
         vm.expectRevert("Not proposed");
-        coordinator.challengeAnswer(request, false,answer2, reason);
+        coordinator.challengeAnswer(request, false, answer2, reason);
     }
 
     function test_submitReview_succeedsWithValidInput() public {
@@ -418,7 +472,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // 3. Submit review
         deal(address(usdc), reviewer, 200e6);
@@ -440,6 +499,12 @@ contract OracleCoordinatorTest is Test {
             .getChallenge(request);
         assertEq(_challenge.reviews.length, 1, "Expected one review recorded");
         assertEq(_challenge.reviews[0].reviewer, reviewer, "Reviewer mismatch");
+
+        IOracleCoordinator.Review memory _review = coordinator.getReviewerVotes(
+            request,
+            reviewer
+        );
+        assertTrue(_review.supportsChallenge, "Should support the challenge");
     }
 
     function test_submitReview_RevertIf_AlreadyReviewed() public {
@@ -460,7 +525,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // 3. First review
         deal(address(usdc), reviewer, 200e6);
@@ -488,7 +558,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         deal(address(usdc), reviewer, 200e6);
         vm.startPrank(reviewer);
@@ -528,7 +603,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request,false, bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(
+            request,
+            false,
+            bytes("challenge"),
+            bytes("why")
+        );
 
         vm.startPrank(proposer);
         vm.expectRevert("Reviewer is proposer");
@@ -549,7 +629,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request,false, bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(
+            request,
+            false,
+            bytes("challenge"),
+            bytes("why")
+        );
 
         vm.startPrank(requester);
         vm.expectRevert("Reviewer is requester");
@@ -570,7 +655,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,bytes("challenge"), bytes("why"));
+        coordinator.challengeAnswer(
+            request,
+            false,
+            bytes("challenge"),
+            bytes("why")
+        );
 
         vm.expectRevert("Reviewer is challenger");
         coordinator.submitReview(request, reviewReason, false);
@@ -673,7 +763,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // Review in support of challenge
         deal(address(usdc), reviewer, 200e6);
@@ -754,7 +849,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // Step 3: reviewer disagrees with challenge
         deal(address(usdc), reviewer, 200e6);
@@ -895,7 +995,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request, false,challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // Review in support of challenge
         deal(address(usdc), reviewer, 200e6);
@@ -943,7 +1048,12 @@ contract OracleCoordinatorTest is Test {
         deal(address(usdc), challenger, 200e6);
         vm.startPrank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
-        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // Step 3: reviewer disagrees with challenge
         deal(address(usdc), reviewer, 200e6);
@@ -995,7 +1105,12 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // 3. Review (supports challenge)
         deal(address(usdc), reviewer, 200e6);
@@ -1114,7 +1229,12 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request, false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // 3. Review (supports challenge)
         deal(address(usdc), reviewer, 200e6);
@@ -1138,6 +1258,8 @@ contract OracleCoordinatorTest is Test {
     function test_claimReward_RevertIf_ReviewerWasOnLosingSide() public {
         address challenger = address(0xC1);
         address reviewer = address(0xC2);
+        address reviewer1 = address(0xC3);
+        address reviewer2 = address(0xC4);
         bytes memory challengeAnswer = bytes("corrected");
         bytes memory challengeReason = bytes("logic fix");
         bytes memory reviewReason = bytes("I disagree");
@@ -1156,14 +1278,31 @@ contract OracleCoordinatorTest is Test {
         vm.prank(challenger);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(challenger);
-        coordinator.challengeAnswer(request,false, challengeAnswer, challengeReason);
+        coordinator.challengeAnswer(
+            request,
+            false,
+            challengeAnswer,
+            challengeReason
+        );
 
         // 3. Review (opposes challenge)
         deal(address(usdc), reviewer, 200e6);
+        deal(address(usdc), reviewer1, 200e6);
+        deal(address(usdc), reviewer2, 200e6);
         vm.prank(reviewer);
         usdc.approve(address(coordinator), type(uint256).max);
         vm.prank(reviewer);
         coordinator.submitReview(request, reviewReason, false); // votesAgainst = 1
+
+        vm.prank(reviewer1);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(reviewer1);
+        coordinator.submitReview(request, reviewReason, true); // voteFor = 1
+
+        vm.prank(reviewer2);
+        usdc.approve(address(coordinator), type(uint256).max);
+        vm.prank(reviewer2);
+        coordinator.submitReview(request, reviewReason, true); // voteFor = 2
 
         // 4. Finalize (Challenge wins: no opposing votes)
         vm.warp(block.timestamp + 2 days);

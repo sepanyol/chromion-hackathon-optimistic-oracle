@@ -20,12 +20,12 @@ export const urqlClient = (url: string) => {
   return clientCache[url];
 };
 
-export const querySubgraph = async (
+export const querySubgraph = async <T extends any>(
   query: DocumentInput,
   variables: AnyVariables,
   context?: Partial<OperationContext>
 ) =>
-  await urqlClient(`${process.env.NEXT_PUBLIC_SUBGRAPH_API}`).query(
+  await urqlClient(`${process.env.NEXT_PUBLIC_SUBGRAPH_API}`).query<T>(
     query,
     variables,
     context

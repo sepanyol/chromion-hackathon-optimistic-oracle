@@ -74,26 +74,185 @@ AI-based scoring service for request validation and consistency
 
 ---
 
-## 🧱 Smart Contract Workflow Overview
+## 🧱 Workflow Overview
 
 ```mermaid
-sequenceDiagram
-    participant Requester
-    participant Factory
-    participant OracleRelayer
-    participant OracleChain
-    participant OracleCoordinator
-    participant Reviewer
-    participant Automation
+graph TB
+    %% Styling
+    classDef oracleChain fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef requesterChain fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef offChain fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef actors fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef automation fill:#00e4ec,stroke:#00185b,stroke-width:2px
 
-    Requester->>Factory: createRequest(...)
-    Factory->>OracleRelayer: forwardToOracle(payload)
-    OracleRelayer->>OracleChain: deploy + initialize RequestContract
-    OracleChain->>OracleCoordinator: registerRequest()
+    %% Requester Chains (Ethereum, Base, etc.)
+    subgraph RC["🔗 CROSS CHAIN (Ethereum, Base,...)"]
+        direction TB
+        FACTORY["`**Request Factory**
+        • Submit request
+        • Send reward
+        • USDC funding
+        • CCIP forwarding`"]
+        RELAYER["`**CCIP Relayer**
+        • Forward Request Creation to Oracle
+        • Receives + Forwards Request Status Updates from Oracle`"]
+        REQUEST["`**Request**
+        • Cross Chain Representation of Request`"]
+    end
 
-    Note right of OracleCoordinator: Status = Pending → Open
+    %% Oracle Chain (Avalanche)
+    subgraph OC["⛰️ ORACLE CHAIN (Avalanche)"]
+        direction TB
 
-    Requester-->>Requester: Wait for Open status
+        COORD["`**Oracle Coordinator**
+        • Entry point for requests
+        • Manages proposal windows
+        • Initiates challenge periods
+        • Participant tracking
+        • Challenge acceptance
+        • Reviewer windows
+        • Consensus tallying
+        • Request finalization
+        • Reward distribution`"]
+
+        FACTORYOC["`**Request Factory**
+        • Submit request
+        • Send reward
+        • USDC funding`"]
+
+        SCOREREG["`**ScoreRegistry**
+        • Risk scoring
+        • Quality analysis`"]
+
+        RELAYEROC["`**CCIP Relayer**
+        • Forward Request Creation to Oracle
+        • Receives + Forwards Request Status Updates from Oracle`"]
+
+        REQUESTOC["`**Request**`"]
+    end
+
+    %% Chainlink Components
+    subgraph CL["`**CHAINLINK COMPONENTS**`"]
+        AUTO["`**Chainlink Automation**
+        • Automated Finalization
+        • Criteria-based triggers`"]
+
+        %% Cross-Chain Communication
+        CCIP["`**Chainlink CCIP**`"]
+    end
+
+
+    %% Off-Chain Components
+    subgraph OFF["🌐 OFF-CHAIN"]
+        FRONTEND["`**Frontend**
+        • Multi-role interface
+        • Status displays
+        • Timer management
+        • Event history`"]
+
+        THEGRAPH["`**TheGraph**`"]
+
+        AIS["`**AI Scoring Service**
+        • Risk scoring
+        • Quality analysis`"]
+
+        OPENAI["`**OpenAI**`"]
+
+        %% AI Scoring
+        subgraph AISCORING["Scoring"]
+            AIS -->|"Check for new requests"| THEGRAPH
+            THEGRAPH -->|"delivers new request without scoring"| AIS
+            AIS -->|"Evaluates Risk"| OPENAI 
+            OPENAI -->|"Delivers Risk Score based on context"| AIS
+            AIS -->|"Stores score for request"| SCOREREG
+            SCOREREG --> |"Triggers event"| THEGRAPH
+            THEGRAPH --> |"Updates Score For Request"| THEGRAPH
+        end
+
+    end
+
+    %% Actors
+    subgraph ACTORS["👥 ACTORS"]
+        direction LR
+        REQUESTER["`**Requester**
+        Submit question
+        + reward`"]
+        
+        PROPOSER["`**Proposer**
+        Submit answer
+        + bond`"]
+        
+        CHALLENGER["`**Challenger**
+        Challenge answers
+        + bond`"]
+        
+        REVIEWER["`**Reviewer**
+        Validate correctness
+        + bond`"]
+
+        RWA["`**RWA Owner**
+        Submit evaluation
+        + reward`"]
+    end
+
+    %% %% Answer Types
+    %% subgraph ANSWERS["📋 ANSWER TYPES"]
+    %%     direction TB
+    %%     BOOL["`**Boolean Answers**
+    %%     True/False responses
+    %%     For factual events`"]
+        
+    %%     RWA["`**RWA Valuation**
+    %%     USDC valuations
+    %%     ERC-1155 assets
+    %%     Subjective pricing`"]
+    %% end
+
+    %% %% State Flow
+    %% subgraph STATES["🔄 LIFECYCLE STATES"]
+    %%     direction LR
+    %%     OPEN["Open"] --> PROPOSED["Proposed"]
+    %%     PROPOSED --> CHALLENGED["Challenged"]
+    %%     PROPOSED --> CHALLENGE_PERIOD["Challenge Period Expires"]
+    %%     CHALLENGE_PERIOD --> RESOLVED["Resolved"]
+    %%     CHALLENGED --> REVIEW_PERIOD["Review Period Expires"]
+    %%     REVIEW_PERIOD --> RESOLVED
+    %% end
+
+    %% Connections
+    REQUESTER -->|"Creates request"| FACTORY
+    FACTORY -->|"Create"| REQUEST
+    FACTORY -->|"Init CCIP Request"| RELAYER
+    RELAYER -->|"Send message"| CCIP
+    CCIP -->|"Forward Request to Oracle"| COORD
+
+    %% oracle chain creation
+    REQUESTER -->|"Creates request"| FACTORYOC
+    FACTORYOC -->|"Creates"| REQUESTOC
+    FACTORYOC -->|"Register"| COORD
+
+    %% oracle chain creation
+    RWA -->|"Creates evaluation request"| FACTORYOC
+    FACTORYOC -->|"Creates"| REQUESTOC
+    FACTORYOC -->|"Register"| COORD
+
+    %% cross chain update
+    COORD -->|"Result Notification"| RELAYEROC
+    RELAYEROC --> CCIP
+    CCIP -->|"Return Result"| RELAYER
+    RELAYER -->|"Updates"| REQUEST
+        
+    FRONTEND -->|"API for Requests"| THEGRAPH
+    FRONTEND -->|"Live Data"| COORD
+
+    THEGRAPH -->|"New Requests"| COORD
+
+    %% Apply styles
+    class RC,FACTORY,RELAYER,REQUEST requesterChain
+    class OC,COORD,FACTORYOC,SCOREREG,RELAYEROC,REQUESTOC oracleChain
+    class OFF,FRONTEND,AISCORING,THEGRAPH,AIS,OPENAI offChain
+    class ACTORS,REQUESTER,PROPOSER,CHALLENGER,REVIEWER,RWA actors
+    class AUTO,CCIP,CL automation
 ```
 
 ---

@@ -29,20 +29,29 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
     {
       name: "Dashboard",
       href: "/dashboard",
-      active: pathname === "/dashboard",
+      active: pathname.startsWith("/dashboard"),
     },
     {
       name: "Requester",
       href: "/requester",
-      active: pathname === "/requester",
+      active: pathname.startsWith("/requester"),
     },
-    { name: "Solver", href: "/solver", active: pathname === "/solver" },
+    { name: "Solver", href: "/solver", active: pathname.startsWith("/solver") },
     {
       name: "Challenger",
       href: "/challenger",
-      active: pathname === "/challenger",
+      active: pathname.startsWith("/challenger"),
     },
-    { name: "Reviewer", href: "/reviewer", active: pathname === "/reviewer" },
+    {
+      name: "Reviewer",
+      href: "/reviewer",
+      active: pathname.startsWith("/reviewer"),
+    },
+    {
+      name: "RWA Valuation",
+      href: "/rwa",
+      active: pathname.startsWith("/rwa"),
+    },
   ];
 
   const handleDisconnectWallet = () => {
@@ -67,7 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({ showNavigation = false }) => {
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 group">
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                Equolibrium
+                <img alt="Logo" src="/logo.png" className="h-12" />
               </h1>
             </Link>
 

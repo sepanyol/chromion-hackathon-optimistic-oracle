@@ -1,152 +1,83 @@
-
-'use client';
-import React, { useState, useEffect } from 'react';
+"use client";
 import Navbar from "@/components/Navbar";
+import { NetworkStatusBar } from "@/components/NetworkStatusBar";
+import { AvailableReviews } from "@/components/reviewer/AvailableReviews";
+import { MyReviews } from "@/components/reviewer/MyReviews";
 import StatCard from "@/components/StatCard";
-
-import { Clock, CheckCircle, Users, Star } from "lucide-react";
-
-import { 
-  AnswerReview, 
-  RecentReview, 
-  ReviewPatterns as ReviewPatternsType
-} from "@/types/reviewer";
-import ReviewGuidelines from '@/components/reviewer/ReviewGuidelines';
-import RecentReviews from '@/components/reviewer/RecentReviews';
-import ReviewPatterns from '@/components/reviewer/ReviewPatterns';
-import AnswerReviewCard from '@/components/reviewer/AnswerReviewCard';
-import { StatData } from '@/types/StatsCards';
+import { useAvailableReviews } from "@/hooks/useAvailableReviews";
+import { useUserReviewer } from "@/hooks/useUserReviewer";
+import { AvailableReviewsType, MyReviewsType } from "@/types/Requests";
+import { StatData } from "@/types/StatsCards";
+import { Check, DollarSign, Handshake, Scale, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
+import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
 
 const ReviewerPage: React.FC = () => {
-  const [stats, setStats] = useState<StatData[]>([]);
-  const [currentReview, setCurrentReview] = useState<AnswerReview | null>(null);
-  const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
-  const [reviewPatterns] = useState<ReviewPatternsType>({
-    approvalRate: '73%',
-    challengeAgreement: '85%',
-    averageTime: '12 minutes',
-    specialization: 'Technical Analysis'
-  });
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<StatData[]>([]);
+  const [myReviews, setMyReviews] = useState<MyReviewsType[]>([]);
+  const [availableReviews, setAvailableReviews] = useState<
+    AvailableReviewsType[]
+  >([]);
+
+  const { address: accountAddress } = useAccount();
+  const reviewer = useUserReviewer(accountAddress!);
+  const reviews = useAvailableReviews();
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
+    if (!reviews.isSuccess) return;
+    setAvailableReviews(reviews.data ? reviews.data : []);
+  }, [reviews.data, reviews.isSuccess]);
 
-  
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  useEffect(() => {
+    if (!reviewer.isSuccess || !reviewer.data) return;
 
-      setStats([
-        {
-          title: 'Review Queue',
-          value: '8',
-          change: 'Awaiting your review, 2 urgent',
-          changeType: 'positive',
-          icon: <Clock className="w-6 h-6 text-blue-600" />
-        },
-        {
-          title: 'Reviews Completed',
-          value: '156',
-          change: 'This month, +12 this week',
-          changeType: 'positive',
-          icon: <CheckCircle className="w-6 h-6 text-green-600" />
-        },
-        {
-          title: 'Consensus Rate',
-          value: '94.2%',
-          change: 'Agreement with majority',
-          changeType: 'positive',
-          icon: <Users className="w-6 h-6 text-purple-600" />
-        },
-        {
-          title: 'Reviewer Reputation',
-          value: '4.8/5.0',
-          change: 'Quality score, Top 10% reviewer',
-          changeType: 'positive',
-          icon: <Star className="w-6 h-6 text-yellow-600" />
-        }
-      ]);
+    setStats([
+      {
+        change: null,
+        changeType: "positive",
+        icon: <Scale className="w-6 h-6 text-purple-600" />,
+        title: "Review Queue",
+        value: reviewer.data.dashboard.activeChallenges,
+      },
+      {
+        change: null,
+        changeType: "positive",
+        icon: <Check className="w-6 h-6 text-green-600" />,
+        title: "Reviews Completed",
+        value: reviewer.data.user
+          ? Number(reviewer.data.user.stats.reviews) -
+            Number(reviewer.data.user.stats.reviewsActive)
+          : "0",
+      },
+      {
+        change: null,
+        changeType: "positive",
+        icon: <DollarSign className="w-6 h-6 text-blue-600" />,
+        title: "Earned",
+        value: reviewer.data.user
+          ? `${Number(
+              formatUnits(reviewer.data.user.stats.earningsInUSD, 6)
+            ).toLocaleString(navigator.language)} USDC`
+          : "0",
+      },
+      {
+        change: null,
+        changeType: "positive",
+        icon: <Star className="w-6 h-6 text-yellow-600" />,
+        title: "Reviewer Reputation",
+        value: "4.8/5",
+      },
+    ]);
 
-      setCurrentReview({
-        id: '1247',
-        originalQuestion: 'What is the current gas price on Ethereum mainnet and how does it compare to historical averages?',
-        submittedAnswer: 'The current gas price is approximately 25 Gwei based on Etherscan data as of 2024-06-08 14:30 UTC. This represents a moderate network congestion level compared to the 30-day average of 22 Gwei. The price reflects...',
-        sources: [
-          {
-            type: 'api',
-            description: 'Etherscan API endpoint (etherscan.io/gastracker)',
-            verified: true
-          },
-          {
-            type: 'screenshot',
-            description: 'Gas tracker screenshots (timestamp verified)',
-            verified: true
-          },
-          {
-            type: 'data',
-            description: 'Historical comparison data (30-day trend)',
-            verified: false
-          }
-        ],
-        riskAssessment: {
-          score: 2.1,
-          level: 'Low Risk Score',
-          factors: [
-            'Multiple reliable sources cited',
-            'Recent timestamp verification passed',
-            'Data consistent with market conditions',
-            'Methodology clearly explained'
-          ]
-        },
-        challengeStatus: {
-          isDisputed: true,
-          challengerClaims: 'Data appears outdated by 4 hours',
-          challengerEvidence: [
-            'More recent gas tracker showing 30 Gwei',
-            'Claims 4-hour delay in answer timestamp',
-            'Alternative data source comparison'
-          ]
-        }
-      });
+    if (reviewer.data.user && reviewer.data.user.reviews) {
+      setMyReviews([...reviewer.data.user.reviews]);
+    } else setMyReviews([]);
 
-      setRecentReviews([
-        { id: '1245', status: 'Approved' },
-        { id: '1243', status: 'Rejected' },
-        { id: '1241', status: 'Approved' }
-      ]);
-
-      setIsLoading(false);
-    };
-
-    loadData();
-  }, []);
-
-  const handleSubmitReview = (decision: 'support' | 'reject', comments?: string) => {
-    
-    console.log('Review submitted:', { decision, comments });
-    
- 
-    if (currentReview) {
-      const newReview: RecentReview = {
-        id: currentReview.id,
-        status: decision === 'support' ? 'Approved' : 'Rejected'
-      };
-      setRecentReviews(prev => [newReview, ...prev.slice(0, 2)]);
-    }
-    
-
-    setCurrentReview(null);
-    setTimeout(() => {
-
-      console.log('Loading next review...');
-    }, 1000);
-  };
-
-  const handleSkipReview = () => {
-
-    console.log('Review skipped');
-    setCurrentReview(null);
-  };
+    setIsLoading(false);
+  }, [reviewer.isSuccess, reviewer.data]);
 
   if (isLoading) {
     return (
@@ -162,42 +93,33 @@ const ReviewerPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar showNavigation />
-      
+
+      {/* Network Status Bar */}
+      <NetworkStatusBar />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      
-          <div className="lg:col-span-3 space-y-8">
-
+          {/* Stats Grid */}
+          <div className="col-span-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
                 <StatCard key={index} {...stat} />
               ))}
             </div>
-
-         
-            {currentReview ? (
-              <AnswerReviewCard
-                review={currentReview}
-                onSubmitReview={handleSubmitReview}
-                onSkipReview={handleSkipReview}
-              />
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">All Reviews Complete!</h3>
-                <p className="text-gray-600">No more reviews in your queue. Check back later for new submissions.</p>
-              </div>
-            )}
           </div>
 
-     
-          <div className="space-y-6">
-            <ReviewGuidelines />
-            <RecentReviews reviews={recentReviews} />
-            <ReviewPatterns patterns={reviewPatterns} />
+          {/* Main Content */}
+          <div className="col-span-4 space-y-8">
+            {/* Available Challenges */}
+            <div className="space-y-4">
+              <AvailableReviews reviews={availableReviews} />
+              <MyReviews reviews={myReviews} />
+            </div>
+            {/* Already Reviewd Challenges */}
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

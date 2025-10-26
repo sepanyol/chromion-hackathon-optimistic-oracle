@@ -2,6 +2,7 @@
 
 import { SolanaAdapter } from "@reown/appkit-adapter-solana";
 import {
+  AppKitNetwork,
   arbitrum,
   arbitrumSepolia,
   avalanche,
